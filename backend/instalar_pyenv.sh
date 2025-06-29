@@ -1,0 +1,24 @@
+#!/bin/bash
+# Instalar Pyenv + Python 3.12 isolado em qualquer sistema
+
+echo "➡️ Instalando dependências..."
+sudo apt update && sudo apt install -y \
+    make build-essential libssl-dev zlib1g-dev \
+    libbz2-dev libreadline-dev libsqlite3-dev wget curl \
+    llvm libncursesw5-dev xz-utils tk-dev libxml2-dev \
+    libxmlsec1-dev libffi-dev liblzma-dev
+
+echo "➡️ Baixando e instalando Pyenv..."
+curl https://pyenv.run | bash
+
+echo "➡️ Adicionando Pyenv ao shell..."
+echo -e '\n# Pyenv\nexport PATH="$HOME/.pyenv/bin:$PATH"\neval "$(pyenv init --path)"\neval "$(pyenv virtualenv-init -)"' >> ~/.bashrc
+source ~/.bashrc
+
+echo "➡️ Instalando Python 3.12.3..."
+~/.pyenv/bin/pyenv install 3.12.3
+~/.pyenv/bin/pyenv global 3.12.3
+
+echo "✅ Finalizado! Reinicie o terminal e rode: python --version"
+
+
