@@ -1,0 +1,9 @@
+Django>=5.0
+djangorestframework
+djangorestframework-simplejwt
+psycopg[binary]
+celery[redis]
+diffusers
+torch
+Pillow
+python-dotenv

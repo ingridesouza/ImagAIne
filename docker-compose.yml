@@ -1,0 +1,52 @@
+version: "3.9"
+
+services:
+  web:
+    build:
+      context: .
+      dockerfile: docker/Dockerfile
+    container_name: imagine_web
+    command: python backend/manage.py runserver 0.0.0.0:8000
+    volumes:
+      - .:/app
+      - media:/app/media
+    env_file: .env
+    depends_on:
+      - db
+      - redis
+    ports:
+      - "8000:8000"
+
+  worker:
+    build: .
+    command: celery -A core worker -l info
+    volumes:
+      - .:/app
+    env_file: .env
+    depends_on:
+      - db
+      - redis
+
+  db:
+    image: postgres:16
+    container_name: imagine_db
+    restart: always
+    environment:
+      POSTGRES_USER: imagine
+      POSTGRES_PASSWORD: imagine
+      POSTGRES_DB: imagine
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    ports:
+      - "5432:5432"
+
+  redis:
+    image: redis:7
+    container_name: imagine_redis
+    restart: always
+    ports:
+      - "6379:6379"
+
+volumes:
+  pgdata:
+  media:
