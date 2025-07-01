@@ -6,4 +6,4 @@ celery[redis]
 diffusers
 torch
 Pillow
-python-dotenv
+python-decouple
