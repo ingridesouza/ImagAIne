@@ -33,11 +33,9 @@ def generate_image_task(image_id):
         )
         logger.info('Modelo carregado. Aplicando otimizações de memória...')
 
-        # Otimização para baixo consumo de memória
-        pipe.enable_sequential_cpu_offload()
+        # Otimização para baixo consumo de memória (CPU only)
         pipe.enable_attention_slicing()
-
-        logger.info('Otimizações de memória aplicadas.')
+        logger.info('Otimização de memória (attention slicing) aplicada.')
 
         # Gera a imagem
         logger.info('Gerando a imagem a partir do prompt...')
