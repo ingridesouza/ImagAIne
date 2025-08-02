@@ -7,3 +7,5 @@ diffusers
 torch
 Pillow
 python-decouple
+transformers
+accelerate

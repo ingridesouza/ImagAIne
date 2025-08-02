@@ -19,7 +19,8 @@ services:
     build:
       context: .
       dockerfile: docker/Dockerfile
-    command: celery -A imagAine worker -l info
+    command: celery -A imagAine.celery worker -l info
+    working_dir: /app/backend
     volumes:
       - .:/app
     env_file: .env
