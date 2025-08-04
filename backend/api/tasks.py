@@ -24,22 +24,58 @@ def generate_image_task(image_id):
 
         logger.info(f'[TASK_START] Iniciando geração para Image ID: {image_id}, Prompt: "{prompt}"')
 
-        # Carrega o pipeline de difusão. 
-        # low_cpu_mem_usage=True é recomendado para evitar picos de memória.
-        logger.info('Carregando o modelo de difusão...')
+        # Carrega o pipeline do Stable Diffusion XL com otimizações para baixa memória
+        logger.info('Carregando o modelo Stable Diffusion XL com otimizações para 12GB RAM...')
+        
+        # Forçando uso de CPU e float32 para maior estabilidade
+        device = 'cpu'
+        torch_dtype = torch.float32
+        
+        # Carrega o pipeline com configurações otimizadas para baixa memória
         pipe = DiffusionPipeline.from_pretrained(
-            "CompVis/ldm-text2im-large-256", 
+            "stabilityai/stable-diffusion-xl-base-1.0",
+            torch_dtype=torch_dtype,
+            use_safetensors=True,
+            variant=None,  # Usando fp32 para maior estabilidade
             low_cpu_mem_usage=True
         )
-        logger.info('Modelo carregado. Aplicando otimizações de memória...')
+        
+        # Configurações avançadas para economia de memória
+        pipe.enable_attention_slicing(slice_size="auto")
+        pipe.enable_sequential_cpu_offload()  # Mais eficiente que enable_model_cpu_offload para CPU
+        
+        logger.info(f'Modelo carregado em {device.upper()} com sucesso.')
 
-        # Otimização para baixo consumo de memória (CPU only)
-        pipe.enable_attention_slicing()
-        logger.info('Otimização de memória (attention slicing) aplicada.')
-
-        # Gera a imagem
-        logger.info('Gerando a imagem a partir do prompt...')
-        image_data = pipe(prompt).images[0]
+        # Gera a imagem com configurações otimizadas para qualidade
+        logger.info('Gerando a imagem (isso pode levar de 5-10 minutos em CPU)...')
+        
+        # Configurações para melhor qualidade
+        generator = torch.Generator(device='cpu')
+        
+        # Geração com parâmetros otimizados para qualidade
+        try:
+            image_data = pipe(
+                prompt=prompt,
+                negative_prompt="blurry, low quality, distorted, deformed, disfigured, text, watermark",
+                num_inference_steps=40,       # Aumentado para melhor qualidade
+                guidance_scale=8.0,           # Ajuste fino para melhor aderência ao prompt
+                generator=generator,
+                output_type='pil',
+                width=768,                   # Largura maior para mais detalhes
+                height=512,                  # Proporção 3:2 comum para paisagens
+                num_images_per_prompt=1
+            ).images[0]
+        except Exception as e:
+            logger.error(f'Erro ao gerar imagem: {str(e)}')
+            # Tenta novamente com configurações mais leves
+            image_data = pipe(
+                prompt=prompt,
+                num_inference_steps=25,
+                guidance_scale=7.5,
+                generator=generator,
+                output_type='pil'
+            ).images[0]
+        
         logger.info('Imagem gerada com sucesso.')
 
         # Prepara o caminho para salvar o arquivo
