@@ -12,6 +12,7 @@ from .serializers import ImageSerializer, GenerateImageSerializer, UserRegistrat
 from .tasks import generate_image_task
 
 class UserRegistrationView(generics.CreateAPIView):
+    permission_classes = []  # Remove a necessidade de autenticação
     serializer_class = UserRegistrationSerializer
 
 class GenerateImageView(APIView):
