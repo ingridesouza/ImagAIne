@@ -1,6 +1,8 @@
 from pathlib import Path
 from decouple import config
+import os
 
+HF_TOKEN = os.getenv("HF_TOKEN")
 BASE_DIR = Path(__file__).resolve().parent.parent
 
 SECRET_KEY = config('SECRET_KEY', default='unsafe-secret-key')

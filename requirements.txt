@@ -9,3 +9,6 @@ Pillow
 python-decouple
 transformers
 accelerate
+huggingface-hub>=0.16.0
+python-dotenv
+redis
