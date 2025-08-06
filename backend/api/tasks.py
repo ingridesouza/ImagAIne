@@ -5,7 +5,8 @@ import uuid
 from celery import shared_task
 from django.conf import settings
 from huggingface_hub import InferenceClient
-
+from decouple import config
+from decouple import config
 from .models import Image
 
 logger = logging.getLogger(__name__)
@@ -22,7 +23,7 @@ def generate_image_task(image_id):
         # Inicializa o client com token
         client = InferenceClient(
             provider="nebius",
-            api_key=settings.HF_TOKEN
+            api_key=config('HF_TOKEN')
 
         )
 

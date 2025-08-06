@@ -24,6 +24,8 @@ services:
     volumes:
       - .:/app
     env_file: .env
+    environment:
+      - HF_TOKEN=${HF_TOKEN}
     depends_on:
       - db
       - redis
