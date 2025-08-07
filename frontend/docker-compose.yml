@@ -2,19 +2,31 @@ version: '3.8'
 
 services:
   frontend:
-    build:
-      context: .
-      dockerfile: Dockerfile
+    build: .
     container_name: imagaine-frontend
+    restart: unless-stopped
     ports:
       - "3000:80"
     environment:
-      - NODE_ENV=development
-    volumes:
-      - .:/app
-      - /app/node_modules
-    networks:
-      - imagaine-network
+      - NODE_ENV=production
+      - API_BASE_URL=http://localhost:8000/api
+    # Removemos os volumes para produção
+    # Em desenvolvimento, você pode descomentar:
+    # volumes:
+    #   - ./dist:/usr/share/nginx/html
+    #   - ./nginx.conf:/etc/nginx/conf.d/default.conf
+    entrypoint: ["/docker-entrypoint.sh"]
+    command: ["nginx", "-g", "daemon off;"]
+  #   environment:
+  #     - DEBUG=True
+  #     - SECRET_KEY=sua_chave_secreta_aqui
+  #     - ALLOWED_HOSTS=*
+  #   volumes:
+  #     - ../backend:/app
+  #     - ../backend/static:/app/static
+  #     - ../backend/media:/app/media
+  #   networks:
+  #     - imagaine-network
 
 networks:
   imagaine-network:

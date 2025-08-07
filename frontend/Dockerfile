@@ -1,17 +1,14 @@
 # Estágio de build
-FROM node:18-alpine as build
+FROM node:18-alpine AS build
 
 # Define o diretório de trabalho
 WORKDIR /app
 
-# Instala as ferramentas necessárias para build
-RUN apk add --no-cache python3 make g++
+# Copia apenas o package.json primeiro (mais eficiente para cache do Docker)
+COPY package.json ./
 
-# Copia os arquivos de configuração do projeto
-COPY package.json package-lock.json ./
-
-# Instala as dependências
-RUN npm ci --omit=dev
+# Instala as dependências incluindo as de desenvolvimento (precisamos do Vite)
+RUN npm install
 
 # Copia o restante dos arquivos
 COPY . .
@@ -28,8 +25,8 @@ RUN apk add --no-cache bash
 # Copia os arquivos construídos do estágio de build
 COPY --from=build /app/dist /usr/share/nginx/html
 
-# Copia a configuração personalizada do Nginx
-COPY nginx.conf /etc/nginx/conf.d/default.conf
+# Copia a configuração simplificada do Nginx
+COPY nginx-simple.conf /etc/nginx/conf.d/default.conf
 
 # Copia o script de inicialização
 COPY docker-entrypoint.sh /docker-entrypoint.sh
