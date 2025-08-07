@@ -8,7 +8,8 @@ export const CONFIG = {
             VERIFY_EMAIL: (token) => `/auth/verify-email/${token}/`,
             FORGOT_PASSWORD: '/auth/password/reset/request/',
             RESET_PASSWORD: '/auth/password/reset/confirm/',
-            PROFILE: '/auth/profile/'
+            PROFILE: '/auth/profile/',
+            DELETE_ACCOUNT: '/auth/delete-account/'
         }
     },
     STORAGE_KEYS: {
