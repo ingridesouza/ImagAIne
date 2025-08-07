@@ -4,7 +4,7 @@ services:
       context: .
       dockerfile: docker/Dockerfile
     container_name: imagine_web
-    command: python backend/manage.py runserver 0.0.0.0:8000
+    command: python manage.py runserver 0.0.0.0:8000
     volumes:
       - .:/app
       - media:/app/media
@@ -15,6 +15,7 @@ services:
     ports:
       - "8000:8000"
     working_dir: /app/backend
+
 
   worker:
     build:
