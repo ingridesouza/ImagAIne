@@ -1,6 +1,13 @@
+// Verifica se está rodando em desenvolvimento
+const isDevelopment = process.env.NODE_ENV === 'development';
+
 // Configurações globais da aplicação
 export const CONFIG = {
-    API_BASE_URL: 'http://localhost:8000/api',
+    // Usa o host.docker.internal para acessar o host do Docker no Windows/macOS
+    // No Linux, pode ser necessário usar o IP real do host
+    API_BASE_URL: isDevelopment 
+        ? 'http://localhost:8000/api' 
+        : 'http://backend:8000/api', // Nome do serviço no docker-compose
     ENDPOINTS: {
         AUTH: {
             LOGIN: '/auth/login/',

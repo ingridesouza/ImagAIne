@@ -1,0 +1,25 @@
+{
+  "name": "imagaine-frontend",
+  "private": true,
+  "version": "1.0.0",
+  "description": "Frontend para o projeto ImagAIne",
+  "type": "module",
+  "scripts": {
+    "dev": "vite",
+    "build": "vite build",
+    "preview": "vite preview",
+    "start": "vite preview --port 3000 --host",
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "dependencies": {
+    "@fortawesome/fontawesome-free": "^6.4.0",
+    "axios": "^1.6.2",
+    "bootstrap": "^5.3.0",
+    "bootstrap-icons": "^1.11.1",
+    "vite-plugin-html": "^3.2.0"
+  },
+  "devDependencies": {
+    "@vitejs/plugin-html": "^4.2.1",
+    "vite": "^4.5.0"
+  }
+}
