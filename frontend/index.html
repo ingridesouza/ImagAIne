@@ -1,0 +1,45 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ImagAIne - Plataforma de Geração de Imagens</title>
+    <link rel="stylesheet" href="./assets/css/main.css">
+    <!-- Font Awesome para ícones -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+</head>
+<body>
+    <div id="app">
+        <!-- O conteúdo será injetado aqui pelo JavaScript -->
+    </div>
+
+    <!-- Configurações globais -->
+    <script type="module" src="./config/config.js"></script>
+    
+    <!-- Serviços -->
+    <script type="module" src="./services/api.service.js"></script>
+    <script type="module" src="./services/auth.service.js"></script>
+    <script type="module" src="./services/storage.service.js"></script>
+    
+    <!-- Componentes -->
+    <script type="module" src="./components/layout/header.js"></script>
+    <script type="module" src="./components/layout/footer.js"></script>
+    <script type="module" src="./components/auth/login-form.js"></script>
+    <script type="module" src="./components/auth/register-form.js"></script>
+    <script type="module" src="./components/auth/verify-email.js"></script>
+    <script type="module" src="./components/auth/forgot-password.js"></script>
+    <script type="module" src="./components/auth/reset-password.js"></script>
+    
+    <!-- Páginas -->
+    <script type="module" src="./pages/home.js"></script>
+    <script type="module" src="./pages/login.js"></script>
+    <script type="module" src="./pages/register.js"></script>
+    <script type="module" src="./pages/verify-email.js"></script>
+    <script type="module" src="./pages/forgot-password.js"></script>
+    <script type="module" src="./pages/reset-password.js"></script>
+    <script type="module" src="./pages/dashboard.js"></script>
+    
+    <!-- Aplicação principal -->
+    <script type="module" src="./app.js"></script>
+</body>
+</html>
