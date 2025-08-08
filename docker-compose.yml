@@ -20,6 +20,8 @@ services:
       - API_BASE_URL=/
       - DATABASE_URL=postgresql://imagine:imagine@db:5432/imagine
       - REDIS_URL=redis://redis:6379/0
+      - DJANGO_SETTINGS_MODULE=imagAine.settings
+      - PYTHONPATH=/app/backend
     depends_on:
       db:
         condition: service_healthy
