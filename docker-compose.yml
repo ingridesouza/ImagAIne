@@ -3,34 +3,81 @@ services:
     build:
       context: .
       dockerfile: docker/Dockerfile
+      args:
+        - NODE_ENV=development
     container_name: imagine_web
-    command: python manage.py runserver 0.0.0.0:8000
+    command: /app/docker/startup.sh
     volumes:
       - .:/app
-      - media:/app/media
+      - media:/app/backend/media
+      - ./logs/nginx:/var/log/nginx
     env_file: .env
+    environment:
+      - NODE_ENV=development
+      - DEBUG=True
+      - DJANGO_DEBUG=True
+      - PYTHONUNBUFFERED=1
+      - API_BASE_URL=/
+      - DATABASE_URL=postgresql://imagine:imagine@db:5432/imagine
+      - REDIS_URL=redis://redis:6379/0
     depends_on:
-      - db
-      - redis
+      db:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
     ports:
+      - "80:80"
       - "8000:8000"
     working_dir: /app/backend
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8000/health/"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 10s
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "10m"
+        max-file: "3"
 
 
   worker:
     build:
       context: .
       dockerfile: docker/Dockerfile
-    command: celery -A imagAine.celery worker -l info
+    container_name: imagine_worker
+    command: >
+      bash -c "
+      echo 'Aguardando banco de dados...' &&
+      until PGPASSWORD=$$POSTGRES_PASSWORD psql -h db -U $$POSTGRES_USER -d $$POSTGRES_DB -c 'SELECT 1' > /dev/null 2>&1; do
+        echo 'Aguardando banco de dados...';
+        sleep 2;
+      done &&
+      echo 'Banco de dados pronto!' &&
+      celery -A imagAine.celery worker -l debug --concurrency=2
+      "
     working_dir: /app/backend
     volumes:
       - .:/app
     env_file: .env
     environment:
       - HF_TOKEN=${HF_TOKEN}
+      - POSTGRES_USER=imagine
+      - POSTGRES_PASSWORD=imagine
+      - POSTGRES_DB=imagine
+      - C_FORCE_ROOT=1
+      - PYTHONUNBUFFERED=1
     depends_on:
-      - db
-      - redis
+      db:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "10m"
+        max-file: "3"
 
   db:
     image: postgres:16
@@ -40,10 +87,28 @@ services:
       POSTGRES_USER: imagine
       POSTGRES_PASSWORD: imagine
       POSTGRES_DB: imagine
+      POSTGRES_INITDB_ARGS: --data-checksums
     volumes:
       - pgdata:/var/lib/postgresql/data
+      - ./logs/postgres:/var/log/postgresql
     ports:
       - "5432:5432"
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U imagine -d imagine"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "10m"
+        max-file: "3"
+    command: >
+      postgres
+      -c log_destination=stderr
+      -c log_statement=all
+      -c log_min_duration_statement=0
+      -c log_min_messages=debug1
 
   redis:
     image: redis:7
@@ -51,6 +116,17 @@ services:
     restart: always
     ports:
       - "6379:6379"
+    command: redis-server --loglevel debug
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "10m"
+        max-file: "3"
 
 volumes:
   pgdata:
