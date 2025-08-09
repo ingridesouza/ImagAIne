@@ -93,6 +93,12 @@ DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 # Custom user model
 AUTH_USER_MODEL = 'authentication.User'
 
+# Custom authentication backends
+AUTHENTICATION_BACKENDS = [
+    'authentication.backends.EmailBackend',  # Custom email-based authentication
+    'django.contrib.auth.backends.ModelBackend',  # Fallback to default backend
+]
+
 # JWT Settings
 from datetime import timedelta
 
