@@ -4,8 +4,7 @@ import uuid
 
 from celery import shared_task
 from django.conf import settings
-from huggingface_hub import InferenceClient
-from decouple import config
+from huggingface_hub import InferenceClient, hf_hub_download
 from decouple import config
 from .models import Image
 
@@ -21,17 +20,16 @@ def generate_image_task(image_id):
         logger.info(f'[TASK_START] Gerando imagem via Hugging Face Nebius - Prompt: "{prompt}"')
 
         # Inicializa o client com token
-        client = InferenceClient(
-            provider="nebius",
-            api_key=config('HF_TOKEN')
-
-        )
+        client = InferenceClient(token=config('HF_TOKEN'))
 
         # Gera a imagem remotamente
-        image_data = client.text_to_image(
-            prompt,
-            model="black-forest-labs/FLUX.1-dev"
-        )
+        try:
+            image_data = client.text_to_image(prompt, model="black-forest-labs/FLUX.1-dev")
+        except Exception as e:
+            logger.error('HF API error: %s', repr(e), exc_info=True)
+            image_instance.image_url = 'FAILED'
+            image_instance.save()
+            return
 
         logger.info('Imagem recebida com sucesso da API Nebius.')
 
