@@ -1,7 +1,7 @@
 # ImagAIne - Plataforma de Geração e Compartilhamento de Imagens por IA
 
 ## 🚀 Visão Geral
-O ImagAIne é uma plataforma web que permite aos usuários gerar imagens únicas a partir de descrições textuais (prompts) utilizando inteligência artificial. Desenvolvido com Django e React, o sistema oferece recursos de autenticação de usuários, geração assíncrona de imagens e compartilhamento público das criações.
+O ImagAIne é uma plataforma web que permite aos usuários gerar imagens únicas a partir de descrições textuais (prompts) utilizando inteligência artificial. Desenvolvido com Django, o sistema oferece recursos de autenticação de usuários, geração assíncrona de imagens e compartilhamento público das criações.
 
 ## ✨ Recursos Principais
 
@@ -22,11 +22,11 @@ O ImagAIne é uma plataforma web que permite aos usuários gerar imagens únicas
 - **Hugging Face Diffusers**: Para geração de imagens com IA
 - **PostgreSQL**: Banco de dados relacional
 
-### Frontend (a ser implementado)
-- **React**: Biblioteca JavaScript para interfaces de usuário
-- **Redux**: Gerenciamento de estado da aplicação
-- **Material-UI**: Componentes de interface do usuário
-- **Axios**: Cliente HTTP para requisições à API
+
+
+
+
+
 
 ## 🚀 Como Executar o Projeto
 
@@ -52,7 +52,7 @@ O ImagAIne é uma plataforma web que permite aos usuários gerar imagens únicas
    ```
 
 4. Acesse a aplicação em:
-   - Frontend: http://localhost:3000 (quando implementado)
+   
    - API: http://localhost:8000
    - Admin Django: http://localhost:8000/admin
 
