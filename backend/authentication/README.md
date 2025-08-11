@@ -42,8 +42,8 @@ EMAIL_HOST_USER=your-email@gmail.com
 EMAIL_HOST_PASSWORD=your-email-password
 DEFAULT_FROM_EMAIL=noreply@example.com
 
-# Frontend URL (for password reset links)
-FRONTEND_URL=http://localhost:3000
+
+
 
 # JWT Secret Key
 SECRET_KEY=your-secret-key-here
