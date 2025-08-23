@@ -18,6 +18,4 @@ urlpatterns = [
     path('password/reset/request/', views.PasswordResetRequestView.as_view(), name='password_reset_request'),
     path('password/reset/confirm/', views.PasswordResetConfirmView.as_view(), name='password_reset_confirm'),
     
-    # User profile endpoint
-    path('profile/', views.UserProfileView.as_view(), name='user_profile'),
 ]

@@ -89,4 +89,14 @@ class UserSerializer(serializers.ModelSerializer):
     """Serializer for user details."""
     class Meta:
         model = User
-        fields = ('id', 'email', 'username', 'first_name', 'last_name', 'is_verified')
+        fields = (
+            'id', 'email', 'username', 'first_name', 'last_name', 'is_verified',
+            'profile_picture', 'social_media_links', 'bio', 'plan'
+        )
+
+
+class UserProfileSerializer(serializers.ModelSerializer):
+    """Serializer for updating user profile."""
+    class Meta:
+        model = User
+        fields = ('first_name', 'last_name', 'profile_picture', 'social_media_links', 'bio')

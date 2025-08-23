@@ -13,3 +13,5 @@ accelerate
 huggingface-hub>=0.16.0
 python-dotenv
 redis
+django-admin-interface
+django-colorfield

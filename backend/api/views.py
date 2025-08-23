@@ -7,6 +7,9 @@ from rest_framework import generics, status, filters
 from rest_framework.response import Response
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.views import APIView
+from datetime import date
+from dateutil.relativedelta import relativedelta
+from authentication.models import User
 from .models import Image
 from .serializers import ImageSerializer, GenerateImageSerializer, UserRegistrationSerializer
 from .tasks import generate_image_task
@@ -19,24 +22,47 @@ class GenerateImageView(APIView):
     permission_classes = [IsAuthenticated]
 
     def post(self, request, *args, **kwargs):
+        user = request.user
+
+        # Check if the counter needs to be reset
+        if user.last_reset_date <= date.today() - relativedelta(months=1):
+            user.image_generation_count = 0
+            user.last_reset_date = date.today()
+            user.save(update_fields=['image_generation_count', 'last_reset_date'])
+
+        # Define limits based on plan
+        limits = {
+            User.Plan.FREE: 3,
+            User.Plan.PREMIUM: 50
+        }
+        limit = limits.get(user.plan, 0)
+
+        # Check if user has reached the limit
+        if user.image_generation_count >= limit:
+            return Response(
+                {"detail": f"You have reached your monthly limit of {limit} images for the {user.get_plan_display()} plan."},
+                status=status.HTTP_429_TOO_MANY_REQUESTS
+            )
+
         serializer = GenerateImageSerializer(data=request.data)
         if serializer.is_valid():
             prompt = serializer.validated_data['prompt']
             
-            # Crie a instância da imagem com uma URL temporária ou status
             image = Image.objects.create(
-                user=request.user,
+                user=user,
                 prompt=prompt,
-                image_url='GENERATING' # ou deixe em branco
+                image_url='GENERATING'
             )
             
-            # Inicie a tarefa em segundo plano
+            # Increment user's generation count
+            user.image_generation_count += 1
+            user.save(update_fields=['image_generation_count'])
+            
             generate_image_task.delay(image.id)
             
-            # Retorne uma resposta imediata para o usuário
             return Response(
                 ImageSerializer(image).data, 
-                status=status.HTTP_202_ACCEPTED # Accepted, mas não concluído
+                status=status.HTTP_202_ACCEPTED
             )
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 

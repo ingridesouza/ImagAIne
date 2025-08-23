@@ -15,7 +15,8 @@ from .serializers import (
     UserLoginSerializer,
     PasswordResetRequestSerializer,
     PasswordResetConfirmSerializer,
-    UserSerializer
+    UserSerializer,
+    UserProfileSerializer
 )
 
 class UserRegistrationView(generics.CreateAPIView):
@@ -217,10 +218,31 @@ class VerifyEmailView(APIView):
         )
 
 
+class UpgradeSubscriptionView(APIView):
+    """View for upgrading user subscription plan."""
+    permission_classes = [permissions.IsAuthenticated]
+
+    def post(self, request, *args, **kwargs):
+        user = request.user
+        if user.plan == User.Plan.PREMIUM:
+            return Response({'detail': 'User is already on the Premium plan.'}, status=status.HTTP_400_BAD_REQUEST)
+
+        # Here you would typically integrate with a payment gateway.
+        # For now, we'll just upgrade the plan directly.
+        user.plan = User.Plan.PREMIUM
+        user.save()
+
+        return Response({'detail': 'Subscription upgraded to Premium successfully.'}, status=status.HTTP_200_OK)
+
+
 class UserProfileView(generics.RetrieveUpdateAPIView):
     """View to retrieve and update user profile."""
-    serializer_class = UserSerializer
     permission_classes = [permissions.IsAuthenticated]
-    
+
     def get_object(self):
         return self.request.user
+
+    def get_serializer_class(self):
+        if self.request.method in ['PUT', 'PATCH']:
+            return UserProfileSerializer
+        return UserSerializer

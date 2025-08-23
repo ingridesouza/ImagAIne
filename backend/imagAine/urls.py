@@ -6,12 +6,15 @@ from rest_framework_simplejwt.views import (
     TokenRefreshView,
     TokenVerifyView,
 )
+from authentication.views import UserProfileView
 
 urlpatterns = [
     path('admin/', admin.site.urls),
     path('api/', include('api.urls')),
     path('api/auth/', include('authentication.urls')),
     path('api/token/verify/', TokenVerifyView.as_view(), name='token_verify'),
+    path('api/users/me/', UserProfileView.as_view(), name='user-me'),
+    path('api/subscription/', include('subscription.urls')),
 ]
 
 if settings.DEBUG:

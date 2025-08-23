@@ -11,6 +11,8 @@ ALLOWED_HOSTS = config('ALLOWED_HOSTS', default='*').split(',')
 
 
 INSTALLED_APPS = [
+    'admin_interface',
+    'colorfield',
     'django.contrib.admin',
     'django.contrib.auth',
     'django.contrib.contenttypes',
@@ -53,11 +55,8 @@ TEMPLATES = [
 
 WSGI_APPLICATION = 'imagAine.wsgi.application'
 
-REST_FRAMEWORK = {
-    'DEFAULT_AUTHENTICATION_CLASSES': (
-        'rest_framework_simplejwt.authentication.JWTAuthentication',
-    )
-}
+X_FRAME_OPTIONS = 'SAMEORIGIN'
+
 
 DATABASES = {
     'default': {
