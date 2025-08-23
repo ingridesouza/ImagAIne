@@ -5,12 +5,13 @@ O ImagAIne é uma plataforma web que permite aos usuários gerar imagens únicas
 
 ## ✨ Recursos Principais
 
-- **Geração de Imagens**: Crie imagens a partir de descrições textuais usando modelos de IA avançados
-- **Compartilhamento Público**: Torne suas imagens disponíveis para toda a comunidade
-- **Galeria Pública**: Explore e baixe imagens criadas por outros usuários
-- **Busca Inteligente**: Encontre imagens por palavras-chave ou similaridade de conceito
-- **Autenticação Segura**: Sistema de login e registro com JWT (JSON Web Tokens)
-- **Interface Responsiva**: Acessível em dispositivos móveis e desktop
+- **Geração de Imagens por IA**: Crie imagens a partir de descrições textuais (prompts).
+- **Perfis de Usuário**: Perfis personalizáveis com foto, bio e links de redes sociais.
+- **Planos de Assinatura**: Planos Free e Premium com diferentes limites de geração de imagens.
+- **Galeria Pública**: Explore e baixe imagens criadas por outros usuários, com o nome do autor.
+- **Compartilhamento de Imagens**: Torne suas criações privadas ou públicas.
+- **Autenticação Segura**: Sistema de registro e login com JWT (JSON Web Tokens).
+- **Painel de Administração Moderno**: Interface de admin aprimorada para fácil gerenciamento de usuários e imagens.
 
 ## 🛠️ Tecnologias Utilizadas
 
@@ -21,6 +22,7 @@ O ImagAIne é uma plataforma web que permite aos usuários gerar imagens únicas
 - **Redis**: Broker de mensagens para filas de tarefas
 - **Hugging Face Diffusers**: Para geração de imagens com IA
 - **PostgreSQL**: Banco de dados relacional
+- **django-admin-interface**: Para uma interface de administração moderna e personalizável
 
 
 
@@ -59,15 +61,20 @@ O ImagAIne é uma plataforma web que permite aos usuários gerar imagens únicas
 ## 🛠️ Endpoints da API
 
 ### Autenticação
-- `POST /api/token/` - Obter token JWT (login)
-- `POST /api/token/refresh/` - Atualizar token JWT
-- `POST /api/register/` - Registrar novo usuário
+- `POST /api/auth/register/` - Registrar um novo usuário.
+- `POST /api/auth/login/` - Autenticar e obter tokens JWT.
+- `POST /api/auth/login/refresh/` - Obter um novo token de acesso usando o token de atualização.
+
+### Usuário e Assinatura
+- `GET /api/users/me/` - Obter detalhes do perfil do usuário autenticado.
+- `PATCH /api/users/me/` - Atualizar o perfil do usuário (nome, bio, redes sociais, etc.).
+- `POST /api/subscription/upgrade/` - Fazer upgrade do plano do usuário para Premium.
 
 ### Imagens
-- `POST /api/generate/` - Gerar nova imagem a partir de um prompt
-- `GET /api/images/public/` - Listar imagens públicas
-- `GET /api/images/my-images/` - Listar imagens do usuário autenticado
-- `PATCH /api/images/<id>/share/` - Compartilhar/remover compartilhamento de imagem
+- `POST /api/generate/` - Gerar uma nova imagem a partir de um prompt (respeita os limites do plano).
+- `GET /api/images/public/` - Listar todas as imagens públicas.
+- `GET /api/images/my-images/` - Listar as imagens do usuário autenticado.
+- `POST /api/images/<id>/share/` - Tornar uma imagem privada em pública.
 
 ## 🤝 Contribuição
 

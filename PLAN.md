@@ -1,32 +1,49 @@
-# ImagAIne - Plano de Retomada e Testes Finais
+# ImagAIne - Plano de Desenvolvimento
 
-Este documento descreve os passos necessários para validar a implementação da arquitetura de multi-agentes (Analisador de Prompt, Crítico de Imagem e Sistema de Retentativa) assim que o acesso à API de geração de imagens for restabelecido.
+Este documento descreve o plano de desenvolvimento, as funcionalidades implementadas e os próximos passos para a plataforma ImagAIne.
 
-## Passos para Validação
+## Fase 1: Perfis de Usuário, Planos e Admin (Concluída)
 
-1.  **Resolver Acesso à API (Prioridade: Alta)**
-    *   **O que:** Restaurar a capacidade de gerar imagens via API da Hugging Face.
-    *   **Como:** Aguardar a renovação mensal dos créditos gratuitos ou fazer upgrade para um plano pago (PRO).
-    *   **Status:** `Pendente`
+Nesta fase, o foco foi enriquecer a experiência do usuário, introduzir um sistema de monetização básico e melhorar a capacidade de gerenciamento da plataforma.
 
-2.  **Teste de Sucesso de Ponta a Ponta (Prioridade: Alta)**
-    *   **O que:** Validar que o fluxo completo funciona sem erros.
-    *   **Como:**
-        1.  Reiniciar o worker do Docker: `docker compose restart worker`.
-        2.  Monitorar os logs: `docker compose logs -f worker`.
-        3.  Solicitar a geração de uma imagem com um prompt válido.
-    *   **Resultado Esperado:** A imagem é gerada, o `Agente Crítico` a valida com sucesso (`Validation PASSED`), e a tarefa é concluída (`TASK_SUCCESS`) sem retentativas.
-    *   **Status:** `Pendente`
+-   **[X] Modelos de Dados Aprimorados**
+    -   **O que:** Extensão do modelo `User` para incluir campos de perfil (foto, bio, redes sociais) e controle de assinatura (plano, contagem de uso, data de reset).
+    -   **Status:** `Concluído`
 
-3.  **Teste do Mecanismo de Retentativa (Prioridade: Média)**
-    *   **O que:** Garantir que o sistema de retentativa funciona quando o `Agente Crítico` reprova uma imagem.
-    *   **Como:**
-        1.  Modificar temporariamente o `backend/agents/critic_agent.py` para que o método `validate_image` sempre retorne `False`.
-        2.  Reiniciar o worker e solicitar uma nova imagem.
-    *   **Resultado Esperado:** Os logs devem mostrar a imagem sendo reprovada, a tarefa sendo reenfileirada, e o contador de tentativas (`retry_count`) sendo incrementado até o limite de `MAX_RETRIES`, quando a imagem é marcada como `FAILED`.
-    *   **Status:** `Pendente`
+-   **[X] API de Perfil de Usuário**
+    -   **O que:** Implementação de endpoints para que os usuários possam visualizar (`GET /api/users/me/`) e editar (`PATCH /api/users/me/`) seus perfis.
+    -   **Status:** `Concluído`
 
-4.  **Limpeza Final (Prioridade: Baixa)**
-    *   **O que:** Restaurar o `Agente Crítico` ao seu estado normal.
-    *   **Como:** Reverter a modificação feita no passo 3, garantindo que `validate_image` retorne `True` para imagens válidas.
-    *   **Status:** `Pendente`
+-   **[X] Sistema de Planos e Assinaturas**
+    -   **O que:** Criação de um sistema com dois níveis de plano (`Free` e `Premium`) e um endpoint para upgrade (`POST /api/subscription/upgrade/`).
+    -   **Status:** `Concluído`
+
+-   **[X] Controle de Limites de Geração**
+    -   **O que:** Integração da lógica de controle de uso na API de geração de imagens (`POST /api/generate/`), impondo limites mensais baseados no plano do usuário.
+    -   **Status:** `Concluído`
+
+-   **[X] Reset Mensal Automático**
+    -   **O que:** Criação de uma tarefa agendada (Celery Beat) para resetar o contador de imagens de todos os usuários no primeiro dia de cada mês.
+    -   **Status:** `Concluído`
+
+-   **[X] Melhorias na Galeria Pública**
+    -   **O que:** Atualização da API da galeria para exibir o nome completo do autor da imagem.
+    -   **Status:** `Concluído`
+
+-   **[X] Aprimoramento do Painel de Administração**
+    -   **O que:** Instalação e configuração do `django-admin-interface` para uma UI de admin moderna. Personalização das visualizações dos modelos `User` e `Image` para facilitar o gerenciamento.
+    -   **Status:** `Concluído`
+
+## Fase 2: Próximos Passos e Melhorias Futuras
+
+-   **Integração com Gateway de Pagamento (Prioridade: Alta)**
+    -   **O que:** Substituir o endpoint de upgrade de plano por uma integração real com um serviço de pagamento como Stripe ou Mercado Pago para automatizar a cobrança.
+    -   **Status:** `Pendente`
+
+-   **Desenvolvimento do Frontend (Prioridade: Alta)**
+    -   **O que:** Construir a interface do usuário com um framework moderno (ex: React, Vue, Svelte) para consumir a API do Django.
+    -   **Status:** `Pendente`
+
+-   **Notificações para Usuários (Prioridade: Média)**
+    -   **O que:** Implementar um sistema de notificações para avisar os usuários quando o limite de imagens estiver próximo ou quando o contador for resetado.
+    -   **Status:** `Pendente`
