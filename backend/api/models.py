@@ -9,6 +9,7 @@ class Image(models.Model):
     image_url = models.URLField(max_length=1024)
     is_public = models.BooleanField(default=False)
     created_at = models.DateTimeField(auto_now_add=True)
+    retry_count = models.PositiveIntegerField(default=0)
 
     def __str__(self):
         return f'Image by {self.user.username} - {self.prompt[:50]}'
