@@ -1,14 +1,19 @@
 from django.conf import settings
+from django.db.models import BooleanField, Count, Exists, F, OuterRef, Value
+from django.http import Http404
+from django.shortcuts import get_object_or_404
 from django.utils import timezone
 from rest_framework import filters, generics, status
-from rest_framework.exceptions import Throttled
+from rest_framework.exceptions import PermissionDenied, Throttled
 from rest_framework.permissions import AllowAny, IsAuthenticated
 from rest_framework.response import Response
 from rest_framework.views import APIView
 
-from .models import Image
+from .models import Image, ImageComment, ImageLike
 from .serializers import (
     GenerateImageSerializer,
+    ImageCommentCreateSerializer,
+    ImageCommentSerializer,
     ImageSerializer,
     ImageShareUpdateSerializer,
 )
@@ -71,11 +76,36 @@ class GenerateImageView(APIView):
 
 
 class PublicImageListView(generics.ListAPIView):
-    queryset = Image.objects.filter(is_public=True).order_by("-created_at")
     serializer_class = ImageSerializer
     permission_classes = [AllowAny]
     filter_backends = [filters.SearchFilter]
     search_fields = ["prompt"]
+
+    def get_queryset(self):
+        base_queryset = (
+            Image.objects.filter(is_public=True)
+            .select_related("user")
+            .order_by("-created_at")
+        )
+        annotated_queryset = base_queryset.annotate(
+            like_count=Count("likes", distinct=True),
+            comment_count=Count("comments", distinct=True),
+        )
+
+        request = self.request
+        if request.user.is_authenticated:
+            annotated_queryset = annotated_queryset.annotate(
+                is_liked=Exists(
+                    ImageLike.objects.filter(
+                        image=OuterRef("pk"), user=request.user
+                    )
+                )
+            )
+        else:
+            annotated_queryset = annotated_queryset.annotate(
+                is_liked=Value(False, output_field=BooleanField())
+            )
+        return annotated_queryset
 
 
 class UserImageListView(generics.ListAPIView):
@@ -83,7 +113,22 @@ class UserImageListView(generics.ListAPIView):
     permission_classes = [IsAuthenticated]
 
     def get_queryset(self):
-        return Image.objects.filter(user=self.request.user).order_by("-created_at")
+        queryset = (
+            Image.objects.filter(user=self.request.user)
+            .select_related("user")
+            .annotate(
+                like_count=Count("likes", distinct=True),
+                comment_count=Count("comments", distinct=True),
+            )
+            .order_by("-created_at")
+        )
+        return queryset.annotate(
+            is_liked=Exists(
+                ImageLike.objects.filter(
+                    image=OuterRef("pk"), user=self.request.user
+                )
+            )
+        )
 
 
 class ShareImageView(APIView):
@@ -121,5 +166,143 @@ class ShareImageView(APIView):
         image.save(update_fields=["is_public"])
         return Response(
             ImageSerializer(image, context={"request": request}).data,
+            status=status.HTTP_200_OK,
+        )
+
+
+class ImageLikeView(APIView):
+    permission_classes = [IsAuthenticated]
+
+    def _get_image(self, pk):
+        image = get_object_or_404(Image, pk=pk)
+        if image.is_public or image.user == self.request.user:
+            return image
+        raise PermissionDenied("This image is not available for interaction.")
+
+    def post(self, request, pk, *args, **kwargs):
+        image = self._get_image(pk)
+        like, created = ImageLike.objects.get_or_create(
+            image=image, user=request.user
+        )
+        status_code = status.HTTP_201_CREATED if created else status.HTTP_200_OK
+        serializer = ImageSerializer(
+            image, context={"request": request}
+        )
+        return Response(serializer.data, status=status_code)
+
+    def delete(self, request, pk, *args, **kwargs):
+        image = self._get_image(pk)
+        deleted, _ = ImageLike.objects.filter(
+            image=image, user=request.user
+        ).delete()
+        if deleted:
+            return Response(status=status.HTTP_204_NO_CONTENT)
+        return Response(
+            {"detail": "Like not found."}, status=status.HTTP_404_NOT_FOUND
+        )
+
+
+class ImageCommentListCreateView(generics.ListCreateAPIView):
+    permission_classes = [AllowAny]
+    serializer_class = ImageCommentSerializer
+
+    def get_permissions(self):
+        if self.request.method == "POST":
+            return [IsAuthenticated()]
+        return super().get_permissions()
+
+    def get_serializer_class(self):
+        if self.request.method == "POST":
+            return ImageCommentCreateSerializer
+        return ImageCommentSerializer
+
+    def _get_image(self):
+        image = get_object_or_404(Image, pk=self.kwargs["pk"])
+        user = self.request.user
+        if image.is_public:
+            return image
+        if user.is_authenticated and image.user == user:
+            return image
+        raise Http404
+
+    def get_queryset(self):
+        image = self._get_image()
+        return (
+            ImageComment.objects.filter(image=image)
+            .select_related("user")
+            .order_by("created_at")
+        )
+
+    def create(self, request, *args, **kwargs):
+        serializer = self.get_serializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+        image = self._get_image()
+        comment = serializer.save(user=request.user, image=image)
+        output_serializer = ImageCommentSerializer(
+            comment, context={"request": request}
+        )
+        headers = self.get_success_headers(output_serializer.data)
+        return Response(
+            output_serializer.data,
+            status=status.HTTP_201_CREATED,
+            headers=headers,
+        )
+
+
+class ImageCommentDetailView(generics.DestroyAPIView):
+    permission_classes = [IsAuthenticated]
+    serializer_class = ImageCommentSerializer
+    lookup_url_kwarg = "comment_id"
+
+    def get_queryset(self):
+        return ImageComment.objects.select_related("user", "image")
+
+    def get_object(self):
+        queryset = self.get_queryset()
+        obj = get_object_or_404(
+            queryset,
+            pk=self.kwargs["comment_id"],
+            image__pk=self.kwargs["pk"],
+        )
+        user = self.request.user
+        if (
+            obj.user == user
+            or obj.image.user == user
+            or user.is_staff
+        ):
+            return obj
+        raise PermissionDenied("You cannot delete this comment.")
+
+
+class ImageDownloadView(APIView):
+    permission_classes = [AllowAny]
+
+    def post(self, request, pk, *args, **kwargs):
+        image = get_object_or_404(Image.objects.select_related("user"), pk=pk)
+        user = request.user
+        if not image.is_public:
+            if not (user.is_authenticated and user == image.user):
+                raise Http404
+
+        if image.status != Image.Status.READY or not image.image:
+            return Response(
+                {"detail": "Image is not available for download."},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+
+        Image.objects.filter(pk=image.pk).update(
+            download_count=F("download_count") + 1
+        )
+        image.refresh_from_db(fields=["download_count"])
+
+        url = image.image.url
+        if request:
+            url = request.build_absolute_uri(url)
+
+        return Response(
+            {
+                "download_url": url,
+                "download_count": image.download_count,
+            },
             status=status.HTTP_200_OK,
         )
