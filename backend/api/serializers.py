@@ -19,6 +19,11 @@ class ImageSerializer(serializers.ModelSerializer):
 class GenerateImageSerializer(serializers.Serializer):
     prompt = serializers.CharField()
 
+
+class ImageShareUpdateSerializer(serializers.Serializer):
+    is_public = serializers.BooleanField()
+
+
 class UserRegistrationSerializer(serializers.ModelSerializer):
     password = serializers.CharField(write_only=True, required=True, style={'input_type': 'password'})
 
