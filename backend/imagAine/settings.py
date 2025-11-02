@@ -1,6 +1,7 @@
 from pathlib import Path
 from decouple import config
 import os
+import sys
 
 HF_TOKEN = os.getenv("HF_TOKEN")
 BASE_DIR = Path(__file__).resolve().parent.parent
@@ -53,12 +54,6 @@ TEMPLATES = [
 
 WSGI_APPLICATION = 'imagAine.wsgi.application'
 
-REST_FRAMEWORK = {
-    'DEFAULT_AUTHENTICATION_CLASSES': (
-        'rest_framework_simplejwt.authentication.JWTAuthentication',
-    )
-}
-
 DATABASES = {
     'default': {
         'ENGINE': 'django.db.backends.postgresql',
@@ -69,6 +64,12 @@ DATABASES = {
         'PORT': config('DB_PORT', default='5432'),
     }
 }
+
+if 'test' in sys.argv or config('USE_SQLITE_FOR_TESTS', default=False, cast=bool):
+    DATABASES['default'] = {
+        'ENGINE': 'django.db.backends.sqlite3',
+        'NAME': BASE_DIR / 'test_db.sqlite3',
+    }
 
 AUTH_PASSWORD_VALIDATORS = [
     {'NAME': 'django.contrib.auth.password_validation.UserAttributeSimilarityValidator'},
@@ -140,4 +141,7 @@ REST_FRAMEWORK = {
     'DEFAULT_PAGINATION_CLASS': 'rest_framework.pagination.PageNumberPagination',
     'PAGE_SIZE': 20,
 }
+
+# Custom test runner with descriptive output
+TEST_RUNNER = 'tests.runner.DescriptiveTestRunner'
 

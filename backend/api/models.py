@@ -1,7 +1,17 @@
-from django.db import models
+import os
+import uuid
+
 from django.contrib.auth import get_user_model
+from django.db import models
 
 User = get_user_model()
+
+
+def image_upload_to(instance, filename):
+    """Store generated images under per-user folders with stable extensions."""
+    extension = os.path.splitext(filename)[1] or ".png"
+    return f"users/{instance.user_id}/images/{uuid.uuid4()}{extension}"
+
 
 class Image(models.Model):
     class Status(models.TextChoices):
@@ -11,7 +21,7 @@ class Image(models.Model):
 
     user = models.ForeignKey(User, on_delete=models.CASCADE, related_name='images')
     prompt = models.TextField(blank=True, null=True)
-    image = models.ImageField(upload_to='', blank=True, null=True)
+    image = models.ImageField(upload_to=image_upload_to, blank=True, null=True)
     status = models.CharField(
         max_length=20,
         choices=Status.choices,

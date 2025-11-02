@@ -1,6 +1,23 @@
 from django.db import migrations, models
 
 
+def add_retry_count_field(apps, schema_editor):
+    Image = apps.get_model("api", "Image")
+    if schema_editor.connection.vendor == "postgresql":
+        statements = [
+            "ALTER TABLE api_image ADD COLUMN IF NOT EXISTS retry_count integer;",
+            "ALTER TABLE api_image ALTER COLUMN retry_count SET DEFAULT 0;",
+            "UPDATE api_image SET retry_count = 0 WHERE retry_count IS NULL;",
+            "ALTER TABLE api_image ALTER COLUMN retry_count SET NOT NULL;",
+        ]
+        for statement in statements:
+            schema_editor.execute(statement)
+    else:
+        field = models.PositiveIntegerField(default=0)
+        field.set_attributes_from_name("retry_count")
+        schema_editor.add_field(Image, field)
+
+
 class Migration(migrations.Migration):
 
     dependencies = [
@@ -17,23 +34,7 @@ class Migration(migrations.Migration):
                 ),
             ],
             database_operations=[
-                migrations.RunSQL(
-                    sql="ALTER TABLE api_image ADD COLUMN IF NOT EXISTS retry_count integer;",
-                    reverse_sql="ALTER TABLE api_image DROP COLUMN IF EXISTS retry_count;",
-                ),
-                migrations.RunSQL(
-                    sql="ALTER TABLE api_image ALTER COLUMN retry_count SET DEFAULT 0;",
-                    reverse_sql="ALTER TABLE api_image ALTER COLUMN retry_count DROP DEFAULT;",
-                ),
-                migrations.RunSQL(
-                    sql="UPDATE api_image SET retry_count = 0 WHERE retry_count IS NULL;",
-                    reverse_sql=migrations.RunSQL.noop,
-                ),
-                migrations.RunSQL(
-                    sql="ALTER TABLE api_image ALTER COLUMN retry_count SET NOT NULL;",
-                    reverse_sql="ALTER TABLE api_image ALTER COLUMN retry_count DROP NOT NULL;",
-                ),
+                migrations.RunPython(add_retry_count_field, migrations.RunPython.noop),
             ],
         ),
     ]
-
