@@ -26,7 +26,7 @@ Componentes principais:
 - `scripts/`: utilitarios como criacao de superusuario e testes rapidos da API.
 
 ## Fluxo de geracao de imagem
-1. `POST /api/generate/` (autenticado) grava o prompt e cria um registro `Image` marcado como `GENERATING`.
+1. `POST /api/generate/` (autenticado) grava o prompt e parametros opcionais (`negative_prompt`, `aspect_ratio`, `seed`) e cria um registro `Image` marcado como `GENERATING`.
 2. A view dispara `generate_image_task.delay(image.id)` para a fila Celery.
 3. O worker Celery busca o prompt, chama a API `text_to_image` da Hugging Face utilizando o token `HF_TOKEN`.
 4. A imagem gerada e salva em `MEDIA_ROOT` e o campo `image_url` do modelo e atualizado com `/media/<arquivo>.png`.
@@ -107,13 +107,23 @@ docker-compose exec web python manage.py createsuperuser
 - `GET|PUT /api/auth/profile/` - Consulta ou atualiza dados basicos do usuario autenticado.
 
 ### Geracao de imagens (`backend/api`)
-- `POST /api/generate/` - Cria tarefa de geracao a partir de um prompt.
+- `POST /api/generate/` - Cria tarefa de geracao a partir de um prompt e aceita parametros opcionais para reproducibilidade.
 - `GET /api/images/my-images/` - Retorna imagens do usuario autenticado.
 - `GET /api/images/public/` - Lista galeria publica com filtro por `?search=<texto>`.
 - `POST /api/images/<id>/share/` - Torna a imagem publica.
 - `PATCH /api/images/<id>/share/` - Atualiza a visibilidade (`{"is_public": false}` para remover da galeria publica).
 
 > Observacao: endpoints antigos `/api/token/` e `/api/register/` sao mantidos para compatibilidade, mas recomenda-se utilizar os caminhos sob `/api/auth/`.
+
+#### Parametros de `POST /api/generate/`
+| Campo             | Obrigatorio | Descricao                                                                                           |
+| ----------------- | ----------- | ---------------------------------------------------------------------------------------------------- |
+| `prompt`          | Sim         | Texto principal que descreve a cena desejada.                                                        |
+| `negative_prompt` | Nao         | Termos a evitar (ex.: 'blurry, text').                                                              |
+| `aspect_ratio`    | Nao         | Proporcao da imagem. Valores aceitos: `1:1`, `16:9`, `4:3`, `9:16`, `3:2`. Padrão: `1:1`.           |
+| `seed`            | Nao         | Numero inteiro para reproducibilidade. Quando vazio, usa seed aleatoria.                            |
+
+As respostas incluem os mesmos campos, alem de `status`, `is_public` e `image_url`. As dimensoes geradas variam conforme o `aspect_ratio`.
 
 ## Scripts utilitarios
 - `scripts/create_superuser.py`: usa variaveis `DJANGO_SUPERUSER_*` do `.env` para criar um admin sem prompt.
@@ -137,9 +147,16 @@ Certifique-se de ter Redis e PostgreSQL acessiveis localmente ou ajuste as varia
 - Configure a variavel `DJANGO_LOG_LEVEL` (opcional) ou adapte o dicionario `LOGGING` em `settings.py`.
 - Pastas `logs/nginx` e `logs/postgres` permanecem reservadas para configuracoes futuras de observabilidade.
 
+## Planos e limites
+- Usuarios possuem um campo `plan` (`free`, `pro`, etc.) e um contador diario (`image_generation_count`).
+- Limites padrao: plano `free` pode gerar ate 5 imagens por dia; plano `pro`, 10. Valores podem ser ajustados em `backend/imagAine/settings.py` (`PLAN_QUOTAS`).
+- O contador e resetado automaticamente na primeira geracao de cada dia.
+- Ao atingir a cota, a API retorna HTTP `429 Too Many Requests` com orientacao para aguardar o proximo dia ou fazer upgrade.
+- Para promover um usuario ao plano `pro`, altere o campo `plan` pelo Django Admin (`/admin/authentication/user/`) ou via script de manutencao.
+
 ## Testes recomendados
 - Endpoints de autenticacao e verificacao de e-mail usando ferramentas como Insomnia ou Postman.
-- Fluxo completo: registro -> verificacao -> login -> `POST /api/generate/`.
+- Fluxo completo: registro -> verificacao -> login -> `POST /api/generate/` (incluindo parametros opcionais) -> validacao dos limites diarios.
 - Validar que o worker Celery cria arquivos em `backend/media/` e atualiza o campo `image_url`.
 
 ## Licenca
