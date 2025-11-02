@@ -6,7 +6,8 @@ from django.utils import timezone
 from rest_framework import status
 from rest_framework.test import APITestCase
 
-from api.models import Image, ImageComment, ImageLike
+from api.models import Image, ImageComment, ImageLike, ImageTag
+from api.relevance import RelevanceWeights, update_image_relevance
 from tests.utils import create_user
 
 
@@ -79,17 +80,22 @@ class PublicImageViewTests(APITestCase):
             email="public@example.com",
             username="publicuser",
         )
-        Image.objects.create(
+        image = Image.objects.create(
             user=user,
             prompt="public prompt",
             is_public=True,
             status=Image.Status.READY,
         )
+        update_image_relevance(image)
 
         response = self.client.get(reverse("public-images"))
 
         self.assertEqual(response.status_code, status.HTTP_200_OK)
         self.assertGreaterEqual(len(response.data["results"]), 1)
+        result = next(item for item in response.data["results"] if item["id"] == image.id)
+        self.assertIn("relevance_score", result)
+        self.assertIn("featured", result)
+        self.assertIn("tags", result)
 
     def test_public_feed_includes_engagement_metadata(self):
         """Feed publico traz totais de likes, comentarios e downloads."""
@@ -110,6 +116,7 @@ class PublicImageViewTests(APITestCase):
         )
         ImageLike.objects.create(image=image, user=fan)
         ImageComment.objects.create(image=image, user=fan, text="Incrivel!")
+        update_image_relevance(image)
 
         self.client.force_authenticate(user=fan)
         response = self.client.get(reverse("public-images"))
@@ -123,14 +130,62 @@ class PublicImageViewTests(APITestCase):
         self.assertEqual(result["download_count"], 3)
         self.assertTrue(result["is_liked"])
         self.assertEqual(result["prompt"], image.prompt)
+        self.assertGreater(result["relevance_score"], 0)
+        self.assertEqual(result["tags"], [])
 
-        self.client.force_authenticate(user=None)
-        anon_response = self.client.get(reverse("public-images"))
-        anon_result = next(
-            item for item in anon_response.data["results"] if item["id"] == image.id
+    def test_public_feed_orders_featured_and_score(self):
+        """Itens destacados aparecem primeiro seguidos pelos mais relevantes."""
+        owner = create_user(email="order-owner@example.com", username="orderowner")
+        tag = ImageTag.objects.create(name="paisagem")
+
+        baseline = Image.objects.create(
+            user=owner,
+            prompt="baseline",
+            is_public=True,
+            status=Image.Status.READY,
         )
-        self.assertFalse(anon_result["is_liked"])
+        update_image_relevance(baseline)
 
+        trending = Image.objects.create(
+            user=owner,
+            prompt="trending",
+            is_public=True,
+            status=Image.Status.READY,
+            download_count=7,
+        )
+        trending.tags.add(tag)
+        ImageLike.objects.create(image=trending, user=owner)
+        update_image_relevance(trending)
+
+        featured = Image.objects.create(
+            user=owner,
+            prompt="featured",
+            is_public=True,
+            status=Image.Status.READY,
+            featured=True,
+        )
+        update_image_relevance(featured)
+
+        # Imagem antiga sem engajamento deve aparecer por último.
+        old_image = Image.objects.create(
+            user=owner,
+            prompt="old",
+            is_public=True,
+            status=Image.Status.READY,
+        )
+        Image.objects.filter(pk=old_image.pk).update(
+            created_at=timezone.now() - timedelta(days=3)
+        )
+        old_image.refresh_from_db()
+        update_image_relevance(old_image)
+
+        response = self.client.get(reverse("public-images"))
+        ids = [item["id"] for item in response.data["results"][:4]]
+
+        self.assertEqual(ids[0], featured.id)
+        self.assertEqual(ids[1], trending.id)
+        self.assertIn(baseline.id, ids[2:])
+        self.assertIn(old_image.id, ids[2:])
 
 class UserImageViewTests(APITestCase):
     def test_user_feed_contains_engagement_fields(self):
@@ -207,6 +262,23 @@ class ShareImageViewTests(APITestCase):
         image.refresh_from_db()
         self.assertFalse(image.is_public)
 
+    def test_sharing_updates_relevance_score_with_boost(self):
+        """Compartilhar imagem garante boost inicial de relevancia."""
+        weights = RelevanceWeights()
+        image = Image.objects.create(
+            user=self.user,
+            prompt="boost me",
+            status=Image.Status.READY,
+            is_public=False,
+        )
+
+        response = self.client.post(f"/api/images/{image.id}/share/")
+
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        image.refresh_from_db()
+        self.assertTrue(image.is_public)
+        self.assertGreaterEqual(image.relevance_score, weights.boost_min_score)
+
 
 class ImageLikeViewTests(APITestCase):
     def test_user_can_like_public_image(self):
@@ -230,6 +302,9 @@ class ImageLikeViewTests(APITestCase):
             ImageLike.objects.filter(image=image, user=liker).exists()
         )
         self.assertEqual(response.data["like_count"], 1)
+        image.refresh_from_db()
+        self.assertGreater(image.relevance_score, 0)
+        self.assertAlmostEqual(response.data["relevance_score"], image.relevance_score, places=4)
 
         response_repeat = self.client.post(
             reverse("image-like", kwargs={"pk": image.id})
@@ -248,6 +323,8 @@ class ImageLikeViewTests(APITestCase):
             status=Image.Status.READY,
         )
         ImageLike.objects.create(image=image, user=liker)
+        update_image_relevance(image)
+        before = Image.objects.get(pk=image.pk).relevance_score
 
         self.client.force_authenticate(user=liker)
         response = self.client.delete(
@@ -258,6 +335,8 @@ class ImageLikeViewTests(APITestCase):
         self.assertFalse(
             ImageLike.objects.filter(image=image, user=liker).exists()
         )
+        image.refresh_from_db()
+        self.assertLess(image.relevance_score, before)
 
     def test_cannot_like_private_image_without_access(self):
         """Usuarios sem acesso recebem 403 ao curtir imagem privada."""
@@ -302,6 +381,8 @@ class ImageCommentViewTests(APITestCase):
             is_public=False,
             status=Image.Status.READY,
         )
+        update_image_relevance(self.public_image)
+        update_image_relevance(self.private_image)
 
     def test_list_public_comments_available_without_auth(self):
         """Comentarios de imagem publica podem ser listados por anonimos."""
@@ -328,6 +409,7 @@ class ImageCommentViewTests(APITestCase):
     def test_authenticated_user_can_comment_public_image(self):
         """Usuario autenticado consegue comentar imagem publica."""
         commenter = create_user(email="add-comment@example.com", username="addcomment")
+        before = self.public_image.relevance_score
 
         self.client.force_authenticate(user=commenter)
         response = self.client.post(
@@ -342,6 +424,8 @@ class ImageCommentViewTests(APITestCase):
                 image=self.public_image, user=commenter, text="Muito boa!"
             ).exists()
         )
+        self.public_image.refresh_from_db()
+        self.assertGreaterEqual(self.public_image.relevance_score, before)
 
     def test_comment_creation_requires_auth(self):
         """Anonimo recebe 401 ao tentar comentar."""
@@ -360,6 +444,8 @@ class ImageCommentViewTests(APITestCase):
         comment = ImageComment.objects.create(
             image=self.public_image, user=commenter, text="Remover"
         )
+        update_image_relevance(self.public_image)
+        before = Image.objects.get(pk=self.public_image.pk).relevance_score
         self.client.force_authenticate(user=commenter)
         response = self.client.delete(
             reverse(
@@ -369,6 +455,8 @@ class ImageCommentViewTests(APITestCase):
         )
         self.assertEqual(response.status_code, status.HTTP_204_NO_CONTENT)
         self.assertFalse(ImageComment.objects.filter(pk=comment.id).exists())
+        self.public_image.refresh_from_db()
+        self.assertLessEqual(self.public_image.relevance_score, before)
 
     def test_image_owner_can_delete_comment(self):
         """Proprietario da imagem pode remover comentario de terceiros."""
@@ -378,6 +466,8 @@ class ImageCommentViewTests(APITestCase):
         comment = ImageComment.objects.create(
             image=self.public_image, user=commenter, text="Removido pelo dono"
         )
+        update_image_relevance(self.public_image)
+        before = Image.objects.get(pk=self.public_image.pk).relevance_score
         self.client.force_authenticate(user=self.owner)
         response = self.client.delete(
             reverse(
@@ -386,6 +476,8 @@ class ImageCommentViewTests(APITestCase):
             )
         )
         self.assertEqual(response.status_code, status.HTTP_204_NO_CONTENT)
+        self.public_image.refresh_from_db()
+        self.assertLessEqual(self.public_image.relevance_score, before)
 
     def test_staff_user_can_delete_comment(self):
         """Usuario staff tem permissao para remover qualquer comentario."""
@@ -396,6 +488,8 @@ class ImageCommentViewTests(APITestCase):
         staff = create_user(
             email="moderator@example.com", username="moderator", is_staff=True
         )
+        update_image_relevance(self.public_image)
+        before = Image.objects.get(pk=self.public_image.pk).relevance_score
         self.client.force_authenticate(user=staff)
         response = self.client.delete(
             reverse(
@@ -404,6 +498,8 @@ class ImageCommentViewTests(APITestCase):
             )
         )
         self.assertEqual(response.status_code, status.HTTP_204_NO_CONTENT)
+        self.public_image.refresh_from_db()
+        self.assertLessEqual(self.public_image.relevance_score, before)
 
     def test_non_owner_cannot_delete_comment(self):
         """Terceiros nao podem remover comentario alheio."""
@@ -414,6 +510,8 @@ class ImageCommentViewTests(APITestCase):
         comment = ImageComment.objects.create(
             image=self.public_image, user=commenter, text="Persistente"
         )
+        update_image_relevance(self.public_image)
+        before = Image.objects.get(pk=self.public_image.pk).relevance_score
         self.client.force_authenticate(user=spectator)
         response = self.client.delete(
             reverse(
@@ -423,6 +521,8 @@ class ImageCommentViewTests(APITestCase):
         )
         self.assertEqual(response.status_code, status.HTTP_403_FORBIDDEN)
         self.assertTrue(ImageComment.objects.filter(pk=comment.id).exists())
+        self.public_image.refresh_from_db()
+        self.assertEqual(self.public_image.relevance_score, before)
 
 
 class ImageDownloadViewTests(APITestCase):
@@ -439,6 +539,8 @@ class ImageDownloadViewTests(APITestCase):
         )
         image.image.name = f"users/{owner.id}/images/test.png"
         image.save(update_fields=["image"])
+        update_image_relevance(image)
+        before = image.relevance_score
 
         response = self.client.post(
             reverse("image-download", kwargs={"pk": image.id})
@@ -448,6 +550,7 @@ class ImageDownloadViewTests(APITestCase):
         image.refresh_from_db()
         self.assertEqual(image.download_count, 1)
         self.assertIn(image.image.name, response.data["download_url"])
+        self.assertGreaterEqual(image.relevance_score, before)
 
     def test_private_download_restricted_to_owner(self):
         """Imagem privada so pode ser baixada pelo proprietario."""

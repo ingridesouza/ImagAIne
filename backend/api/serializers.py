@@ -16,6 +16,9 @@ class ImageSerializer(serializers.ModelSerializer):
     comment_count = serializers.SerializerMethodField()
     download_count = serializers.IntegerField(read_only=True)
     is_liked = serializers.SerializerMethodField()
+    relevance_score = serializers.FloatField(read_only=True)
+    featured = serializers.BooleanField(read_only=True)
+    tags = serializers.SerializerMethodField()
 
     class Meta:
         model = Image
@@ -33,6 +36,9 @@ class ImageSerializer(serializers.ModelSerializer):
             'comment_count',
             'download_count',
             'is_liked',
+            'relevance_score',
+            'featured',
+            'tags',
             'created_at',
         )
         read_only_fields = (
@@ -44,6 +50,9 @@ class ImageSerializer(serializers.ModelSerializer):
             'comment_count',
             'download_count',
             'is_liked',
+            'relevance_score',
+            'featured',
+            'tags',
             'created_at',
         )
 
@@ -75,6 +84,13 @@ class ImageSerializer(serializers.ModelSerializer):
         if hasattr(obj, 'is_liked'):
             return bool(obj.is_liked)
         return obj.likes.filter(user=user).exists()
+
+    def get_tags(self, obj):
+        if hasattr(obj, "_prefetched_objects_cache") and "tags" in obj._prefetched_objects_cache:
+            tags = obj._prefetched_objects_cache["tags"]
+        else:
+            tags = obj.tags.all()
+        return [tag.name for tag in tags]
 
 class GenerateImageSerializer(serializers.Serializer):
     prompt = serializers.CharField()

@@ -1,5 +1,13 @@
 from django.conf import settings
-from django.db.models import BooleanField, Count, Exists, F, OuterRef, Value
+from django.db.models import (
+    BooleanField,
+    Count,
+    Exists,
+    F,
+    OuterRef,
+    Value,
+)
+from django.db.models.functions import Coalesce
 from django.http import Http404
 from django.shortcuts import get_object_or_404
 from django.utils import timezone
@@ -10,6 +18,7 @@ from rest_framework.response import Response
 from rest_framework.views import APIView
 
 from .models import Image, ImageComment, ImageLike
+from .relevance import update_image_relevance
 from .serializers import (
     GenerateImageSerializer,
     ImageCommentCreateSerializer,
@@ -62,6 +71,7 @@ class GenerateImageView(APIView):
                 aspect_ratio=aspect_ratio,
                 seed=seed,
             )
+            update_image_relevance(image)
 
             user.image_generation_count += 1
             user.save(update_fields=["image_generation_count", "last_reset_date"])
@@ -82,14 +92,13 @@ class PublicImageListView(generics.ListAPIView):
     search_fields = ["prompt"]
 
     def get_queryset(self):
-        base_queryset = (
-            Image.objects.filter(is_public=True)
-            .select_related("user")
-            .order_by("-created_at")
-        )
+        base_queryset = Image.objects.filter(is_public=True).select_related(
+            "user"
+        ).prefetch_related("tags")
         annotated_queryset = base_queryset.annotate(
             like_count=Count("likes", distinct=True),
             comment_count=Count("comments", distinct=True),
+            effective_score=Coalesce(F("relevance_score"), Value(0.0)),
         )
 
         request = self.request
@@ -105,7 +114,11 @@ class PublicImageListView(generics.ListAPIView):
             annotated_queryset = annotated_queryset.annotate(
                 is_liked=Value(False, output_field=BooleanField())
             )
-        return annotated_queryset
+        return annotated_queryset.order_by(
+            "-featured",
+            "-effective_score",
+            "-created_at",
+        )
 
 
 class UserImageListView(generics.ListAPIView):
@@ -116,11 +129,13 @@ class UserImageListView(generics.ListAPIView):
         queryset = (
             Image.objects.filter(user=self.request.user)
             .select_related("user")
+            .prefetch_related("tags")
             .annotate(
                 like_count=Count("likes", distinct=True),
                 comment_count=Count("comments", distinct=True),
+                effective_score=Coalesce(F("relevance_score"), Value(0.0)),
             )
-            .order_by("-created_at")
+            .order_by("-featured", "-effective_score", "-created_at")
         )
         return queryset.annotate(
             is_liked=Exists(
@@ -146,6 +161,7 @@ class ShareImageView(APIView):
 
         image.is_public = True
         image.save(update_fields=["is_public"])
+        update_image_relevance(image)
         return Response(
             ImageSerializer(image, context={"request": request}).data,
             status=status.HTTP_200_OK,
@@ -164,6 +180,7 @@ class ShareImageView(APIView):
 
         image.is_public = serializer.validated_data["is_public"]
         image.save(update_fields=["is_public"])
+        update_image_relevance(image)
         return Response(
             ImageSerializer(image, context={"request": request}).data,
             status=status.HTTP_200_OK,
@@ -184,6 +201,7 @@ class ImageLikeView(APIView):
         like, created = ImageLike.objects.get_or_create(
             image=image, user=request.user
         )
+        update_image_relevance(image)
         status_code = status.HTTP_201_CREATED if created else status.HTTP_200_OK
         serializer = ImageSerializer(
             image, context={"request": request}
@@ -196,6 +214,7 @@ class ImageLikeView(APIView):
             image=image, user=request.user
         ).delete()
         if deleted:
+            update_image_relevance(image)
             return Response(status=status.HTTP_204_NO_CONTENT)
         return Response(
             {"detail": "Like not found."}, status=status.HTTP_404_NOT_FOUND
@@ -238,6 +257,7 @@ class ImageCommentListCreateView(generics.ListCreateAPIView):
         serializer.is_valid(raise_exception=True)
         image = self._get_image()
         comment = serializer.save(user=request.user, image=image)
+        update_image_relevance(image)
         output_serializer = ImageCommentSerializer(
             comment, context={"request": request}
         )
@@ -273,6 +293,11 @@ class ImageCommentDetailView(generics.DestroyAPIView):
             return obj
         raise PermissionDenied("You cannot delete this comment.")
 
+    def perform_destroy(self, instance):
+        image = instance.image
+        super().perform_destroy(instance)
+        update_image_relevance(image)
+
 
 class ImageDownloadView(APIView):
     permission_classes = [AllowAny]
@@ -294,6 +319,7 @@ class ImageDownloadView(APIView):
             download_count=F("download_count") + 1
         )
         image.refresh_from_db(fields=["download_count"])
+        update_image_relevance(image)
 
         url = image.image.url
         if request:

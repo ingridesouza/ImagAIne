@@ -8,6 +8,7 @@ from django.core.files.base import ContentFile
 from huggingface_hub import InferenceClient
 
 from .models import Image
+from .relevance import update_image_relevance
 
 logger = logging.getLogger(__name__)
 
@@ -74,6 +75,7 @@ def generate_image_task(image_id):
         image_instance.status = Image.Status.READY
         image_instance.retry_count = 0
         image_instance.save(update_fields=["image", "status", "retry_count"])
+        update_image_relevance(image_instance)
         logger.info(f"[TASK_SUCCESS] Imagem pronta para Image ID: {image_id}")
 
     except Image.DoesNotExist:
@@ -89,3 +91,21 @@ def generate_image_task(image_id):
             image_instance.image = None
             image_instance.retry_count += 1
             image_instance.save(update_fields=["status", "image", "retry_count"])
+
+
+@shared_task
+def recalculate_relevance_scores(batch_size=200):
+    """
+    Atualiza relevância das imagens públicas em lotes para evitar cargas longas.
+    Pode ser agendado via Celery Beat ou cron.
+    """
+    queryset = (
+        Image.objects.filter(is_public=True)
+        .only("id", "created_at", "download_count", "featured", "relevance_score")
+        .prefetch_related(None)
+    )
+    updated = 0
+    for image in queryset.iterator(chunk_size=batch_size):
+        update_image_relevance(image, commit=True)
+        updated += 1
+    logger.info("[TASK] Relevance scores recalculated for %s images.", updated)
