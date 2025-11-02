@@ -15,8 +15,25 @@ class ImageSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = Image
-        fields = ('id', 'user', 'prompt', 'image_url', 'status', 'is_public', 'created_at')
-        read_only_fields = ('id', 'user', 'image_url', 'status', 'created_at')
+        fields = (
+            'id',
+            'user',
+            'prompt',
+            'negative_prompt',
+            'aspect_ratio',
+            'seed',
+            'image_url',
+            'status',
+            'is_public',
+            'created_at',
+        )
+        read_only_fields = (
+            'id',
+            'user',
+            'image_url',
+            'status',
+            'created_at',
+        )
 
     def get_image_url(self, obj):
         if not obj.image:
@@ -30,6 +47,15 @@ class ImageSerializer(serializers.ModelSerializer):
 
 class GenerateImageSerializer(serializers.Serializer):
     prompt = serializers.CharField()
+    negative_prompt = serializers.CharField(
+        required=False, allow_blank=True, allow_null=True
+    )
+    aspect_ratio = serializers.ChoiceField(
+        choices=Image.AspectRatio.choices,
+        default=Image.AspectRatio.SQUARE,
+        required=False,
+    )
+    seed = serializers.IntegerField(required=False, min_value=0, allow_null=True)
 
 
 class ImageShareUpdateSerializer(serializers.Serializer):
