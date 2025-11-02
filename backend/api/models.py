@@ -43,8 +43,15 @@ class Image(models.Model):
     )
     is_public = models.BooleanField(default=False)
     download_count = models.PositiveIntegerField(default=0)
+    relevance_score = models.FloatField(default=0.0)
+    featured = models.BooleanField(default=False)
     retry_count = models.PositiveIntegerField(default=0)
     created_at = models.DateTimeField(auto_now_add=True)
+    tags = models.ManyToManyField(
+        "ImageTag",
+        blank=True,
+        related_name="images",
+    )
 
     @property
     def image_url(self):
@@ -95,3 +102,14 @@ class ImageComment(models.Model):
     def __str__(self):
         preview = (self.text or '')[:30]
         return f'Comment by {self.user.username}: {preview}'
+
+
+class ImageTag(models.Model):
+    name = models.CharField(max_length=64, unique=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        ordering = ['name']
+
+    def __str__(self):
+        return self.name

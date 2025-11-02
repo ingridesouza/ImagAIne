@@ -20,6 +20,7 @@ Este documento resume como a suíte de testes do **ImagAIne** está estruturada,
 
 ## Cobertura Atual
 - **Feed público e privado**: assegura que endpoints retornem metadados de engajamento (`like_count`, `comment_count`, `download_count`, `is_liked`) e que filtros de permissão funcionem para usuários autenticados e anônimos.
+- **Ranking e relevância**: valida que o feed ordena itens considerando `featured`, pontuação de relevância e boosts temporários sem quebrar o fallback cronológico.
 - **Compartilhamento de imagens**: confirma que donos podem publicar e alterar visibilidade de suas imagens.
 - **Curtidas**: cobre criação idempotente, remoção, limites de permissão (imagens privadas) e respostas retornadas.
 - **Comentários**: inclui listagem pública paginada, criação autenticada, políticas de remoção (autor, dono da imagem, staff) e bloqueios para terceiros ou anônimos em recursos privados.
