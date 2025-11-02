@@ -142,6 +142,11 @@ REST_FRAMEWORK = {
     'PAGE_SIZE': 20,
 }
 
+# Plan quotas (images per day); use None for unlimited plans
+PLAN_QUOTAS = {
+    'free': 5,
+    'pro': 10,
+}
+
 # Custom test runner with descriptive output
 TEST_RUNNER = 'tests.runner.DescriptiveTestRunner'
-
