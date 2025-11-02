@@ -50,7 +50,7 @@ SECRET_KEY=chave-secreta # tambem usada pelo Simple JWT
 `FRONTEND_URL` e utilizado para construir os links de verificacao e reset enviados por e-mail.
 
 ## Modelos
-- `User`: estende `AbstractUser`, substitui o identificador por UUID, usa `email` como `USERNAME_FIELD` e adiciona campos `is_verified` e `verification_token`.
+- `User`: estende `AbstractUser`, substitui o identificador por UUID, usa `email` como `USERNAME_FIELD` e adiciona campos `is_verified`, `verification_token`, `plan`, `image_generation_count` e `last_reset_date`.
 - `PasswordResetToken`: armazena tokens de reset com data de expiracao (`expires_at`) e flag `is_used`.
 
 ## Fluxos principais
@@ -70,6 +70,12 @@ SECRET_KEY=chave-secreta # tambem usada pelo Simple JWT
 - `UserLoginView` autentica por `email` e `password`, exige `is_verified=True`.
 - `RefreshToken.for_user` gera par `refresh` e `access`, retornados ao cliente.
 - Simple JWT tambem atualiza `last_login` por configuracao em `settings.py`.
+
+## Planos e limites de geracao
+- Cada usuario possui o campo `plan` (padrao: `"free"`). O admin pode atribuir `"pro"` ou outros valores via Django Admin ou script customizado.
+- A API de geracao (`POST /api/generate/`) consulta `plan` e `image_generation_count` para aplicar as cotas definidas em `PLAN_QUOTAS` (`backend/imagAine/settings.py`).
+- Limites padrao: `free` permite 5 imagens/dia, `pro` permite 10. Use `None` em `PLAN_QUOTAS` para planos sem limite.
+- `image_generation_count` e `last_reset_date` sao atualizados automaticamente; nao e necessario job separado para reset diario.
 
 ## Execucao local
 Com dependencias instaladas (veja README da raiz):
