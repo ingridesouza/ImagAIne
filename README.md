@@ -110,7 +110,8 @@ docker-compose exec web python manage.py createsuperuser
 - `POST /api/generate/` - Cria tarefa de geracao a partir de um prompt.
 - `GET /api/images/my-images/` - Retorna imagens do usuario autenticado.
 - `GET /api/images/public/` - Lista galeria publica com filtro por `?search=<texto>`.
-- `POST /api/images/<id>/share/` - Torna a imagem publica (toggle simples).
+- `POST /api/images/<id>/share/` - Torna a imagem publica.
+- `PATCH /api/images/<id>/share/` - Atualiza a visibilidade (`{"is_public": false}` para remover da galeria publica).
 
 > Observacao: endpoints antigos `/api/token/` e `/api/register/` sao mantidos para compatibilidade, mas recomenda-se utilizar os caminhos sob `/api/auth/`.
 

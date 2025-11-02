@@ -4,8 +4,7 @@ from .views import (
     GenerateImageView,
     PublicImageListView,
     UserImageListView,
-    ShareImageView,
-    UserRegistrationView
+    ShareImageView
 )
 
 urlpatterns = [
@@ -15,5 +14,5 @@ urlpatterns = [
     path('images/public/', PublicImageListView.as_view(), name='public-images'),
     path('images/my-images/', UserImageListView.as_view(), name='user-images'),
     path('images/<int:pk>/share/', ShareImageView.as_view(), name='share-image'),
-    path('register/', UserRegistrationView.as_view(), name='register'),
 ]
+

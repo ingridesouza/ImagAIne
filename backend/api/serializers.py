@@ -11,13 +11,30 @@ class UserSerializer(serializers.ModelSerializer):
 
 class ImageSerializer(serializers.ModelSerializer):
     user = UserSerializer(read_only=True)
+    image_url = serializers.SerializerMethodField()
 
     class Meta:
         model = Image
-        fields = ('id', 'user', 'prompt', 'image_url', 'is_public', 'created_at')
+        fields = ('id', 'user', 'prompt', 'image_url', 'status', 'is_public', 'created_at')
+        read_only_fields = ('id', 'user', 'image_url', 'status', 'created_at')
+
+    def get_image_url(self, obj):
+        if not obj.image:
+            return None
+
+        request = self.context.get('request') if hasattr(self, 'context') else None
+        url = obj.image.url
+        if request:
+            return request.build_absolute_uri(url)
+        return url
 
 class GenerateImageSerializer(serializers.Serializer):
     prompt = serializers.CharField()
+
+
+class ImageShareUpdateSerializer(serializers.Serializer):
+    is_public = serializers.BooleanField()
+
 
 class UserRegistrationSerializer(serializers.ModelSerializer):
     password = serializers.CharField(write_only=True, required=True, style={'input_type': 'password'})
