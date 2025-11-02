@@ -19,8 +19,22 @@ class Image(models.Model):
         READY = "READY", "Ready"
         FAILED = "FAILED", "Failed"
 
+    class AspectRatio(models.TextChoices):
+        SQUARE = "1:1", "1:1"
+        LANDSCAPE = "16:9", "16:9"
+        LANDSCAPE_CLASSIC = "4:3", "4:3"
+        PORTRAIT = "9:16", "9:16"
+        GOLDEN = "3:2", "3:2"
+
     user = models.ForeignKey(User, on_delete=models.CASCADE, related_name='images')
     prompt = models.TextField(blank=True, null=True)
+    negative_prompt = models.TextField(blank=True, null=True)
+    aspect_ratio = models.CharField(
+        max_length=10,
+        choices=AspectRatio.choices,
+        default=AspectRatio.SQUARE,
+    )
+    seed = models.BigIntegerField(blank=True, null=True)
     image = models.ImageField(upload_to=image_upload_to, blank=True, null=True)
     status = models.CharField(
         max_length=20,

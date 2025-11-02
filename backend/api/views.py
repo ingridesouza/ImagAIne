@@ -21,11 +21,19 @@ class GenerateImageView(APIView):
         if serializer.is_valid():
             user = request.user
             prompt = serializer.validated_data["prompt"]
+            negative_prompt = serializer.validated_data.get("negative_prompt")
+            aspect_ratio = serializer.validated_data.get(
+                "aspect_ratio", Image.AspectRatio.SQUARE
+            )
+            seed = serializer.validated_data.get("seed")
 
             # Create a new image placeholder while async generation runs
             image = Image.objects.create(
                 user=user,
                 prompt=prompt,
+                negative_prompt=negative_prompt,
+                aspect_ratio=aspect_ratio,
+                seed=seed,
             )
 
             today = timezone.now().date()

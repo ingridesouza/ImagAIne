@@ -22,20 +22,33 @@ class GenerateImageViewTests(APITestCase):
         )
         self.client.force_authenticate(user=user)
 
+        payload = {
+            "prompt": "A sunset over the ocean",
+            "negative_prompt": "blurry",
+            "aspect_ratio": Image.AspectRatio.LANDSCAPE,
+            "seed": 42,
+        }
         response = self.client.post(
             reverse("generate-image"),
-            {"prompt": "A sunset over the ocean"},
+            payload,
             format="json",
         )
 
         self.assertEqual(response.status_code, status.HTTP_202_ACCEPTED)
         image = Image.objects.get(user=user)
         self.assertEqual(image.status, Image.Status.GENERATING)
+        self.assertEqual(image.negative_prompt, payload["negative_prompt"])
+        self.assertEqual(image.aspect_ratio, payload["aspect_ratio"])
+        self.assertEqual(image.seed, payload["seed"])
         mock_delay.assert_called_once_with(image.id)
 
         user.refresh_from_db()
         self.assertEqual(user.image_generation_count, 1)
         self.assertEqual(user.last_reset_date, timezone.now().date())
+
+        self.assertEqual(response.data["negative_prompt"], payload["negative_prompt"])
+        self.assertEqual(response.data["aspect_ratio"], payload["aspect_ratio"])
+        self.assertEqual(response.data["seed"], payload["seed"])
 
 
 class PublicImageViewTests(APITestCase):

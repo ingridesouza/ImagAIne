@@ -14,7 +14,13 @@ class GenerateImageTaskTests(TemporaryMediaMixin, TestCase):
     def test_generate_image_success(self, mock_client):
         """Worker salva imagem gerada e zera contador de tentativas."""
         user = create_user(email="task@example.com", username="taskuser")
-        image = Image.objects.create(user=user, prompt="A simple prompt")
+        image = Image.objects.create(
+            user=user,
+            prompt="A simple prompt",
+            negative_prompt="no text, blurry",
+            aspect_ratio=Image.AspectRatio.PORTRAIT,
+            seed=123,
+        )
 
         mock_instance = mock_client.return_value
         mock_instance.text_to_image.return_value = PILImage.new(
@@ -28,12 +34,26 @@ class GenerateImageTaskTests(TemporaryMediaMixin, TestCase):
         self.assertEqual(image.retry_count, 0)
         self.assertTrue(image.image.name.startswith(f"users/{user.id}/images/"))
         self.assertTrue(image.image.storage.exists(image.image.name))
+        mock_instance.text_to_image.assert_called_once_with(
+            "A simple prompt",
+            model="black-forest-labs/FLUX.1-dev",
+            width=576,
+            height=1024,
+            negative_prompt="no text, blurry",
+            seed=123,
+        )
 
     @patch("api.tasks.InferenceClient")
     def test_generate_image_failure_increments_retry(self, mock_client):
         """Worker registra falha, incrementa retry e não mantém arquivo."""
         user = create_user(email="fail@example.com", username="failuser")
-        image = Image.objects.create(user=user, prompt="A failing prompt")
+        image = Image.objects.create(
+            user=user,
+            prompt="A failing prompt",
+            negative_prompt="bad lighting",
+            aspect_ratio=Image.AspectRatio.GOLDEN,
+            seed=None,
+        )
 
         mock_instance = mock_client.return_value
         mock_instance.text_to_image.side_effect = RuntimeError("HuggingFace error")
@@ -46,3 +66,10 @@ class GenerateImageTaskTests(TemporaryMediaMixin, TestCase):
         self.assertEqual(image.retry_count, 1)
         self.assertFalse(bool(image.image))
         self.assertIn("HF API error", logs.getvalue())
+        mock_instance.text_to_image.assert_called_once_with(
+            "A failing prompt",
+            model="black-forest-labs/FLUX.1-dev",
+            width=960,
+            height=640,
+            negative_prompt="bad lighting",
+        )
