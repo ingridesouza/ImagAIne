@@ -140,6 +140,21 @@ REST_FRAMEWORK = {
     ),
     'DEFAULT_PAGINATION_CLASS': 'rest_framework.pagination.PageNumberPagination',
     'PAGE_SIZE': 20,
+    'DEFAULT_THROTTLE_CLASSES': (
+        'rest_framework.throttling.UserRateThrottle',
+        'rest_framework.throttling.AnonRateThrottle',
+        'rest_framework.throttling.ScopedRateThrottle',
+    ),
+    'DEFAULT_THROTTLE_RATES': {
+        'anon': '200/day',
+        'user': '2000/day',
+        'auth_register': '5/hour',
+        'auth_login': '10/minute',
+        'auth_password_reset': '5/hour',
+        'social_like': '60/hour',
+        'social_comment': '30/hour',
+        'social_download': '120/hour',
+    },
 }
 
 # Plan quotas (images per day); use None for unlimited plans

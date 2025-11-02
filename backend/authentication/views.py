@@ -10,6 +10,7 @@ from rest_framework import generics, permissions, status
 from rest_framework.response import Response
 from rest_framework.views import APIView
 from rest_framework_simplejwt.tokens import RefreshToken
+from rest_framework.throttling import ScopedRateThrottle
 
 from .models import PasswordResetToken, User
 from .serializers import (
@@ -25,6 +26,8 @@ class UserRegistrationView(generics.CreateAPIView):
     """View for user registration."""
     serializer_class = UserRegistrationSerializer
     permission_classes = [permissions.AllowAny]
+    throttle_classes = [ScopedRateThrottle]
+    throttle_scope = "auth_register"
     
     def create(self, request, *args, **kwargs):
         serializer = self.get_serializer(data=request.data)
@@ -44,7 +47,8 @@ class UserRegistrationView(generics.CreateAPIView):
         # Create a verification token
         token = str(uuid.uuid4())
         user.verification_token = token
-        user.save()
+        user.verification_token_expires_at = timezone.now() + timedelta(hours=24)
+        user.save(update_fields=["verification_token", "verification_token_expires_at"])
         
         send_verification_email_task.delay(user.id, token)
 
@@ -52,6 +56,8 @@ class UserRegistrationView(generics.CreateAPIView):
 class UserLoginView(APIView):
     """View for user login."""
     permission_classes = [permissions.AllowAny]
+    throttle_classes = [ScopedRateThrottle]
+    throttle_scope = "auth_login"
     
     def post(self, request):
         serializer = UserLoginSerializer(data=request.data, context={'request': request})
@@ -69,6 +75,8 @@ class UserLoginView(APIView):
 class PasswordResetRequestView(APIView):
     """View to request a password reset."""
     permission_classes = [permissions.AllowAny]
+    throttle_classes = [ScopedRateThrottle]
+    throttle_scope = "auth_password_reset"
     
     def post(self, request):
         serializer = PasswordResetRequestSerializer(data=request.data)
@@ -123,6 +131,8 @@ class PasswordResetRequestView(APIView):
 class PasswordResetConfirmView(APIView):
     """View to confirm password reset with token."""
     permission_classes = [permissions.AllowAny]
+    throttle_classes = [ScopedRateThrottle]
+    throttle_scope = "auth_password_reset"
     
     def post(self, request):
         serializer = PasswordResetConfirmSerializer(data=request.data)
@@ -164,9 +174,14 @@ class VerifyEmailView(APIView):
     
     def get(self, request, token):
         try:
-            user = User.objects.get(verification_token=token, is_verified=False)
+            user = User.objects.get(
+                verification_token=token,
+                is_verified=False,
+                verification_token_expires_at__gt=timezone.now(),
+            )
             user.is_verified = True
             user.verification_token = ''  # Clear the token after verification
+            user.verification_token_expires_at = None
             user.save()
             
             # Send welcome email

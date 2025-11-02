@@ -16,6 +16,7 @@ from rest_framework.exceptions import PermissionDenied, Throttled
 from rest_framework.permissions import AllowAny, IsAuthenticated
 from rest_framework.response import Response
 from rest_framework.views import APIView
+from rest_framework.throttling import ScopedRateThrottle
 
 from .models import Image, ImageComment, ImageLike
 from .relevance import update_image_relevance
@@ -189,6 +190,8 @@ class ShareImageView(APIView):
 
 class ImageLikeView(APIView):
     permission_classes = [IsAuthenticated]
+    throttle_classes = [ScopedRateThrottle]
+    throttle_scope = "social_like"
 
     def _get_image(self, pk):
         image = get_object_or_404(Image, pk=pk)
@@ -224,6 +227,8 @@ class ImageLikeView(APIView):
 class ImageCommentListCreateView(generics.ListCreateAPIView):
     permission_classes = [AllowAny]
     serializer_class = ImageCommentSerializer
+    throttle_classes = [ScopedRateThrottle]
+    throttle_scope = "social_comment"
 
     def get_permissions(self):
         if self.request.method == "POST":
@@ -234,6 +239,11 @@ class ImageCommentListCreateView(generics.ListCreateAPIView):
         if self.request.method == "POST":
             return ImageCommentCreateSerializer
         return ImageCommentSerializer
+
+    def get_throttles(self):
+        if self.request.method != "POST":
+            return []
+        return [throttle() for throttle in self.throttle_classes]
 
     def _get_image(self):
         image = get_object_or_404(Image, pk=self.kwargs["pk"])
@@ -273,6 +283,8 @@ class ImageCommentDetailView(generics.DestroyAPIView):
     permission_classes = [IsAuthenticated]
     serializer_class = ImageCommentSerializer
     lookup_url_kwarg = "comment_id"
+    throttle_classes = [ScopedRateThrottle]
+    throttle_scope = "social_comment"
 
     def get_queryset(self):
         return ImageComment.objects.select_related("user", "image")
@@ -301,6 +313,8 @@ class ImageCommentDetailView(generics.DestroyAPIView):
 
 class ImageDownloadView(APIView):
     permission_classes = [AllowAny]
+    throttle_classes = [ScopedRateThrottle]
+    throttle_scope = "social_download"
 
     def post(self, request, pk, *args, **kwargs):
         image = get_object_or_404(Image.objects.select_related("user"), pk=pk)
