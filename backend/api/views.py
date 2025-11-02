@@ -24,13 +24,12 @@ class GenerateImageView(APIView):
             image = Image.objects.create(
                 user=request.user,
                 prompt=prompt,
-                image_url="GENERATING",
             )
 
             generate_image_task.delay(image.id)
 
             return Response(
-                ImageSerializer(image).data,
+                ImageSerializer(image, context={"request": request}).data,
                 status=status.HTTP_202_ACCEPTED,
             )
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
@@ -66,7 +65,10 @@ class ShareImageView(APIView):
 
         image.is_public = True
         image.save(update_fields=["is_public"])
-        return Response(ImageSerializer(image).data, status=status.HTTP_200_OK)
+        return Response(
+            ImageSerializer(image, context={"request": request}).data,
+            status=status.HTTP_200_OK,
+        )
 
     def patch(self, request, pk, *args, **kwargs):
         serializer = ImageShareUpdateSerializer(data=request.data)
@@ -81,4 +83,7 @@ class ShareImageView(APIView):
 
         image.is_public = serializer.validated_data["is_public"]
         image.save(update_fields=["is_public"])
-        return Response(ImageSerializer(image).data, status=status.HTTP_200_OK)
+        return Response(
+            ImageSerializer(image, context={"request": request}).data,
+            status=status.HTTP_200_OK,
+        )

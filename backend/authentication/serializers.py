@@ -7,13 +7,15 @@ class UserRegistrationSerializer(serializers.ModelSerializer):
     """Serializer for user registration."""
     password = serializers.CharField(write_only=True, required=True, style={'input_type': 'password'})
     password2 = serializers.CharField(write_only=True, required=True, style={'input_type': 'password'})
+    bio = serializers.CharField(required=False, allow_blank=True, default="")
 
     class Meta:
         model = User
-        fields = ('email', 'username', 'password', 'password2', 'first_name', 'last_name')
+        fields = ('email', 'username', 'password', 'password2', 'first_name', 'last_name', 'bio')
         extra_kwargs = {
             'first_name': {'required': True},
-            'last_name': {'required': True}
+            'last_name': {'required': True},
+            'bio': {'required': False},
         }
 
     def validate(self, attrs):
@@ -24,12 +26,14 @@ class UserRegistrationSerializer(serializers.ModelSerializer):
     def create(self, validated_data):
         # Remove password2 as it's not a User model field
         validated_data.pop('password2', None)
+        bio = validated_data.pop('bio', '')
         user = User.objects.create_user(
             email=validated_data['email'],
             username=validated_data['username'],
             first_name=validated_data.get('first_name', ''),
             last_name=validated_data.get('last_name', ''),
-            password=validated_data['password']
+            password=validated_data['password'],
+            bio=bio,
         )
         return user
 
@@ -89,4 +93,4 @@ class UserSerializer(serializers.ModelSerializer):
     """Serializer for user details."""
     class Meta:
         model = User
-        fields = ('id', 'email', 'username', 'first_name', 'last_name', 'is_verified')
+        fields = ('id', 'email', 'username', 'first_name', 'last_name', 'bio', 'is_verified')
