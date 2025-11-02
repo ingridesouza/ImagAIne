@@ -1,132 +1,91 @@
-# Authentication System
+# Authentication Module
 
-This module provides a complete authentication system for the ImagAIne platform, including user registration, login, and password reset functionality.
+Camada responsavel pelos fluxos de cadastro, login, verificacao de e-mail, redefinicao de senha e gerenciamento de perfil da plataforma ImagAIne. O modulo estende o usuario padrao do Django para suportar login por e-mail e integra o Simple JWT para emissao de tokens.
 
-## Features
+## Principais recursos
+- **Usuario personalizado** (`authentication.models.User`) com identificador UUID, campo `email` unico e flag `is_verified`.
+- **Registro com dupla confirmacao de senha** e envio automatico de e-mail com link de verificacao.
+- **Login por e-mail** com bloqueio enquanto o usuario nao confirmar o endereco.
+- **Reset de senha** com tokens temporarios (`PasswordResetToken`) validos por 24 horas.
+- **Perfil autenticado** disponivel via `GET` e `PUT`.
+- Templates HTML para e-mails de verificacao, reset e boas-vindas em `authentication/templates/emails/`.
 
-- User registration with email verification
-- JWT-based authentication
-- Password reset functionality with email notifications
-- Custom user model with additional fields
-- Secure password hashing and validation
+## Dependencias relevantes
+- `djangorestframework`
+- `djangorestframework-simplejwt`
+- `python-decouple`
+- Servico de e-mail SMTP configurado via variaveis de ambiente (veja `.env` na raiz).
 
-## API Endpoints
+## Endpoints
+Todos os caminhos abaixo estao sob o prefixo `/api/auth/`.
 
-### Authentication
+| Metodo | Caminho                   | Descricao                                                                   |
+| ------ | ------------------------- | --------------------------------------------------------------------------- |
+| POST   | `register/`               | Cria usuario, dispara e-mail de verificacao.                                |
+| POST   | `login/`                  | Valida credenciais e retorna tokens JWT.                                    |
+| POST   | `token/refresh/`          | Gera novo access token a partir do refresh token.                           |
+| GET    | `verify-email/<token>/`   | Marca usuario como verificado e envia e-mail de boas-vindas.                |
+| POST   | `password/reset/request/` | Cria token de reset e envia link por e-mail.                                |
+| POST   | `password/reset/confirm/` | Atualiza a senha utilizando token valido.                                   |
+| GET    | `profile/`                | Retorna dados basicos do usuario autenticado.                               |
+| PUT    | `profile/`                | Atualiza nome, sobrenome ou username do usuario autenticado.                |
 
-- **POST** `/api/auth/register/` - Register a new user
-- **POST** `/api/auth/login/` - User login (returns JWT tokens)
-- **POST** `/api/auth/token/refresh/` - Refresh JWT token
-- **POST** `/api/auth/token/verify/` - Verify JWT token
+> O endpoint `/api/token/verify/` (definido no projeto principal) continua disponivel para verificar tokens emitidos.
 
-### Password Reset
-
-- **POST** `/api/auth/password/reset/request/` - Request password reset email
-- **POST** `/api/auth/password/reset/confirm/` - Confirm password reset with token
-
-### User Profile
-
-- **GET** `/api/auth/profile/` - Get current user profile
-- **PUT** `/api/auth/profile/` - Update current user profile
-
-## Environment Variables
-
-Add these to your `.env` file:
+## Variaveis de ambiente
+O modulo utiliza as seguintes chaves (definidas no arquivo `.env` da raiz):
 
 ```
-# Email Configuration
 EMAIL_HOST=smtp.gmail.com
 EMAIL_PORT=587
 EMAIL_USE_TLS=True
-EMAIL_HOST_USER=your-email@gmail.com
-EMAIL_HOST_PASSWORD=your-email-password
-DEFAULT_FROM_EMAIL=noreply@example.com
+EMAIL_HOST_USER=seu-email@example.com
+EMAIL_HOST_PASSWORD=senha-ou-app-password
+DEFAULT_FROM_EMAIL=seu-email@example.com
+FRONTEND_URL=http://localhost:3000
 
-
-
-
-# JWT Secret Key
-SECRET_KEY=your-secret-key-here
+SECRET_KEY=chave-secreta # tambem usada pelo Simple JWT
 ```
 
-## Setup
+`FRONTEND_URL` e utilizado para construir os links de verificacao e reset enviados por e-mail.
 
-1. Make sure you have the required Python packages installed:
-   ```bash
-   pip install djangorestframework djangorestframework-simplejwt python-decouple
-   ```
+## Modelos
+- `User`: estende `AbstractUser`, substitui o identificador por UUID, usa `email` como `USERNAME_FIELD` e adiciona campos `is_verified` e `verification_token`.
+- `PasswordResetToken`: armazena tokens de reset com data de expiracao (`expires_at`) e flag `is_used`.
 
-2. Run migrations:
-   ```bash
-   python manage.py makemigrations
-   python manage.py migrate
-   ```
+## Fluxos principais
+### Registro
+1. `POST /api/auth/register/` com os campos `email`, `username`, `first_name`, `last_name`, `password`, `password2`.
+2. Usuario e criado, token de verificacao (UUID) e persistido.
+3. E-mail HTML `emails/verification.html` e enviado com link `<FRONTEND_URL>/verify-email/<token>/`.
+4. Ao acessar o link, `VerifyEmailView` define `is_verified=True`, limpa o token e dispara `emails/welcome.html`.
 
-3. Start the development server:
-   ```bash
-   python manage.py runserver
-   ```
+### Reset de senha
+1. `POST /api/auth/password/reset/request/` com `email`.
+2. Tokens ativos do usuario sao invalidados, novo registro `PasswordResetToken` (expira em 24 horas) e criado.
+3. E-mail `emails/password_reset.html` envia link `<FRONTEND_URL>/reset-password/<token>/`.
+4. `POST /api/auth/password/reset/confirm/` com `token`, `new_password` e `new_password_confirm` atualiza a senha e marca o token como usado.
 
-## Testing
+### Login e JWT
+- `UserLoginView` autentica por `email` e `password`, exige `is_verified=True`.
+- `RefreshToken.for_user` gera par `refresh` e `access`, retornados ao cliente.
+- Simple JWT tambem atualiza `last_login` por configuracao em `settings.py`.
 
-You can test the authentication endpoints using tools like Postman or cURL. Here are some example requests:
-
-### Register a new user
-```http
-POST /api/auth/register/
-Content-Type: application/json
-
-{
-    "email": "user@example.com",
-    "username": "user123",
-    "first_name": "John",
-    "last_name": "Doe",
-    "password": "securepassword123",
-    "password2": "securepassword123"
-}
+## Execucao local
+Com dependencias instaladas (veja README da raiz):
+```bash
+python backend/manage.py makemigrations authentication
+python backend/manage.py migrate
+python backend/manage.py runserver
 ```
+Para testar envio de e-mails em desenvolvimento, ajuste `EMAIL_BACKEND` no `.env` (por exemplo, `django.core.mail.backends.console.EmailBackend`).
 
-### Login
-```http
-POST /api/auth/login/
-Content-Type: application/json
+## Testes manuais sugeridos
+1. Registrar novo usuario, checar e-mail enviado e tentar login antes e depois da verificacao.
+2. Solicitar reset de senha, utilizar o token recebido e validar bloqueio apos expirar ou reutilizar.
+3. Atualizar o perfil autenticado e garantir que o username permanece unico.
 
-{
-    "email": "user@example.com",
-    "password": "securepassword123"
-}
-```
-
-### Request password reset
-```http
-POST /api/auth/password/reset/request/
-Content-Type: application/json
-
-{
-    "email": "user@example.com"
-}
-```
-
-### Reset password with token
-```http
-POST /api/auth/password/reset/confirm/
-Content-Type: application/json
-
-{
-    "token": "your-reset-token",
-    "new_password": "newsecurepassword123",
-    "new_password_confirm": "newsecurepassword123"
-}
-```
-
-## Security Considerations
-
-- Always use HTTPS in production
-- Keep your `SECRET_KEY` secure and never commit it to version control
-- Use strong password validation rules
-- Implement rate limiting for authentication endpoints
-- Keep your dependencies up to date
-
-## License
-
-This project is licensed under the MIT License - see the LICENSE file for details.
+## Estendendo o modulo
+- Personalize os templates HTML em `templates/emails/` para refletir a identidade visual do produto.
+- Adicione campos extras aos serializers `UserSerializer` ou `UserRegistrationSerializer` conforme necessario.
+- Implemente throttling ou rate limiting via DRF configurando `DEFAULT_THROTTLE_CLASSES` em `settings.py` caso deseje limitar tentativas de login.
