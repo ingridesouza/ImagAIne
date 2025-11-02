@@ -1,6 +1,6 @@
 from rest_framework import serializers
 from django.contrib.auth import get_user_model
-from .models import Image
+from .models import Image, ImageComment
 
 User = get_user_model()
 
@@ -12,6 +12,10 @@ class UserSerializer(serializers.ModelSerializer):
 class ImageSerializer(serializers.ModelSerializer):
     user = UserSerializer(read_only=True)
     image_url = serializers.SerializerMethodField()
+    like_count = serializers.SerializerMethodField()
+    comment_count = serializers.SerializerMethodField()
+    download_count = serializers.IntegerField(read_only=True)
+    is_liked = serializers.SerializerMethodField()
 
     class Meta:
         model = Image
@@ -25,6 +29,10 @@ class ImageSerializer(serializers.ModelSerializer):
             'image_url',
             'status',
             'is_public',
+            'like_count',
+            'comment_count',
+            'download_count',
+            'is_liked',
             'created_at',
         )
         read_only_fields = (
@@ -32,6 +40,10 @@ class ImageSerializer(serializers.ModelSerializer):
             'user',
             'image_url',
             'status',
+            'like_count',
+            'comment_count',
+            'download_count',
+            'is_liked',
             'created_at',
         )
 
@@ -44,6 +56,25 @@ class ImageSerializer(serializers.ModelSerializer):
         if request:
             return request.build_absolute_uri(url)
         return url
+
+    def get_like_count(self, obj):
+        if hasattr(obj, 'like_count'):
+            return obj.like_count or 0
+        return obj.likes.count()
+
+    def get_comment_count(self, obj):
+        if hasattr(obj, 'comment_count'):
+            return obj.comment_count or 0
+        return obj.comments.count()
+
+    def get_is_liked(self, obj):
+        request = self.context.get('request') if hasattr(self, 'context') else None
+        user = getattr(request, 'user', None)
+        if not user or not user.is_authenticated:
+            return False
+        if hasattr(obj, 'is_liked'):
+            return bool(obj.is_liked)
+        return obj.likes.filter(user=user).exists()
 
 class GenerateImageSerializer(serializers.Serializer):
     prompt = serializers.CharField()
@@ -60,6 +91,22 @@ class GenerateImageSerializer(serializers.Serializer):
 
 class ImageShareUpdateSerializer(serializers.Serializer):
     is_public = serializers.BooleanField()
+
+
+class ImageCommentSerializer(serializers.ModelSerializer):
+    user = UserSerializer(read_only=True)
+
+    class Meta:
+        model = ImageComment
+        fields = ('id', 'user', 'text', 'created_at', 'updated_at')
+        read_only_fields = ('id', 'user', 'created_at', 'updated_at')
+
+
+class ImageCommentCreateSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = ImageComment
+        fields = ('text',)
+
 
 
 class UserRegistrationSerializer(serializers.ModelSerializer):

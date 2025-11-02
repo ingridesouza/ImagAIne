@@ -42,6 +42,7 @@ class Image(models.Model):
         default=Status.GENERATING,
     )
     is_public = models.BooleanField(default=False)
+    download_count = models.PositiveIntegerField(default=0)
     retry_count = models.PositiveIntegerField(default=0)
     created_at = models.DateTimeField(auto_now_add=True)
 
@@ -54,3 +55,43 @@ class Image(models.Model):
     def __str__(self):
         prompt_preview = (self.prompt or '')[:50]
         return f'Image by {self.user.username} - {prompt_preview}'
+
+
+class ImageLike(models.Model):
+    image = models.ForeignKey(
+        Image, on_delete=models.CASCADE, related_name='likes'
+    )
+    user = models.ForeignKey(
+        User, on_delete=models.CASCADE, related_name='image_likes'
+    )
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        constraints = [
+            models.UniqueConstraint(
+                fields=['image', 'user'], name='unique_like_per_user_image'
+            )
+        ]
+        ordering = ['-created_at']
+
+    def __str__(self):
+        return f'Like by {self.user.username} on image {self.image_id}'
+
+
+class ImageComment(models.Model):
+    image = models.ForeignKey(
+        Image, on_delete=models.CASCADE, related_name='comments'
+    )
+    user = models.ForeignKey(
+        User, on_delete=models.CASCADE, related_name='image_comments'
+    )
+    text = models.TextField()
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        ordering = ['created_at']
+
+    def __str__(self):
+        preview = (self.text or '')[:30]
+        return f'Comment by {self.user.username}: {preview}'
