@@ -1,5 +1,18 @@
 from django.db import migrations, models
 
+def add_bio_column(apps, schema_editor):
+    if schema_editor.connection.vendor == "postgresql":
+        schema_editor.execute(
+            "ALTER TABLE authentication_user "
+            "ADD COLUMN IF NOT EXISTS bio text NOT NULL DEFAULT '';"
+        )
+    else:
+        User = apps.get_model("authentication", "User")
+        field = models.TextField(blank=True, default="")
+        field.set_attributes_from_name("bio")
+        schema_editor.add_field(User, field)
+
+
 
 class Migration(migrations.Migration):
 
@@ -10,16 +23,7 @@ class Migration(migrations.Migration):
     operations = [
         migrations.SeparateDatabaseAndState(
             database_operations=[
-                migrations.RunSQL(
-                    sql=(
-                        "ALTER TABLE authentication_user "
-                        "ADD COLUMN IF NOT EXISTS bio text NOT NULL DEFAULT '';"
-                    ),
-                    reverse_sql=(
-                        "ALTER TABLE authentication_user "
-                        "DROP COLUMN IF EXISTS bio;"
-                    ),
-                ),
+                migrations.RunPython(add_bio_column, migrations.RunPython.noop),
             ],
             state_operations=[
                 migrations.AddField(

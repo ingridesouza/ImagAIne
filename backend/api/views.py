@@ -1,5 +1,6 @@
+from django.utils import timezone
 from rest_framework import filters, generics, status
-from rest_framework.permissions import IsAuthenticated
+from rest_framework.permissions import AllowAny, IsAuthenticated
 from rest_framework.response import Response
 from rest_framework.views import APIView
 
@@ -18,13 +19,21 @@ class GenerateImageView(APIView):
     def post(self, request, *args, **kwargs):
         serializer = GenerateImageSerializer(data=request.data)
         if serializer.is_valid():
+            user = request.user
             prompt = serializer.validated_data["prompt"]
 
             # Create a new image placeholder while async generation runs
             image = Image.objects.create(
-                user=request.user,
+                user=user,
                 prompt=prompt,
             )
+
+            today = timezone.now().date()
+            if user.last_reset_date != today:
+                user.image_generation_count = 0
+                user.last_reset_date = today
+            user.image_generation_count += 1
+            user.save(update_fields=["image_generation_count", "last_reset_date"])
 
             generate_image_task.delay(image.id)
 
@@ -38,6 +47,7 @@ class GenerateImageView(APIView):
 class PublicImageListView(generics.ListAPIView):
     queryset = Image.objects.filter(is_public=True).order_by("-created_at")
     serializer_class = ImageSerializer
+    permission_classes = [AllowAny]
     filter_backends = [filters.SearchFilter]
     search_fields = ["prompt"]
 

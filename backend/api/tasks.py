@@ -33,7 +33,8 @@ def generate_image_task(image_id):
             logger.error("HF API error: %s", repr(exc), exc_info=True)
             image_instance.status = Image.Status.FAILED
             image_instance.image = None
-            image_instance.save(update_fields=["status", "image"])
+            image_instance.retry_count += 1
+            image_instance.save(update_fields=["status", "image", "retry_count"])
             return
 
         logger.info("Imagem recebida com sucesso da API Nebius.")
@@ -49,7 +50,8 @@ def generate_image_task(image_id):
             save=False,
         )
         image_instance.status = Image.Status.READY
-        image_instance.save(update_fields=["image", "status"])
+        image_instance.retry_count = 0
+        image_instance.save(update_fields=["image", "status", "retry_count"])
         logger.info(f"[TASK_SUCCESS] Imagem pronta para Image ID: {image_id}")
 
     except Image.DoesNotExist:
@@ -63,4 +65,5 @@ def generate_image_task(image_id):
         if image_instance:
             image_instance.status = Image.Status.FAILED
             image_instance.image = None
-            image_instance.save(update_fields=["status", "image"])
+            image_instance.retry_count += 1
+            image_instance.save(update_fields=["status", "image", "retry_count"])

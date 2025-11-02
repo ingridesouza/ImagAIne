@@ -1,22 +1,25 @@
-from rest_framework import status, generics, permissions
+from datetime import timedelta
+import uuid
+
+from django.conf import settings
+from django.core.mail import send_mail
+from django.template.loader import render_to_string
+from django.utils import timezone
+from django.utils.html import strip_tags
+from rest_framework import generics, permissions, status
 from rest_framework.response import Response
 from rest_framework.views import APIView
 from rest_framework_simplejwt.tokens import RefreshToken
-from django.utils import timezone
-from django.core.mail import send_mail
-from django.conf import settings
-from django.template.loader import render_to_string
-from django.utils.html import strip_tags
-import uuid
 
-from .models import User, PasswordResetToken
+from .models import PasswordResetToken, User
 from .serializers import (
-    UserRegistrationSerializer,
-    UserLoginSerializer,
-    PasswordResetRequestSerializer,
     PasswordResetConfirmSerializer,
-    UserSerializer
+    PasswordResetRequestSerializer,
+    UserLoginSerializer,
+    UserRegistrationSerializer,
+    UserSerializer,
 )
+from .tasks import send_verification_email_task, send_welcome_email_task
 
 class UserRegistrationView(generics.CreateAPIView):
     """View for user registration."""
@@ -43,26 +46,7 @@ class UserRegistrationView(generics.CreateAPIView):
         user.verification_token = token
         user.save()
         
-        # Build verification URL
-        verification_url = f"{settings.FRONTEND_URL}/verify-email/{token}/"
-        
-        # Prepare email content
-        subject = 'Verify your email address'
-        html_message = render_to_string('emails/verification.html', {
-            'user': user,
-            'verification_url': verification_url
-        })
-        plain_message = strip_tags(html_message)
-        
-        # Send email
-        send_mail(
-            subject,
-            plain_message,
-            settings.DEFAULT_FROM_EMAIL,
-            [user.email],
-            html_message=html_message,
-            fail_silently=False,
-        )
+        send_verification_email_task.delay(user.id, token)
 
 
 class UserLoginView(APIView):
@@ -109,7 +93,7 @@ class PasswordResetRequestView(APIView):
         PasswordResetToken.objects.filter(user=user, is_used=False).update(is_used=True)
         
         # Create new token
-        expires_at = timezone.now() + timezone.timedelta(hours=24)  # Token valid for 24 hours
+        expires_at = timezone.now() + timedelta(hours=24)  # Token valid for 24 hours
         token = PasswordResetToken.objects.create(
             user=user,
             expires_at=expires_at
@@ -200,21 +184,7 @@ class VerifyEmailView(APIView):
     
     def _send_welcome_email(self, user):
         """Send welcome email after successful verification."""
-        subject = 'Welcome to Our Platform!'
-        html_message = render_to_string('emails/welcome.html', {
-            'user': user,
-            'login_url': f"{settings.FRONTEND_URL}/login"
-        })
-        plain_message = strip_tags(html_message)
-        
-        send_mail(
-            subject,
-            plain_message,
-            settings.DEFAULT_FROM_EMAIL,
-            [user.email],
-            html_message=html_message,
-            fail_silently=False,
-        )
+        send_welcome_email_task.delay(user.id)
 
 
 class UserProfileView(generics.RetrieveUpdateAPIView):
