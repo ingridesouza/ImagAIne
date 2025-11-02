@@ -1,5 +1,7 @@
+from django.conf import settings
 from django.utils import timezone
 from rest_framework import filters, generics, status
+from rest_framework.exceptions import Throttled
 from rest_framework.permissions import AllowAny, IsAuthenticated
 from rest_framework.response import Response
 from rest_framework.views import APIView
@@ -10,11 +12,17 @@ from .serializers import (
     ImageSerializer,
     ImageShareUpdateSerializer,
 )
+from .throttles import PlanQuotaThrottle
 from .tasks import generate_image_task
 
 
 class GenerateImageView(APIView):
     permission_classes = [IsAuthenticated]
+    throttle_classes = [PlanQuotaThrottle]
+
+    def throttled(self, request, wait=None):
+        message = "Daily quota reached. Upgrade to Pro or wait until tomorrow."
+        raise Throttled(detail=message, wait=wait)
 
     def post(self, request, *args, **kwargs):
         serializer = GenerateImageSerializer(data=request.data)
@@ -27,6 +35,20 @@ class GenerateImageView(APIView):
             )
             seed = serializer.validated_data.get("seed")
 
+            quotas = getattr(settings, "PLAN_QUOTAS", {})
+            quota = quotas.get(getattr(user, "plan", "free"))
+
+            today = timezone.now().date()
+            if user.last_reset_date != today:
+                user.image_generation_count = 0
+                user.last_reset_date = today
+
+            if quota is not None and user.image_generation_count >= quota:
+                return Response(
+                    {"detail": "Daily quota reached. Upgrade to Pro or wait until tomorrow."},
+                    status=status.HTTP_429_TOO_MANY_REQUESTS,
+                )
+
             # Create a new image placeholder while async generation runs
             image = Image.objects.create(
                 user=user,
@@ -36,10 +58,6 @@ class GenerateImageView(APIView):
                 seed=seed,
             )
 
-            today = timezone.now().date()
-            if user.last_reset_date != today:
-                user.image_generation_count = 0
-                user.last_reset_date = today
             user.image_generation_count += 1
             user.save(update_fields=["image_generation_count", "last_reset_date"])
 

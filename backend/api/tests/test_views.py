@@ -50,6 +50,27 @@ class GenerateImageViewTests(APITestCase):
         self.assertEqual(response.data["aspect_ratio"], payload["aspect_ratio"])
         self.assertEqual(response.data["seed"], payload["seed"])
 
+    def test_generate_image_respects_plan_quota(self):
+        """Usuário acima do limite diário recebe 429."""
+        today = timezone.now().date()
+        user = create_user(
+            email="limited@example.com",
+            username="limited",
+            plan="free",
+            image_generation_count=5,
+            last_reset_date=today,
+        )
+        self.client.force_authenticate(user=user)
+
+        response = self.client.post(
+            reverse("generate-image"),
+            {"prompt": "Exceed quota test"},
+            format="json",
+        )
+
+        self.assertEqual(response.status_code, status.HTTP_429_TOO_MANY_REQUESTS)
+        self.assertIn("quota", response.data["detail"].lower())
+
 
 class PublicImageViewTests(APITestCase):
     def test_public_images_accessible_without_authentication(self):
