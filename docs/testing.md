@@ -27,6 +27,7 @@ Este documento resume como a suíte de testes do **ImagAIne** está estruturada,
 - **Downloads**: verifica incremento de contador, checagem de disponibilidade (status `READY`, arquivo existente) e restrições para imagens privadas.
 - **Geração de imagens (API)**: garante quotas diárias, reinicialização de contadores e enfileiramento de tarefas.
 - **Tarefas assíncronas**: confirma que o worker salva imagens corretas, reseta `retry_count`, limpa arquivos em caso de falha e registra logs de erro.
+- **Autenticação**: cobre cadastro, login, reset de senha e bloqueio por throttling para mitigar brute-force.
 
 ## Objetivos dos Testes
 1. **Segurança e permissões** – Garantir que apenas usuários autorizados consigam interagir com recursos privados.
@@ -52,7 +53,7 @@ python manage.py test api.tests.test_views
 Antes de rodar, é recomendável garantir que o virtualenv esteja ativo e que dependências de desenvolvimento estejam instaladas (`pip install -r requirements.txt`).
 
 ## Próximos Passos Sugeridos
-- Adicionar cobertura para limites de *throttling* nas interações sociais, garantindo proteção contra abuso.
+- Estender testes para cenários de tokens de verificação regenerados e reenvio de e-mails.
 - Medir cobertura com `coverage.py` e integrar relatórios a uma pipeline CI.
 - Considerar cenários de concorrência (ex.: múltiplos downloads simultâneos) usando transações ou locks.
 

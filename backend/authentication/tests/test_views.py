@@ -5,6 +5,7 @@ from django.urls import reverse
 from django.utils import timezone
 from rest_framework import status
 from rest_framework.test import APITestCase
+from rest_framework.exceptions import Throttled
 
 from authentication.models import PasswordResetToken, User
 from tests.utils import create_user
@@ -31,6 +32,8 @@ class RegistrationTests(APITestCase):
         user = User.objects.get(email=payload["email"])
         self.assertFalse(user.is_verified)
         self.assertIsNotNone(user.verification_token)
+        self.assertIsNotNone(user.verification_token_expires_at)
+        self.assertGreater(user.verification_token_expires_at, timezone.now())
         mock_delay.assert_called_once_with(user.id, user.verification_token)
 
 
@@ -68,6 +71,19 @@ class LoginTests(APITestCase):
         self.assertIn("access", response.data)
         self.assertIn("refresh", response.data)
         self.assertEqual(response.data["user"]["email"], user.email)
+
+    @patch("authentication.views.ScopedRateThrottle.allow_request", side_effect=Throttled(detail="Rate limit", wait=60))
+    def test_login_throttled_after_limit(self, mock_allow):
+        """Login sofre throttling apos exceder limite configurado."""
+        user = create_user(email="throttle@example.com", username="throttleuser")
+
+        response = self.client.post(
+            reverse("authentication:login"),
+            {"email": user.email, "password": "Str0ngPass!"},
+            format="json",
+        )
+        self.assertEqual(response.status_code, status.HTTP_429_TOO_MANY_REQUESTS)
+        mock_allow.assert_called_once()
 
 
 class PasswordResetTests(APITestCase):
@@ -144,7 +160,8 @@ class VerificationTests(APITestCase):
             is_verified=False,
         )
         user.verification_token = "sometoken"
-        user.save(update_fields=["verification_token"])
+        user.verification_token_expires_at = timezone.now() + timedelta(hours=1)
+        user.save(update_fields=["verification_token", "verification_token_expires_at"])
 
         response = self.client.get(
             reverse("authentication:verify_email", kwargs={"token": "sometoken"})
@@ -154,6 +171,7 @@ class VerificationTests(APITestCase):
         user.refresh_from_db()
         self.assertTrue(user.is_verified)
         self.assertEqual(user.verification_token, "")
+        self.assertIsNone(user.verification_token_expires_at)
         mock_delay.assert_called_once_with(user.id)
 
     def test_verify_email_with_invalid_token_returns_400(self):
@@ -163,3 +181,24 @@ class VerificationTests(APITestCase):
         )
 
         self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
+
+    def test_verify_email_expired_token_returns_400(self):
+        """Token expirado nao ativa usuario e retorna 400."""
+        user = create_user(
+            email="expired@example.com",
+            username="expireduser",
+            is_verified=False,
+        )
+        user.verification_token = "expiredtoken"
+        user.verification_token_expires_at = timezone.now() - timedelta(hours=1)
+        user.save(
+            update_fields=["verification_token", "verification_token_expires_at"]
+        )
+
+        response = self.client.get(
+            reverse("authentication:verify_email", kwargs={"token": "expiredtoken"})
+        )
+
+        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
+        user.refresh_from_db()
+        self.assertFalse(user.is_verified)

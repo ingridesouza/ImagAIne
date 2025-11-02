@@ -4,6 +4,7 @@ from unittest.mock import patch
 from django.urls import reverse
 from django.utils import timezone
 from rest_framework import status
+from rest_framework.exceptions import Throttled
 from rest_framework.test import APITestCase
 
 from api.models import Image, ImageComment, ImageLike, ImageTag
@@ -362,6 +363,26 @@ class ImageLikeViewTests(APITestCase):
             ImageLike.objects.filter(image=image, user=outsider).exists()
         )
 
+    @patch("api.views.ScopedRateThrottle.allow_request", side_effect=Throttled(detail="Rate limit", wait=60))
+    def test_like_endpoint_respects_throttle(self, mock_allow):
+        """Like retorna 429 quando limite de taxa e excedido."""
+        owner = create_user(email="throttle-like-owner@example.com", username="throttlelikeowner")
+        liker = create_user(email="throttle-like@example.com", username="throttlelike")
+        image = Image.objects.create(
+            user=owner,
+            prompt="throttle like",
+            is_public=True,
+            status=Image.Status.READY,
+        )
+
+        self.client.force_authenticate(user=liker)
+        response = self.client.post(
+            reverse("image-like", kwargs={"pk": image.id})
+        )
+
+        self.assertEqual(response.status_code, status.HTTP_429_TOO_MANY_REQUESTS)
+        mock_allow.assert_called_once()
+
 
 class ImageCommentViewTests(APITestCase):
     def setUp(self):
@@ -524,6 +545,21 @@ class ImageCommentViewTests(APITestCase):
         self.public_image.refresh_from_db()
         self.assertEqual(self.public_image.relevance_score, before)
 
+    @patch("api.views.ScopedRateThrottle.allow_request", side_effect=Throttled(detail="Rate limit", wait=60))
+    def test_comment_creation_throttled(self, mock_allow):
+        """Comentario respeita limite de taxa quando excedido."""
+        commenter = create_user(email="throttle-comment@example.com", username="throttlecomment")
+        self.client.force_authenticate(user=commenter)
+
+        response = self.client.post(
+            reverse("image-comments", kwargs={"pk": self.public_image.id}),
+            {"text": "Throttle test"},
+            format="json",
+        )
+
+        self.assertEqual(response.status_code, status.HTTP_429_TOO_MANY_REQUESTS)
+        mock_allow.assert_called_once()
+
 
 class ImageDownloadViewTests(APITestCase):
     def test_public_download_increments_counter(self):
@@ -605,3 +641,23 @@ class ImageDownloadViewTests(APITestCase):
             reverse("image-download", kwargs={"pk": ready_without_file.id})
         )
         self.assertEqual(response_file.status_code, status.HTTP_400_BAD_REQUEST)
+
+    @patch("api.views.ScopedRateThrottle.allow_request", side_effect=Throttled(detail="Rate limit", wait=60))
+    def test_download_endpoint_respects_throttle(self, mock_allow):
+        """Download retorna 429 quando limite de taxa e excedido."""
+        owner = create_user(email="throttle-download@example.com", username="throttledownload")
+        image = Image.objects.create(
+            user=owner,
+            prompt="throttle download",
+            is_public=True,
+            status=Image.Status.READY,
+        )
+        image.image.name = f"users/{owner.id}/images/throttle.png"
+        image.save(update_fields=["image"])
+
+        response = self.client.post(
+            reverse("image-download", kwargs={"pk": image.id})
+        )
+
+        self.assertEqual(response.status_code, status.HTTP_429_TOO_MANY_REQUESTS)
+        mock_allow.assert_called_once()

@@ -23,7 +23,8 @@ def create_user(
     if is_verified and not user.is_verified:
         user.is_verified = True
         user.verification_token = ""
-        user.save(update_fields=["is_verified", "verification_token"])
+        user.verification_token_expires_at = None
+        user.save(update_fields=["is_verified", "verification_token", "verification_token_expires_at"])
     return user
 
 
