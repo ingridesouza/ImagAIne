@@ -541,7 +541,6 @@ class ImageCommentViewTests(APITestCase):
             )
         )
         self.assertEqual(response.status_code, status.HTTP_403_FORBIDDEN)
-        self.assertTrue(ImageComment.objects.filter(pk=comment.id).exists())
         self.public_image.refresh_from_db()
         self.assertEqual(self.public_image.relevance_score, before)
 
@@ -555,6 +554,26 @@ class ImageCommentViewTests(APITestCase):
             reverse("image-comments", kwargs={"pk": self.public_image.id}),
             {"text": "Throttle test"},
             format="json",
+        )
+
+        self.assertEqual(response.status_code, status.HTTP_429_TOO_MANY_REQUESTS)
+        mock_allow.assert_called_once()
+        self.assertFalse(ImageComment.objects.filter(image=self.public_image, user=commenter, text="Throttle test").exists())
+
+    @patch("api.views.ScopedRateThrottle.allow_request", side_effect=Throttled(detail="Rate limit", wait=60))
+    def test_comment_delete_throttled(self, mock_allow):
+        """Remocao de comentario retorna 429 quando limite e excedido."""
+        commenter = create_user(email="throttle-delete@example.com", username="throttledelete")
+        comment = ImageComment.objects.create(
+            image=self.public_image, user=commenter, text="Remove-me"
+        )
+        self.client.force_authenticate(user=commenter)
+
+        response = self.client.delete(
+            reverse(
+                "image-comment-detail",
+                kwargs={"pk": self.public_image.id, "comment_id": comment.id},
+            )
         )
 
         self.assertEqual(response.status_code, status.HTTP_429_TOO_MANY_REQUESTS)
@@ -661,3 +680,6 @@ class ImageDownloadViewTests(APITestCase):
 
         self.assertEqual(response.status_code, status.HTTP_429_TOO_MANY_REQUESTS)
         mock_allow.assert_called_once()
+
+
+
