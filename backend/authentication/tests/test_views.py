@@ -36,6 +36,29 @@ class RegistrationTests(APITestCase):
         self.assertGreater(user.verification_token_expires_at, timezone.now())
         mock_delay.assert_called_once_with(user.id, user.verification_token)
 
+    @patch(
+        "authentication.views.ScopedRateThrottle.allow_request",
+        side_effect=Throttled(detail="Rate limit", wait=60),
+    )
+    def test_register_throttled(self, mock_allow):
+        """Cadastro retorna 429 quando limite de taxa e excedido."""
+        payload = {
+            "email": "blocked@example.com",
+            "username": "blocked",
+            "password": "ComplexPass123!",
+            "password2": "ComplexPass123!",
+            "first_name": "Block",
+            "last_name": "User",
+        }
+
+        response = self.client.post(
+            reverse("authentication:register"), payload, format="json"
+        )
+
+        self.assertEqual(response.status_code, status.HTTP_429_TOO_MANY_REQUESTS)
+        self.assertFalse(User.objects.filter(email=payload["email"]).exists())
+        mock_allow.assert_called_once()
+
 
 class LoginTests(APITestCase):
     def test_login_requires_verified_email(self):
@@ -148,6 +171,42 @@ class PasswordResetTests(APITestCase):
 
         self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
         self.assertEqual(response.data["detail"], "Invalid or expired token.")
+
+    @patch(
+        "authentication.views.ScopedRateThrottle.allow_request",
+        side_effect=Throttled(detail="Rate limit", wait=60),
+    )
+    def test_password_reset_request_throttled(self, mock_allow):
+        """Solicitacao de reset retorna 429 ao atingir limite de taxa."""
+        user = create_user(email="throttle-reset@example.com", username="throttlereset")
+
+        response = self.client.post(
+            reverse("authentication:password_reset_request"),
+            {"email": user.email},
+            format="json",
+        )
+
+        self.assertEqual(response.status_code, status.HTTP_429_TOO_MANY_REQUESTS)
+        mock_allow.assert_called_once()
+
+    @patch(
+        "authentication.views.ScopedRateThrottle.allow_request",
+        side_effect=Throttled(detail="Rate limit", wait=60),
+    )
+    def test_password_reset_confirm_throttled(self, mock_allow):
+        """Confirmacao de reset retorna 429 quando limite e excedido."""
+        response = self.client.post(
+            reverse("authentication:password_reset_confirm"),
+            {
+                "token": "00000000-0000-0000-0000-000000000001",
+                "new_password": "AnotherPass123!",
+                "new_password_confirm": "AnotherPass123!",
+            },
+            format="json",
+        )
+
+        self.assertEqual(response.status_code, status.HTTP_429_TOO_MANY_REQUESTS)
+        mock_allow.assert_called_once()
 
 
 class VerificationTests(APITestCase):
