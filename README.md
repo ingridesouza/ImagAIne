@@ -106,12 +106,16 @@ docker-compose exec web python manage.py createsuperuser
 - `POST /api/auth/password/reset/confirm/` - Define nova senha com token enviado por e-mail.
 - `GET|PUT /api/auth/profile/` - Consulta ou atualiza dados basicos do usuario autenticado.
 
-### Geracao de imagens (`backend/api`)
+### Geracao e feed social (`backend/api`)
 - `POST /api/generate/` - Cria tarefa de geracao a partir de um prompt e aceita parametros opcionais para reproducibilidade.
-- `GET /api/images/my-images/` - Retorna imagens do usuario autenticado.
-- `GET /api/images/public/` - Lista galeria publica com filtro por `?search=<texto>`.
-- `POST /api/images/<id>/share/` - Torna a imagem publica.
-- `PATCH /api/images/<id>/share/` - Atualiza a visibilidade (`{"is_public": false}` para remover da galeria publica).
+- `GET /api/images/my-images/` - Retorna imagens do usuario autenticado, com contadores (`like_count`, `comment_count`, `download_count`), flag `is_liked`, `relevance_score` e tags.
+- `GET /api/images/public/` - Lista galeria publica ordenada por destaque/relevancia, permitindo filtro por `?search=<texto>`.
+- `POST /api/images/<id>/share/` / `PATCH /api/images/<id>/share/` - Torna a imagem publica ou altera visibilidade, aplicando boost inicial no score ao publicar.
+- `POST /api/images/<id>/like/` e `DELETE /api/images/<id>/like/` - Gerencia curtidas (autenticado, com throttling `social_like`).
+- `GET /api/images/<id>/comments/` - Lista comentarios (anonimos podem consultar imagens publicas).
+- `POST /api/images/<id>/comments/` - Cria comentario (autenticado, sujeito ao throttle `social_comment`).
+- `DELETE /api/images/<id>/comments/<comment_id>/` - Remove comentario (autor, dono da imagem ou staff).
+- `POST /api/images/<id>/download/` - Registra download, incrementa `download_count` e retorna URL absoluta (respeitando permissões e throttle `social_download`).
 
 > Observacao: endpoints antigos `/api/token/` e `/api/register/` sao mantidos para compatibilidade, mas recomenda-se utilizar os caminhos sob `/api/auth/`.
 
@@ -147,17 +151,22 @@ Certifique-se de ter Redis e PostgreSQL acessiveis localmente ou ajuste as varia
 - Configure a variavel `DJANGO_LOG_LEVEL` (opcional) ou adapte o dicionario `LOGGING` em `settings.py`.
 - Pastas `logs/nginx` e `logs/postgres` permanecem reservadas para configuracoes futuras de observabilidade.
 
-## Planos e limites
+## Planos, relevancia e limites
 - Usuarios possuem um campo `plan` (`free`, `pro`, etc.) e um contador diario (`image_generation_count`).
 - Limites padrao: plano `free` pode gerar ate 5 imagens por dia; plano `pro`, 10. Valores podem ser ajustados em `backend/imagAine/settings.py` (`PLAN_QUOTAS`).
 - O contador e resetado automaticamente na primeira geracao de cada dia.
-- Ao atingir a cota, a API retorna HTTP `429 Too Many Requests` com orientacao para aguardar o proximo dia ou fazer upgrade.
+- A galeria publica utiliza `relevance_score` (likes, comentarios, downloads, tags, decaimento temporal e boost de `featured`). Scores podem ser recalculados em lote via task `recalculate_relevance_scores`.
+- Ao atingir cota ou limites de throttling a API retorna HTTP `429 Too Many Requests` com sugestao de espera.
+- Throttles configurados em `REST_FRAMEWORK["DEFAULT_THROTTLE_RATES"]`:
+  - `auth_register`, `auth_login`, `auth_password_reset` para endpoints sensiveis de autenticacao.
+  - `social_like`, `social_comment`, `social_download` para interacoes no feed social.
 - Para promover um usuario ao plano `pro`, altere o campo `plan` pelo Django Admin (`/admin/authentication/user/`) ou via script de manutencao.
 
 ## Testes recomendados
-- Endpoints de autenticacao e verificacao de e-mail usando ferramentas como Insomnia ou Postman.
-- Fluxo completo: registro -> verificacao -> login -> `POST /api/generate/` (incluindo parametros opcionais) -> validacao dos limites diarios.
-- Validar que o worker Celery cria arquivos em `backend/media/` e atualiza o campo `image_url`.
+- Endpoints de autenticacao e verificacao de e-mail (incluindo tentativas repetidas para observar respostas 429/400).
+- Fluxo completo: registro -> verificacao -> login -> `POST /api/generate/` -> validar limites diarios e resposta 429.
+- Interacoes sociais: curtir, comentar e baixar imagens publicas para conferir contadores, ordenacao por relevancia e limites `social_*`.
+- Validar que o worker Celery cria arquivos em `backend/media/`, atualiza `image_url`, reseta `retry_count` e que `POST /api/images/<id>/download/` incrementa `download_count`.
 
 ## Licenca
 Distribuido sob licenca MIT. Consulte `LICENSE` para detalhes.
