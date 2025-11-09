@@ -42,7 +42,7 @@ export const ImageDetailsDialog = ({
       setActiveTab('details');
       setVisibilityChoice(image.is_public ? 'public' : 'private');
     }
-  }, [image?.id, image?.is_public]);
+  }, [image]);
 
   if (!image) {
     return null;

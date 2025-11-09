@@ -30,7 +30,7 @@ export const PublicGalleryPage = () => {
     queryKey: QUERY_KEYS.publicImages(debouncedSearch),
     queryFn: () => imagesApi.fetchPublicImages(debouncedSearch),
   });
-  const images: ImageRecord[] = response?.results ?? [];
+  const images = useMemo<ImageRecord[]>(() => response?.results ?? [], [response?.results]);
 
   const totalLikes = useMemo(() => images.reduce((sum, image) => sum + (image.like_count ?? 0), 0), [images]);
   const totalDownloads = useMemo(
@@ -100,48 +100,61 @@ export const PublicGalleryPage = () => {
   };
 
   const heroStats = [
-    { label: 'Imagens públicas no feed', value: filteredImages.length },
-    { label: 'Curtidas acumuladas', value: totalLikes },
-    { label: 'Downloads registrados', value: totalDownloads },
+    { label: 'Imagens públicas em exibição', value: filteredImages.length },
+    { label: 'Toques de inspiração', value: totalLikes },
+    { label: 'Downloads ativos', value: totalDownloads },
   ];
 
   return (
     <section className="public-gallery">
       <div className="public-gallery__hero glass-panel">
-        <div className="public-gallery__hero-copy">
-          <p className="public-gallery__eyebrow">Explorar comunidade</p>
-          <h1>Galeria pública</h1>
-          <p className="public-gallery__lead">
-            Descubra inspirações coletivas em um ambiente minimalista, com superfícies translúcidas e foco total
-            nas imagens que importam.
-          </p>
-          <div className="public-gallery__stats">
-            {heroStats.map((stat) => (
-              <div key={stat.label} className="public-gallery__stat">
-                <span>{stat.label}</span>
-                <strong>{stat.value.toLocaleString('pt-BR')}</strong>
-              </div>
-            ))}
+        <div className="public-gallery__hero-grid">
+          <div className="public-gallery__hero-copy">
+            <p className="public-gallery__eyebrow">Modo Explore</p>
+            <h1>Atlas público</h1>
+            <p className="public-gallery__lead">
+              Surfe em moodboards vivos inspirados no Midjourney/Sora, com superfícies quentes e foco total nas
+              imagens da comunidade.
+            </p>
+            <div className="public-gallery__hero-actions">
+              <Input
+                placeholder="Buscar por prompt, mood ou artista..."
+                value={search}
+                className="public-gallery__input"
+                onChange={(event) => setSearch(event.target.value)}
+              />
+              <button
+                type="button"
+                className="public-gallery__search-button"
+                onClick={() => setSearch('')}
+                disabled={!search}
+              >
+                {search ? 'Limpar busca' : 'Explorar feed'}
+              </button>
+            </div>
+            <div className="public-gallery__stats">
+              {heroStats.map((stat) => (
+                <div key={stat.label} className="public-gallery__stat">
+                  <span>{stat.label}</span>
+                  <strong>{stat.value.toLocaleString('pt-BR')}</strong>
+                </div>
+              ))}
+            </div>
           </div>
-        </div>
-        <div className="public-gallery__search-card">
-          <div className="public-gallery__search-input">
-            <Input
-              placeholder="Buscar por prompt, mood ou artista..."
-              value={search}
-              className="public-gallery__input"
-              onChange={(event) => setSearch(event.target.value)}
-            />
-            <button
-              type="button"
-              className="public-gallery__search-button"
-              onClick={() => setSearch('')}
-              disabled={!search}
-            >
-              {search ? 'Limpar busca' : 'Descobrir agora'}
-            </button>
+
+          <div className="public-gallery__hero-mosaic">
+            <div className="public-gallery__mosaic" aria-hidden="true">
+              <span className="public-gallery__mosaic-tile public-gallery__mosaic-tile--tall" />
+              <span className="public-gallery__mosaic-tile public-gallery__mosaic-tile--sunset" />
+              <span className="public-gallery__mosaic-tile public-gallery__mosaic-tile--forest" />
+              <span className="public-gallery__mosaic-tile public-gallery__mosaic-tile--mono" />
+              <span className="public-gallery__mosaic-tile public-gallery__mosaic-tile--copper" />
+              <span className="public-gallery__mosaic-tile public-gallery__mosaic-tile--teal" />
+            </div>
+            <p className="public-gallery__hint">
+              Atualizado em tempo real com os prompts mais salvos e curtidos pela comunidade.
+            </p>
           </div>
-          <p className="public-gallery__hint">Dica: combine sentimentos + estilo para resultados mais precisos.</p>
         </div>
       </div>
 
@@ -161,7 +174,7 @@ export const PublicGalleryPage = () => {
             </button>
           ))}
         </div>
-        <div className="public-gallery__chips">
+        <div className="public-gallery__chips" aria-label="Tendências na comunidade">
           {highlightedTags.map((tag) => (
             <button
               key={tag}

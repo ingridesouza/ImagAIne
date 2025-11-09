@@ -8,17 +8,18 @@ export const AppHeader = () => {
 
   return (
     <header className="app-header">
-      <div>
-        <h2 style={{ margin: 0, fontSize: '1.35rem' }}>ImagAIne Studio</h2>
-        <p style={{ margin: 0, color: '#64748b' }}>Experimente, publique e compartilhe imagens geradas.</p>
+      <div className="app-header__intro">
+        <p className="app-header__eyebrow">Modo Explore</p>
+        <h2>Galeria pública ImagAIne</h2>
+        <p>Surfe por moodboards quentes, favoritos da comunidade e streams inspirados no Midjourney/Sora.</p>
       </div>
 
       <div className="app-header__user">
         {user ? (
           <>
-            <div>
-              <strong style={{ display: 'block' }}>{user.first_name || user.username}</strong>
-              <small style={{ color: '#64748b' }}>{user.email}</small>
+            <div className="app-header__identity">
+              <strong>{user.first_name || user.username}</strong>
+              <small>{user.email}</small>
             </div>
             <Badge variant={user.is_verified ? 'success' : 'warning'}>
               {user.is_verified ? 'Verificado' : 'Pendente'}
