@@ -10,6 +10,7 @@ type Props = {
   onToggleLike?: (image: ImageRecord) => void;
   onDownload?: (image: ImageRecord) => void;
   onShare?: (image: ImageRecord) => void;
+  onSelectImage?: (image: ImageRecord) => void;
 };
 
 export const ImageGrid = ({
@@ -20,6 +21,7 @@ export const ImageGrid = ({
   onToggleLike,
   onDownload,
   onShare,
+  onSelectImage,
 }: Props) => {
   if (!isLoading && images.length === 0) {
     return (
@@ -41,6 +43,7 @@ export const ImageGrid = ({
           onToggleLike={onToggleLike}
           onDownload={onDownload}
           onShare={onShare}
+          onSelect={onSelectImage}
         />
       ))}
     </div>

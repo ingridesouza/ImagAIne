@@ -1,3 +1,4 @@
+import type { KeyboardEvent } from 'react';
 import { Download, Eye, EyeOff, Heart, Share2 } from 'lucide-react';
 import { Button } from '@/components/ui/Button';
 import { Badge } from '@/components/ui/Badge';
@@ -19,6 +20,7 @@ type ImageCardProps = {
   onToggleLike?: (image: ImageRecord) => void;
   onDownload?: (image: ImageRecord) => void;
   onShare?: (image: ImageRecord) => void;
+  onSelect?: (image: ImageRecord) => void;
 };
 
 export const ImageCard = ({
@@ -28,13 +30,30 @@ export const ImageCard = ({
   onToggleLike,
   onDownload,
   onShare,
+  onSelect,
 }: ImageCardProps) => {
   const status = STATUS_COPY[image.status];
   const showActions = image.status === 'READY';
+  const previewClasses = `image-card__preview${onSelect ? ' image-card__preview--clickable' : ''}`;
+
+  const handlePreviewKeyDown = (event: KeyboardEvent<HTMLDivElement>) => {
+    if (!onSelect) return;
+    if (event.key === 'Enter' || event.key === ' ') {
+      event.preventDefault();
+      onSelect(image);
+    }
+  };
 
   return (
     <article className="image-card">
-      <div className="image-card__preview">
+      <div
+        className={previewClasses}
+        onClick={onSelect ? () => onSelect(image) : undefined}
+        role={onSelect ? 'button' : undefined}
+        tabIndex={onSelect ? 0 : undefined}
+        onKeyDown={onSelect ? handlePreviewKeyDown : undefined}
+        aria-label={onSelect ? `Ver detalhes de ${image.prompt}` : undefined}
+      >
         {image.image_url ? (
           <img src={image.image_url} alt={image.prompt} loading="lazy" />
         ) : (
