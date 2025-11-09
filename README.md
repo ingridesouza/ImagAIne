@@ -39,6 +39,7 @@ Componentes principais:
 - Celery 5 + Redis
 - PostgreSQL 16
 - Hugging Face Diffusers / transformers / accelerate / torch
+- Frontend React 19 + Vite + TypeScript para o painel do usuário
 
 ## Como executar
 
@@ -69,7 +70,7 @@ EMAIL_USE_TLS=True
 EMAIL_HOST_USER=seu-email@example.com
 EMAIL_HOST_PASSWORD=senha-ou-app-password
 DEFAULT_FROM_EMAIL=seu-email@example.com
-FRONTEND_URL=http://localhost:3000
+FRONTEND_URL=http://localhost:5173
 
 HF_TOKEN=seu-token-hf
 ```
@@ -82,12 +83,22 @@ docker-compose up -d --build
 Servicos publicados:
 - API REST: `http://localhost:8000`
 - Django Admin: `http://localhost:8000/admin`
+- Frontend React (build de producao): `http://localhost:5173`
 
 Para acompanhar logs:
 ```bash
 docker-compose logs -f web
 docker-compose logs -f worker
 ```
+
+### Frontend React (desenvolvimento)
+```bash
+cd frontend
+cp .env.example .env
+npm install
+npm run dev
+```
+O Vite roda em `http://localhost:5173` e precisa que `VITE_API_BASE_URL` aponte para `http://localhost:8000/api`.
 
 ### Criar superusuario (opcional)
 ```bash

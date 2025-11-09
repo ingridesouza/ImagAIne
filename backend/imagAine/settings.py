@@ -3,6 +3,10 @@ from decouple import config
 import os
 import sys
 
+
+def csv_list(value):
+    return [item.strip() for item in value.split(',') if item.strip()]
+
 HF_TOKEN = os.getenv("HF_TOKEN")
 BASE_DIR = Path(__file__).resolve().parent.parent
 
@@ -18,6 +22,7 @@ INSTALLED_APPS = [
     'django.contrib.sessions',
     'django.contrib.messages',
     'django.contrib.staticfiles',
+    'corsheaders',
     'rest_framework',
     'rest_framework_simplejwt',
     'api',
@@ -26,6 +31,7 @@ INSTALLED_APPS = [
 
 MIDDLEWARE = [
     'django.middleware.security.SecurityMiddleware',
+    'corsheaders.middleware.CorsMiddleware',
     'django.contrib.sessions.middleware.SessionMiddleware',
     'django.middleware.common.CommonMiddleware',
     'django.middleware.csrf.CsrfViewMiddleware',
@@ -121,7 +127,7 @@ EMAIL_HOST_PASSWORD = config('EMAIL_HOST_PASSWORD', default='')
 DEFAULT_FROM_EMAIL = config('DEFAULT_FROM_EMAIL', default='noreply@example.com')
 
 # Frontend URL for password reset links
-FRONTEND_URL = config('FRONTEND_URL', default='http://localhost:3000')
+FRONTEND_URL = config('FRONTEND_URL', default='http://localhost:5173')
 
 REST_FRAMEWORK = {
     'DEFAULT_AUTHENTICATION_CLASSES': (
@@ -165,3 +171,7 @@ PLAN_QUOTAS = {
 
 # Custom test runner with descriptive output
 TEST_RUNNER = 'tests.runner.DescriptiveTestRunner'
+
+CORS_ALLOWED_ORIGINS = csv_list(config('CORS_ALLOWED_ORIGINS', default='http://localhost:5173'))
+CORS_ALLOW_CREDENTIALS = True
+CSRF_TRUSTED_ORIGINS = csv_list(config('CSRF_TRUSTED_ORIGINS', default='http://localhost:5173'))
