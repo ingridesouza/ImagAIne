@@ -52,6 +52,19 @@ services:
     ports:
       - "6379:6379"
 
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+      args:
+        VITE_API_BASE_URL: http://localhost:8000/api
+        VITE_APP_URL: http://localhost:5173
+    container_name: imagine_frontend
+    depends_on:
+      - web
+    ports:
+      - "5173:80"
+
 volumes:
   pgdata:
   media:
