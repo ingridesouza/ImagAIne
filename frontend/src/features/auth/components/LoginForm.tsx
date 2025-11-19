@@ -1,4 +1,5 @@
 import { useMutation } from '@tanstack/react-query';
+import type { AxiosError } from 'axios';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { useForm } from 'react-hook-form';
 import { z } from 'zod';
@@ -41,9 +42,8 @@ export const LoginForm = () => {
       });
       navigate(redirectTo, { replace: true });
     },
-    onError: (error: any) => {
-      const detail =
-        error?.response?.data?.detail || 'Credenciais inválidas ou usuário não verificado.';
+    onError: (error: AxiosError<{ detail?: string }>) => {
+      const detail = error.response?.data?.detail || 'Credenciais inválidas ou usuário não verificado.';
       setError('password', { type: 'manual', message: detail });
     },
   });

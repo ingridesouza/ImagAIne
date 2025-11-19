@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import { useMutation } from '@tanstack/react-query';
+import type { AxiosError } from 'axios';
 import { useForm } from 'react-hook-form';
 import { z } from 'zod';
 import { zodResolver } from '@hookform/resolvers/zod';
@@ -53,10 +54,10 @@ export const RegisterForm = () => {
       setServerMessage(response.detail ?? 'Cadastro efetuado! Confira seu e-mail.');
       reset();
     },
-    onError: (error: any) => {
+    onError: (error: AxiosError<{ detail?: string; email?: string[] }>) => {
       const detail =
-        error?.response?.data?.detail ??
-        error?.response?.data?.email?.[0] ??
+        error.response?.data?.detail ??
+        error.response?.data?.email?.[0] ??
         'Não foi possível concluir o cadastro.';
       setError('email', { type: 'manual', message: detail });
     },

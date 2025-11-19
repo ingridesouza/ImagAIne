@@ -1,24 +1,19 @@
 import type { LucideIcon } from 'lucide-react';
-import {
-  Image as ImageIcon,
-  Home,
-  Sparkles,
-  GalleryVerticalEnd,
-  Settings,
-} from 'lucide-react';
+import { Compass, Home, Image as ImageIcon, Settings, Sparkles } from 'lucide-react';
 
 export type NavLink = {
   label: string;
   path: string;
   icon: LucideIcon;
+  section: 'discover' | 'library';
 };
 
 export const NAV_LINKS: NavLink[] = [
-  { label: 'Visão geral', path: '/', icon: Home },
-  { label: 'Gerar imagem', path: '/generate', icon: Sparkles },
-  { label: 'Minhas criações', path: '/my-images', icon: ImageIcon },
-  { label: 'Galeria pública', path: '/public', icon: GalleryVerticalEnd },
-  { label: 'Configurações', path: '/settings', icon: Settings },
+  { label: 'Explore', path: '/', icon: Compass, section: 'discover' },
+  { label: 'Visão geral', path: '/dashboard', icon: Home, section: 'discover' },
+  { label: 'Gerar imagem', path: '/generate', icon: Sparkles, section: 'discover' },
+  { label: 'Minhas criações', path: '/my-images', icon: ImageIcon, section: 'library' },
+  { label: 'Configurações', path: '/settings', icon: Settings, section: 'library' },
 ];
 
 export const QUERY_KEYS = {

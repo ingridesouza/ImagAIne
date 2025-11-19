@@ -1,4 +1,4 @@
-import { useMutation, useQueryClient } from '@tanstack/react-query';
+﻿import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { useForm } from 'react-hook-form';
 import { z } from 'zod';
 import { zodResolver } from '@hookform/resolvers/zod';
@@ -67,13 +67,11 @@ export const GenerateImageForm = () => {
   };
 
   return (
-    <form onSubmit={handleSubmit(onSubmit)} className="grid" style={{ gap: '1rem' }}>
+    <form onSubmit={handleSubmit(onSubmit)} className="generate-form">
       <div className="form-group">
         <label htmlFor="prompt">Prompt *</label>
         <Textarea id="prompt" rows={4} placeholder="Descreva a cena que deseja ver" {...register('prompt')} />
-        {errors.prompt ? (
-          <span style={{ color: '#dc2626', fontSize: '0.85rem' }}>{errors.prompt.message}</span>
-        ) : null}
+        {errors.prompt ? <span className="form-error">{errors.prompt.message}</span> : null}
       </div>
 
       <div className="form-group">
@@ -84,11 +82,7 @@ export const GenerateImageForm = () => {
           placeholder="Elementos a evitar (ex.: blurry, text)"
           {...register('negative_prompt')}
         />
-        {errors.negative_prompt ? (
-          <span style={{ color: '#dc2626', fontSize: '0.85rem' }}>
-            {errors.negative_prompt.message}
-          </span>
-        ) : null}
+        {errors.negative_prompt ? <span className="form-error">{errors.negative_prompt.message}</span> : null}
       </div>
 
       <div className="grid --two">
@@ -105,14 +99,12 @@ export const GenerateImageForm = () => {
         <div className="form-group">
           <label htmlFor="seed">Seed (opcional)</label>
           <Input id="seed" type="number" min={0} placeholder="Número para repetir o resultado" {...register('seed')} />
-          {errors.seed ? (
-            <span style={{ color: '#dc2626', fontSize: '0.85rem' }}>{errors.seed.message}</span>
-          ) : null}
+          {errors.seed ? <span className="form-error">{errors.seed.message}</span> : null}
         </div>
       </div>
 
       {error ? (
-        <div style={{ background: '#fee2e2', color: '#b91c1c', borderRadius: '0.75rem', padding: '0.85rem' }}>
+        <div className="form-alert form-alert--error">
           Não foi possível criar a tarefa. Verifique se sua conta está verificada e dentro da cota diária.
         </div>
       ) : null}
