@@ -1,4 +1,4 @@
-import { useQuery } from '@tanstack/react-query';
+﻿import { useQuery } from '@tanstack/react-query';
 import { GenerateImageForm } from '@/features/images/components/GenerateImageForm';
 import { imagesApi } from '@/features/images/api';
 import { QUERY_KEYS } from '@/lib/constants';
@@ -15,36 +15,42 @@ export const GenerateImagePage = () => {
   const queue = myImages.filter((image) => image.status === 'GENERATING');
 
   return (
-    <section className="grid" style={{ gap: '1.5rem' }}>
-      <div className="page-header">
+    <section className="generate">
+      <div className="generate__hero glass-panel">
         <div>
-          <h1 style={{ margin: 0 }}>Criar nova imagem</h1>
-          <p style={{ margin: 0, color: '#64748b' }}>
-            Ajuste o prompt e acompanhe o status da fila em tempo real.
-          </p>
+          <p className="page-eyebrow">Studio</p>
+          <h1>Criar nova imagem</h1>
+          <p>Descreva o conceito, ajuste parâmetros e acompanhe sua fila em tempo real.</p>
+        </div>
+        <div className="generate__summary">
+          <span>Fila ativa</span>
+          <strong>{queue.length.toLocaleString('pt-BR')}</strong>
         </div>
       </div>
 
-      <div className="grid --two">
-        <Card>
+      <div className="generate__layout">
+        <Card className="glass-panel generate__panel">
           <GenerateImageForm />
         </Card>
 
-        <Card>
-          <h3 style={{ marginTop: 0 }}>Fila em andamento</h3>
+        <Card className="glass-panel generate__panel generate__panel--queue">
+          <div className="generate__panel-header">
+            <h3>Fila em andamento</h3>
+            <span>{queue.length ? `${queue.length} tarefas` : 'Atualizado agora'}</span>
+          </div>
           {queue.length === 0 ? (
-            <p style={{ color: '#94a3b8' }}>Nenhuma geração em processamento.</p>
+            <p className="generate__empty">Nenhuma geração em processamento.</p>
           ) : (
-            <ul style={{ listStyle: 'none', padding: 0, margin: 0, display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
+            <ul className="generate__queue">
               {queue.map((image) => (
-                <li key={image.id} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                <li key={image.id} className="generate__queue-item">
                   <div>
                     <strong>{image.prompt}</strong>
-                    <small style={{ display: 'block', color: '#94a3b8' }}>
-                      Aspect {image.aspect_ratio} · seed {image.seed ?? 'aleatória'}
+                    <small>
+                      Aspecto {image.aspect_ratio} • seed {image.seed ?? 'aleatória'}
                     </small>
                   </div>
-                  <span style={{ color: '#f59e0b', fontWeight: 600 }}>Processando</span>
+                  <span className="generate__queue-status">Processando</span>
                 </li>
               ))}
             </ul>

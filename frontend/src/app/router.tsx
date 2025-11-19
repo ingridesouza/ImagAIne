@@ -7,7 +7,7 @@ import { RegisterPage } from '@/pages/auth/RegisterPage';
 import { DashboardPage } from '@/pages/dashboard/DashboardPage';
 import { GenerateImagePage } from '@/pages/images/GenerateImagePage';
 import { MyImagesPage } from '@/pages/images/MyImagesPage';
-import { PublicGalleryPage } from '@/pages/images/PublicGalleryPage';
+import { ExplorePage } from '@/pages/images/ExplorePage';
 import { SettingsPage } from '@/pages/settings/SettingsPage';
 import { NotFoundPage } from '@/pages/misc/NotFoundPage';
 
@@ -18,10 +18,12 @@ export const router = createBrowserRouter([
       {
         element: <AppLayout />,
         children: [
-          { index: true, element: <DashboardPage /> },
+          { index: true, element: <ExplorePage /> },
+          { path: 'explore', element: <ExplorePage /> },
+          { path: 'dashboard', element: <DashboardPage /> },
           { path: 'generate', element: <GenerateImagePage /> },
           { path: 'my-images', element: <MyImagesPage /> },
-          { path: 'public', element: <PublicGalleryPage /> },
+          { path: 'public', element: <ExplorePage /> },
           { path: 'settings', element: <SettingsPage /> },
         ],
       },
