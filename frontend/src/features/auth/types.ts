@@ -6,6 +6,8 @@ export type UserProfile = {
   last_name: string;
   bio: string;
   is_verified: boolean;
+  avatar_url?: string;
+  cover_url?: string;
 };
 
 export type AuthSessionPayload = {

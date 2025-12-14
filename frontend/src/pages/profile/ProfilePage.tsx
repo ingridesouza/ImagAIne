@@ -71,6 +71,8 @@ export const ProfilePage = () => {
     queryClient.invalidateQueries({ queryKey: QUERY_KEYS.myImages() });
   };
 
+  const coverUrl = profile?.cover_url;
+  const avatarUrl = profile?.avatar_url;
   const fullName =
     [profile?.first_name, profile?.last_name].filter(Boolean).join(' ').trim() ||
     profile?.username ||
@@ -82,8 +84,18 @@ export const ProfilePage = () => {
   return (
     <div className="flex min-h-screen flex-col bg-background-dark text-white">
       <div className="relative h-48 w-full overflow-hidden sm:h-56 md:h-60">
-        <div className="absolute inset-0 bg-gradient-to-r from-[#2e1065] via-[#581c87] to-[#1e1b4b]" />
-        <div className="absolute inset-0 opacity-20 bg-[url('https://www.transparenttextures.com/patterns/cubes.png')]" />
+        {coverUrl ? (
+          <img
+            src={coverUrl}
+            alt={`Capa de ${fullName}`}
+            className="absolute inset-0 h-full w-full object-cover"
+          />
+        ) : (
+          <>
+            <div className="absolute inset-0 bg-gradient-to-r from-[#2e1065] via-[#581c87] to-[#1e1b4b]" />
+            <div className="absolute inset-0 opacity-20 bg-[url('https://www.transparenttextures.com/patterns/cubes.png')]" />
+          </>
+        )}
         <div className="absolute bottom-4 right-6 flex gap-2">
           <button
             type="button"
@@ -95,14 +107,18 @@ export const ProfilePage = () => {
         </div>
       </div>
 
-      <div className="relative -mt-16 px-4 pb-6 sm:px-6 md:px-8 lg:px-16 xl:px-20">
+      <div className="relative -mt-8 px-4 pb-6 sm:-mt-10 sm:px-6 md:-mt-12 md:px-8 lg:px-16 xl:px-20">
         <div className="mx-auto flex w-full max-w-7xl flex-col gap-6">
           <div className="flex flex-col gap-6 md:flex-row md:items-end md:gap-8">
             <div className="relative shrink-0">
               <div className="group relative h-32 w-32 overflow-hidden rounded-full border-4 border-background-dark bg-surface-dark shadow-2xl md:h-36 md:w-36">
-                <div className="flex h-full w-full items-center justify-center bg-gradient-to-br from-primary/20 to-emerald-500/20 text-2xl font-bold text-primary">
-                  {getInitials(fullName, username)}
-                </div>
+                {avatarUrl ? (
+                  <img src={avatarUrl} alt={`Avatar de ${fullName}`} className="h-full w-full object-cover" />
+                ) : (
+                  <div className="flex h-full w-full items-center justify-center bg-gradient-to-br from-primary/20 to-emerald-500/20 text-2xl font-bold text-primary">
+                    {getInitials(fullName, username)}
+                  </div>
+                )}
                 <div className="absolute inset-0 flex items-center justify-center bg-black/40 opacity-0 transition-opacity group-hover:opacity-100">
                   <span className="material-symbols-outlined text-white">photo_camera</span>
                 </div>

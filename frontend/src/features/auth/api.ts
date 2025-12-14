@@ -44,4 +44,20 @@ export const authApi = {
     const { data } = await apiClient.get<{ detail: string }>(`/auth/verify-email/${token}/`);
     return data;
   },
+  async uploadAvatar(file: File) {
+    const formData = new FormData();
+    formData.append('file', file);
+    const { data } = await apiClient.post<UserProfile>('/auth/profile/avatar/', formData, {
+      headers: { 'Content-Type': 'multipart/form-data' },
+    });
+    return data;
+  },
+  async uploadCover(file: File) {
+    const formData = new FormData();
+    formData.append('file', file);
+    const { data } = await apiClient.post<UserProfile>('/auth/profile/cover/', formData, {
+      headers: { 'Content-Type': 'multipart/form-data' },
+    });
+    return data;
+  },
 };
