@@ -11,12 +11,16 @@ export default {
         primary: '#38e07b',
         'accent-purple': '#a855f7',
         'background-light': '#f6f8f7',
-        'background-dark': '#0c0e0d',
+        'background-dark': '#122017',
         'surface-dark': '#161b18',
+        'panel-dark': '#1a2a20',
+        'terminal-dark': '#0b120d',
+        'purple-accent': '#8b5cf6',
       },
       fontFamily: {
         display: ['Spline Sans', 'system-ui', 'sans-serif'],
         sans: ['Spline Sans', 'system-ui', 'sans-serif'],
+        mono: ['JetBrains Mono', 'monospace'],
       },
       borderRadius: {
         DEFAULT: '1rem',
