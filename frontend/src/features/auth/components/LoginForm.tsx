@@ -58,9 +58,6 @@ export const LoginForm = () => {
       <div className="auth-field">
         <label htmlFor="email">E-mail</label>
         <div className="auth-input">
-          <span className="auth-input__icon material-symbols-outlined" aria-hidden>
-            mail
-          </span>
           <Input
             id="email"
             type="email"
@@ -76,9 +73,6 @@ export const LoginForm = () => {
       <div className="auth-field">
         <label htmlFor="password">Senha</label>
         <div className="auth-input">
-          <span className="auth-input__icon material-symbols-outlined" aria-hidden>
-            lock
-          </span>
           <Input
             id="password"
             type={showPassword ? 'text' : 'password'}
