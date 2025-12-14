@@ -4,8 +4,8 @@ import { useNavigate, useLocation } from 'react-router-dom';
 import { useForm } from 'react-hook-form';
 import { z } from 'zod';
 import { zodResolver } from '@hookform/resolvers/zod';
+import { useState } from 'react';
 import { authApi } from '@/features/auth/api';
-import { Button } from '@/components/ui/Button';
 import { Input } from '@/components/ui/Input';
 import { useAuthStore } from '@/features/auth/store';
 
@@ -17,6 +17,7 @@ const schema = z.object({
 type FormValues = z.infer<typeof schema>;
 
 export const LoginForm = () => {
+  const [showPassword, setShowPassword] = useState(false);
   const navigate = useNavigate();
   const location = useLocation();
   const redirectTo = (location.state as { from?: string })?.from ?? '/';
@@ -53,26 +54,64 @@ export const LoginForm = () => {
   };
 
   return (
-    <form className="grid" onSubmit={handleSubmit(onSubmit)} noValidate>
-      <div className="form-group">
+    <form className="auth-form" onSubmit={handleSubmit(onSubmit)} noValidate>
+      <div className="auth-field">
         <label htmlFor="email">E-mail</label>
-        <Input id="email" type="email" placeholder="nome@exemplo.com" {...register('email')} />
-        {errors.email ? (
-          <span style={{ color: '#dc2626', fontSize: '0.85rem' }}>{errors.email.message}</span>
-        ) : null}
+        <div className="auth-input">
+          <span className="auth-input__icon material-symbols-outlined" aria-hidden>
+            mail
+          </span>
+          <Input
+            id="email"
+            type="email"
+            placeholder="seu@email.com"
+            autoComplete="username"
+            className="auth-input__field"
+            {...register('email')}
+          />
+        </div>
+        {errors.email ? <span className="auth-error">{errors.email.message}</span> : null}
       </div>
 
-      <div className="form-group">
+      <div className="auth-field">
         <label htmlFor="password">Senha</label>
-        <Input id="password" type="password" autoComplete="current-password" {...register('password')} />
-        {errors.password ? (
-          <span style={{ color: '#dc2626', fontSize: '0.85rem' }}>{errors.password.message}</span>
-        ) : null}
+        <div className="auth-input">
+          <span className="auth-input__icon material-symbols-outlined" aria-hidden>
+            lock
+          </span>
+          <Input
+            id="password"
+            type={showPassword ? 'text' : 'password'}
+            autoComplete="current-password"
+            placeholder="Digite sua senha"
+            className="auth-input__field"
+            {...register('password')}
+          />
+          <button
+            type="button"
+            className="auth-input__action"
+            onClick={() => setShowPassword((current) => !current)}
+            aria-label={showPassword ? 'Ocultar senha' : 'Mostrar senha'}
+          >
+            <span className="material-symbols-outlined" aria-hidden>
+              {showPassword ? 'visibility_off' : 'visibility'}
+            </span>
+          </button>
+        </div>
+        <div className="auth-field__meta">
+          <a className="auth-link--subtle" href="#">
+            Esqueceu sua senha?
+          </a>
+        </div>
+        {errors.password ? <span className="auth-error">{errors.password.message}</span> : null}
       </div>
 
-      <Button type="submit" disabled={isPending}>
-        {isPending ? 'Entrando...' : 'Acessar painel'}
-      </Button>
+      <button className="auth-submit" type="submit" disabled={isPending}>
+        <span>{isPending ? 'Entrando...' : 'Entrar'}</span>
+        <span className="material-symbols-outlined auth-submit__icon" aria-hidden>
+          arrow_forward
+        </span>
+      </button>
     </form>
   );
 };
