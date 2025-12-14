@@ -29,15 +29,18 @@ const getIconName = (path: string) => MATERIAL_ICON_NAMES[path] ?? 'image';
 
 type SidebarNavProps = {
   onNavigate?: () => void;
+  collapsed?: boolean;
 };
 
-export const SidebarNav = ({ onNavigate }: SidebarNavProps) => (
+export const SidebarNav = ({ onNavigate, collapsed = false }: SidebarNavProps) => (
   <nav className="flex flex-col gap-4">
     {(Object.keys(sections) as (keyof typeof sections)[]).map((sectionKey) => (
       <div key={sectionKey} className="flex flex-col gap-2">
-        <p className="px-2 text-[11px] uppercase tracking-[0.2em] text-white/40">
-          {SECTION_LABELS[sectionKey]}
-        </p>
+        {!collapsed ? (
+          <p className="px-2 text-[11px] uppercase tracking-[0.2em] text-white/40">
+            {SECTION_LABELS[sectionKey]}
+          </p>
+        ) : null}
         <div className="flex flex-col gap-1">
           {sections[sectionKey].map(({ label, path }) => (
             <RouterNavLink
@@ -45,10 +48,15 @@ export const SidebarNav = ({ onNavigate }: SidebarNavProps) => (
               to={path}
               className={({ isActive }) =>
                 clsx(
-                  'flex items-center gap-4 rounded-xl border px-4 py-3 transition-all',
-                  isActive
-                    ? 'border-accent-purple/10 bg-accent-purple/20 text-accent-purple'
-                    : 'border-transparent text-slate-300 hover:bg-white/5 hover:text-white',
+                  'flex items-center rounded-xl transition-all',
+                  collapsed ? 'justify-center gap-0 p-3' : 'gap-4 px-4 py-3',
+                  !collapsed && (isActive
+                    ? 'bg-accent-purple/20 text-accent-purple'
+                    : 'text-slate-300 hover:bg-white/5 hover:text-white'),
+                  collapsed &&
+                    (isActive
+                      ? 'bg-accent-purple/20 text-accent-purple'
+                      : 'text-slate-300 hover:bg-white/5 hover:text-white'),
                 )
               }
               onClick={onNavigate}
@@ -62,7 +70,7 @@ export const SidebarNav = ({ onNavigate }: SidebarNavProps) => (
                   >
                     {getIconName(path)}
                   </span>
-                  <span className="text-sm font-semibold">{label}</span>
+                  {!collapsed ? <span className="text-sm font-semibold">{label}</span> : null}
                 </>
               )}
             </RouterNavLink>

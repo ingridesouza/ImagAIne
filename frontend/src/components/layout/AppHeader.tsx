@@ -4,9 +4,11 @@ import { useAuthStore } from '@/features/auth/store';
 
 type AppHeaderProps = {
   onOpenSidebar?: () => void;
+  onToggleSidebarCollapse?: () => void;
+  isSidebarCollapsed?: boolean;
 };
 
-export const AppHeader = ({ onOpenSidebar }: AppHeaderProps) => {
+export const AppHeader = ({ onOpenSidebar, onToggleSidebarCollapse, isSidebarCollapsed }: AppHeaderProps) => {
   const user = useAuthStore((state) => state.user);
   const logout = useAuthStore((state) => state.logout);
   const searchInputRef = useRef<HTMLInputElement>(null);
@@ -34,6 +36,16 @@ export const AppHeader = ({ onOpenSidebar }: AppHeaderProps) => {
             aria-label="Abrir menu lateral"
           >
             <span className="material-symbols-outlined">menu</span>
+          </button>
+          <button
+            type="button"
+            className="hidden items-center justify-center rounded-full bg-surface-dark p-2 text-white transition-colors hover:text-accent-purple md:flex"
+            onClick={() => onToggleSidebarCollapse?.()}
+            aria-label={isSidebarCollapsed ? 'Expandir menu lateral' : 'Encolher menu lateral'}
+          >
+            <span className="material-symbols-outlined">
+              {isSidebarCollapsed ? 'chevron_right' : 'chevron_left'}
+            </span>
           </button>
 
           <div className="flex-1">
@@ -88,13 +100,7 @@ export const AppHeader = ({ onOpenSidebar }: AppHeaderProps) => {
               <span className="text-sm font-semibold text-white">{user.first_name || user.username}</span>
             </div>
           ) : null}
-          <button
-            type="button"
-            onClick={logout}
-            className="rounded-full border border-white/10 px-3 py-2 text-sm font-semibold text-slate-200 transition-colors hover:border-white/30 hover:text-white"
-          >
-            Sair
-          </button>
+          {/* logout button removido a pedido */}
         </div>
       </div>
     </header>

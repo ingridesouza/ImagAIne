@@ -5,7 +5,7 @@ import { AuthLayout } from '@/features/auth/components/AuthLayout';
 export const LoginPage = () => (
   <AuthLayout
     title="Bem-vindo de volta"
-    subtitle="Use sua conta verificada para acessar o estúdio."
+    subtitle="Acesse sua conta para continuar criando imagens incríveis."
     footer={
       <span>
         Ainda sem conta? <Link to="/register">Crie agora</Link>

@@ -1,9 +1,10 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { useForm } from 'react-hook-form';
 import { z } from 'zod';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import clsx from 'clsx';
+import { useLocation } from 'react-router-dom';
 import { imagesApi } from '@/features/images/api';
 import type { GenerateImagePayload, ImageRecord } from '@/features/images/types';
 import { QUERY_KEYS } from '@/lib/constants';
@@ -43,6 +44,8 @@ export const GenerateImagePage = () => {
   const [showNegative, setShowNegative] = useState(false);
   const [guidance, setGuidance] = useState(7.5);
   const [steps, setSteps] = useState(40);
+  const location = useLocation();
+  const presetPrompt = (location.state as { promptDraft?: string } | undefined)?.promptDraft ?? '';
   const queryClient = useQueryClient();
 
   const {
@@ -55,7 +58,7 @@ export const GenerateImagePage = () => {
   } = useForm<FormValues>({
     resolver: zodResolver(schema),
     defaultValues: {
-      prompt: '',
+      prompt: presetPrompt,
       negative_prompt: '',
       aspect_ratio: '1:1',
       seed: '',
@@ -63,6 +66,11 @@ export const GenerateImagePage = () => {
   });
 
   const aspectRatio = watch('aspect_ratio');
+  useEffect(() => {
+    if (presetPrompt) {
+      setValue('prompt', presetPrompt, { shouldValidate: true, shouldDirty: false });
+    }
+  }, [presetPrompt, setValue]);
 
   const { data: myImagesResponse, isLoading } = useQuery({
     queryKey: QUERY_KEYS.myImages(),

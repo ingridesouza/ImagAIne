@@ -1,4 +1,5 @@
 @import url('https://fonts.googleapis.com/css2?family=Spline+Sans:wght@300;400;500;600;700&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Noto+Sans:wght@400;500;600;700&display=swap');
 @import url('https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&display=swap');
 @import url('https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500&display=swap');
 
@@ -15,26 +16,9 @@
 }
 
 .masonry-grid {
-  column-count: 1;
-  column-gap: 1.5rem;
-}
-
-@media (min-width: 640px) {
-  .masonry-grid {
-    column-count: 2;
-  }
-}
-
-@media (min-width: 1024px) {
-  .masonry-grid {
-    column-count: 3;
-  }
-}
-
-@media (min-width: 1280px) {
-  .masonry-grid {
-    column-count: 4;
-  }
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+  gap: 1.5rem;
 }
 
 .profile-grid {
@@ -62,8 +46,7 @@
 
 .masonry-item {
   break-inside: avoid;
-  margin-bottom: 1.5rem;
-  display: inline-block;
+  display: block;
   width: 100%;
 }
 

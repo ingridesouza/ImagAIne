@@ -1,6 +1,8 @@
 import { useEffect, useMemo, useState } from 'react';
+import type { FormEvent } from 'react';
 import clsx from 'clsx';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
+import { useNavigate } from 'react-router-dom';
 import { imagesApi } from '@/features/images/api';
 import { ImageDetailsDialog } from '@/features/images/components/ImageDetailsDialog';
 import { GalleryCard } from '@/features/images/components/GalleryCard';
@@ -35,8 +37,10 @@ export const ExplorePage = () => {
   const [search, setSearch] = useState('');
   const [activeFilter, setActiveFilter] = useState<ViewFilter>('featured');
   const [selectedImage, setSelectedImage] = useState<ImageRecord | null>(null);
+  const [promptDraft, setPromptDraft] = useState('');
   const debouncedSearch = useDebounce(search);
   const queryClient = useQueryClient();
+  const navigate = useNavigate();
 
   useEffect(() => {
     const searchInput = document.querySelector<HTMLInputElement>('[data-global-search]');
@@ -123,8 +127,13 @@ export const ExplorePage = () => {
   const isLoadingGrid = isLoading;
   const showEmptyState = !isLoadingGrid && readyImages.length === 0;
 
+  const handlePromptSubmit = (event: FormEvent<HTMLFormElement>) => {
+    event.preventDefault();
+    navigate('/generate', { state: { promptDraft } });
+  };
+
   return (
-    <div className="flex h-full min-h-0 flex-col overflow-hidden bg-background-light text-slate-900 dark:bg-background-dark dark:text-slate-200">
+    <div className="explore-page flex h-full min-h-0 flex-col overflow-hidden bg-background-light text-slate-900 dark:bg-background-dark dark:text-slate-200">
       <div className="flex items-start justify-between pt-2">
         <div className="space-y-1">
           <p className="text-xs font-semibold uppercase tracking-[0.35em] text-primary">Galeria AI Gen</p>
@@ -144,50 +153,17 @@ export const ExplorePage = () => {
         ) : null}
       </div>
 
-      <div className="no-scrollbar flex-1 overflow-y-auto pb-12 pt-4">
-        <div className="no-scrollbar flex flex-wrap items-center gap-3 overflow-x-auto pb-4 pt-2">
-          {VIEW_OPTIONS.map((option) => (
-            <button
-              key={option.value}
-              type="button"
-              className={clsx(
-                'rounded-full border px-5 py-2.5 text-sm font-semibold transition-all whitespace-nowrap',
-                activeFilter === option.value
-                  ? 'border-accent-purple/20 bg-white text-background-dark shadow-lg shadow-white/10'
-                  : 'border-white/5 bg-surface-dark text-slate-300 hover:border-white/20 hover:text-white',
-              )}
-              onClick={() => setActiveFilter(option.value)}
-            >
-              {option.label}
-            </button>
-          ))}
-        </div>
-
-        <div className="grid gap-3 pt-2 sm:grid-cols-3">
-          <div className="rounded-2xl border border-white/5 bg-surface-dark/70 p-4 shadow-lg shadow-black/20">
-            <p className="text-xs uppercase tracking-[0.2em] text-slate-400">Peças exibidas</p>
-            <p className="text-xl font-semibold text-white">{readyImages.length.toLocaleString('pt-BR')}</p>
-          </div>
-          <div className="rounded-2xl border border-white/5 bg-surface-dark/70 p-4 shadow-lg shadow-black/20">
-            <p className="text-xs uppercase tracking-[0.2em] text-slate-400">Curtidas</p>
-            <p className="text-xl font-semibold text-white">{totalLikes.toLocaleString('pt-BR')}</p>
-          </div>
-          <div className="rounded-2xl border border-white/5 bg-surface-dark/70 p-4 shadow-lg shadow-black/20">
-            <p className="text-xs uppercase tracking-[0.2em] text-slate-400">Downloads</p>
-            <p className="text-xl font-semibold text-white">{totalDownloads.toLocaleString('pt-BR')}</p>
-          </div>
-        </div>
-
+      <div className="no-scrollbar flex-1 overflow-y-auto pb-32 pt-4">
         <div className="masonry-grid pt-6" role="list">
           {isLoadingGrid
             ? PLACEHOLDER_TILES.map((placeholder) => (
                 <div
                   key={placeholder}
-                  className="masonry-item rounded-2xl bg-surface-dark/80 shadow-lg shadow-black/20"
+                  className="masonry-item rounded-xl bg-surface-dark/80 shadow-lg shadow-black/20"
                   style={{ aspectRatio: SKELETON_RATIOS[placeholder % SKELETON_RATIOS.length] }}
                   aria-hidden
                 >
-                  <div className="h-full w-full animate-pulse rounded-2xl bg-gradient-to-br from-white/5 via-white/10 to-white/5" />
+                  <div className="h-full w-full animate-pulse rounded-xl bg-gradient-to-br from-white/5 via-white/10 to-white/5" />
                 </div>
               ))
             : null}
@@ -215,6 +191,48 @@ export const ExplorePage = () => {
           </div>
         ) : null}
       </div>
+
+      <form className="explore-prompt" onSubmit={handlePromptSubmit}>
+        <div className="explore-prompt__input">
+          <span className="material-symbols-outlined text-lg text-white/80">add</span>
+          <input
+            className="w-full bg-transparent text-base text-white placeholder:text-slate-300 focus:outline-none"
+            placeholder="Descreva sua imagem..."
+            value={promptDraft}
+            onChange={(event) => setPromptDraft(event.target.value)}
+          />
+        </div>
+        <div className="explore-prompt__controls">
+          <div className="explore-pill">
+            <span className="material-symbols-outlined !text-[18px]">photo_camera</span>
+            Image
+          </div>
+          <div className="explore-pill">
+            <span className="material-symbols-outlined !text-[18px]">stay_current_portrait</span>
+            2:3
+          </div>
+          <div className="explore-pill">
+            <span className="material-symbols-outlined !text-[18px]">grid_on</span>
+            2v
+          </div>
+          <div className="explore-pill">
+            <span className="material-symbols-outlined !text-[18px]">aspect_ratio</span>
+            1:1
+          </div>
+          <div className="explore-pill">
+            <span className="material-symbols-outlined !text-[18px]">help</span>
+            Dicas
+          </div>
+          <button
+            type="submit"
+            disabled={!promptDraft.trim()}
+            className="explore-submit"
+          >
+            <span className="material-symbols-outlined !text-[18px]">arrow_forward</span>
+            Gerar
+          </button>
+        </div>
+      </form>
 
       <ImageDetailsDialog
         image={selectedImage}
