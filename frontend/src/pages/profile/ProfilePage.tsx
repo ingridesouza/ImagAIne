@@ -1,4 +1,5 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
+import { useRef, useState } from 'react';
 import clsx from 'clsx';
 import { GalleryCard } from '@/features/images/components/GalleryCard';
 import type { ImageRecord } from '@/features/images/types';
@@ -44,6 +45,44 @@ export const ProfilePage = () => {
     staleTime: 5 * 60 * 1000,
     initialData: cachedProfile,
   });
+
+  const [uploadError, setUploadError] = useState<string | null>(null);
+  const avatarInputRef = useRef<HTMLInputElement | null>(null);
+  const coverInputRef = useRef<HTMLInputElement | null>(null);
+
+  const avatarUploadMutation = useMutation({
+    mutationFn: (file: File) => authApi.uploadAvatar(file),
+    onSuccess: (data) => {
+      queryClient.setQueryData<UserProfile>(QUERY_KEYS.profile, data);
+      setUploadError(null);
+    },
+    onError: () => setUploadError('Não foi possível atualizar a foto de perfil. Tente novamente.'),
+  });
+
+  const coverUploadMutation = useMutation({
+    mutationFn: (file: File) => authApi.uploadCover(file),
+    onSuccess: (data) => {
+      queryClient.setQueryData<UserProfile>(QUERY_KEYS.profile, data);
+      setUploadError(null);
+    },
+    onError: () => setUploadError('Não foi possível atualizar a capa. Tente novamente.'),
+  });
+
+  const handleFileChange = (event: React.ChangeEvent<HTMLInputElement>, type: 'avatar' | 'cover') => {
+    const file = event.target.files?.[0];
+    if (!file) return;
+    if (!file.type.startsWith('image/')) {
+      setUploadError('Selecione um arquivo de imagem válido.');
+      return;
+    }
+    setUploadError(null);
+    if (type === 'avatar') {
+      avatarUploadMutation.mutate(file);
+    } else {
+      coverUploadMutation.mutate(file);
+    }
+    event.target.value = '';
+  };
 
   const { data: myImagesResponse, isLoading } = useQuery({
     queryKey: QUERY_KEYS.myImages(),
@@ -99,11 +138,22 @@ export const ProfilePage = () => {
         <div className="absolute bottom-4 right-6 flex gap-2">
           <button
             type="button"
-            className="flex items-center gap-2 rounded-lg border border-white/10 bg-black/40 px-3 py-1.5 text-xs font-medium text-white backdrop-blur-md transition-colors hover:bg-black/60"
+            onClick={() => coverInputRef.current?.click()}
+            className="flex items-center gap-2 rounded-lg border border-white/10 bg-black/40 px-3 py-1.5 text-xs font-medium text-white backdrop-blur-md transition-colors hover:bg-black/60 disabled:opacity-60"
+            disabled={coverUploadMutation.isPending}
           >
-            <span className="material-symbols-outlined text-[16px]">edit</span>
-            Alterar capa
+            <span className="material-symbols-outlined text-[16px]">
+              {coverUploadMutation.isPending ? 'hourglass_empty' : 'edit'}
+            </span>
+            {coverUploadMutation.isPending ? 'Atualizando...' : 'Alterar capa'}
           </button>
+          <input
+            ref={coverInputRef}
+            type="file"
+            accept="image/*"
+            className="hidden"
+            onChange={(event) => handleFileChange(event, 'cover')}
+          />
         </div>
       </div>
 
@@ -111,7 +161,13 @@ export const ProfilePage = () => {
         <div className="mx-auto flex w-full max-w-7xl flex-col gap-6">
           <div className="flex flex-col gap-6 md:flex-row md:items-end md:gap-8">
             <div className="relative shrink-0">
-              <div className="group relative h-32 w-32 overflow-hidden rounded-full border-4 border-background-dark bg-surface-dark shadow-2xl md:h-36 md:w-36">
+              <button
+                type="button"
+                onClick={() => avatarInputRef.current?.click()}
+                className="group relative h-32 w-32 overflow-hidden rounded-full border-4 border-background-dark bg-surface-dark shadow-2xl md:h-36 md:w-36 disabled:opacity-60"
+                aria-label="Alterar foto de perfil"
+                disabled={avatarUploadMutation.isPending}
+              >
                 {avatarUrl ? (
                   <img src={avatarUrl} alt={`Avatar de ${fullName}`} className="h-full w-full object-cover" />
                 ) : (
@@ -120,9 +176,18 @@ export const ProfilePage = () => {
                   </div>
                 )}
                 <div className="absolute inset-0 flex items-center justify-center bg-black/40 opacity-0 transition-opacity group-hover:opacity-100">
-                  <span className="material-symbols-outlined text-white">photo_camera</span>
+                  <span className="material-symbols-outlined text-white">
+                    {avatarUploadMutation.isPending ? 'hourglass_empty' : 'photo_camera'}
+                  </span>
                 </div>
-              </div>
+              </button>
+              <input
+                ref={avatarInputRef}
+                type="file"
+                accept="image/*"
+                className="hidden"
+                onChange={(event) => handleFileChange(event, 'avatar')}
+              />
               {profile?.is_verified ? (
                 <div
                   className="absolute -bottom-1 -right-1 flex h-7 w-7 items-center justify-center rounded-full border-2 border-background-dark bg-primary text-background-dark"
@@ -194,6 +259,14 @@ export const ProfilePage = () => {
         </div>
       </div>
 
+      {uploadError ? (
+        <div className="mx-auto w-full max-w-7xl px-4 sm:px-6 md:px-8 lg:px-16 xl:px-20">
+          <div className="mt-2 rounded-lg border border-red-500/30 bg-red-500/10 px-4 py-2 text-sm text-red-100">
+            {uploadError}
+          </div>
+        </div>
+      ) : null}
+
       <div className="sticky top-0 z-10 border-b border-white/5 bg-background-dark/95 backdrop-blur-sm">
         <div className="mx-auto w-full max-w-7xl px-4 sm:px-6 md:px-8 lg:px-16 xl:px-20">
           <div className="no-scrollbar flex gap-6 overflow-x-auto">
@@ -249,14 +322,14 @@ export const ProfilePage = () => {
           </div>
         </div>
 
-        <div className="masonry-grid pt-4">
+        <div className="profile-grid pt-4">
           {isLoading
             ? Array.from({ length: 8 }).map((_, index) => (
                 <div
                   key={index}
-                  className="masonry-item h-64 rounded-2xl bg-surface-dark/80"
+                  className="masonry-item h-64 rounded-[22px] bg-surface-dark/80"
                 >
-                  <div className="h-full w-full animate-pulse rounded-2xl bg-gradient-to-br from-white/5 via-white/10 to-white/5" />
+                  <div className="h-full w-full animate-pulse rounded-[22px] bg-gradient-to-br from-white/5 via-white/10 to-white/5" />
                 </div>
               ))
             : null}

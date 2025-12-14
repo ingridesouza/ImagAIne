@@ -37,9 +37,26 @@
   }
 }
 
-@media (min-width: 1536px) {
-  .masonry-grid {
-    column-count: 5;
+.profile-grid {
+  column-count: 1;
+  column-gap: 1.5rem;
+}
+
+@media (min-width: 640px) {
+  .profile-grid {
+    column-count: 2;
+  }
+}
+
+@media (min-width: 1024px) {
+  .profile-grid {
+    column-count: 3;
+  }
+}
+
+@media (min-width: 1280px) {
+  .profile-grid {
+    column-count: 4;
   }
 }
 
