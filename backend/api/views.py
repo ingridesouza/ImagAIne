@@ -36,7 +36,7 @@ class GenerateImageView(APIView):
     throttle_classes = [PlanQuotaThrottle]
 
     def throttled(self, request, wait=None):
-        message = "Daily quota reached. Upgrade to Pro or wait until tomorrow."
+        message = "Monthly quota reached. Faça upgrade para o plano Pro."
         raise Throttled(detail=message, wait=wait)
 
     def post(self, request, *args, **kwargs):
@@ -54,13 +54,14 @@ class GenerateImageView(APIView):
             quota = quotas.get(getattr(user, "plan", "free"))
 
             today = timezone.now().date()
-            if user.last_reset_date != today:
+            period_start = today.replace(day=1)
+            if user.last_reset_date != period_start:
                 user.image_generation_count = 0
-                user.last_reset_date = today
+                user.last_reset_date = period_start
 
             if quota is not None and user.image_generation_count >= quota:
                 return Response(
-                    {"detail": "Daily quota reached. Upgrade to Pro or wait until tomorrow."},
+                    {"detail": "Monthly quota reached. Faça upgrade para o plano Pro."},
                     status=status.HTTP_429_TOO_MANY_REQUESTS,
                 )
 

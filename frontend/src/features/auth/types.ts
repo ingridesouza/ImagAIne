@@ -6,6 +6,8 @@ export type UserProfile = {
   last_name: string;
   bio: string;
   is_verified: boolean;
+  plan?: string;
+  image_generation_count?: number;
   profile_picture?: string | null;
   cover_picture?: string | null;
   avatar_url?: string | null;

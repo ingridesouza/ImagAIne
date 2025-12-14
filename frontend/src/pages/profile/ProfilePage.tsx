@@ -267,34 +267,30 @@ export const ProfilePage = () => {
         </div>
       ) : null}
 
-      <div className="sticky top-0 z-10 border-b border-white/5 bg-background-dark/95 backdrop-blur-sm">
-        <div className="mx-auto w-full max-w-7xl px-4 sm:px-6 md:px-8 lg:px-16 xl:px-20">
-          <div className="no-scrollbar flex gap-6 overflow-x-auto">
-            <button
-              type="button"
-              className="relative flex-shrink-0 py-4 text-sm font-medium text-white transition-colors"
-            >
-              <div className="flex items-center gap-2">
-                <span className="material-symbols-outlined text-[20px] text-accent-purple">grid_view</span>
-                <span>Criações</span>
-              </div>
-              <div className="absolute bottom-0 left-0 right-0 h-[3px] rounded-t-full bg-accent-purple shadow-[0_0_10px_rgba(139,92,246,0.5)]" />
-            </button>
-            <button
-              type="button"
-              className="relative flex-shrink-0 py-4 text-sm font-medium text-gray-500 transition-colors hover:text-gray-300"
-              disabled
-            >
-              <div className="flex items-center gap-2">
-                <span className="material-symbols-outlined text-[20px]">favorite</span>
-                <span>Curtidas</span>
-              </div>
-            </button>
-          </div>
-        </div>
-      </div>
-
       <div className="mx-auto w-full max-w-7xl flex-1 px-4 py-6 sm:px-6 md:px-8 lg:px-16 xl:px-20">
+        <div className="no-scrollbar flex gap-6 overflow-x-auto pb-4">
+          <button
+            type="button"
+            className="relative flex-shrink-0 py-4 text-sm font-medium text-white transition-colors"
+          >
+            <div className="flex items-center gap-2">
+              <span className="material-symbols-outlined text-[20px] text-accent-purple">grid_view</span>
+              <span>Criações</span>
+            </div>
+            <div className="absolute bottom-0 left-0 right-0 h-[3px] rounded-t-full bg-accent-purple shadow-[0_0_10px_rgba(139,92,246,0.5)]" />
+          </button>
+          <button
+            type="button"
+            className="relative flex-shrink-0 py-4 text-sm font-medium text-gray-500 transition-colors hover:text-gray-300"
+            disabled
+          >
+            <div className="flex items-center gap-2">
+              <span className="material-symbols-outlined text-[20px]">favorite</span>
+              <span>Curtidas</span>
+            </div>
+          </button>
+        </div>
+
         <div className="flex flex-wrap items-center justify-between gap-4">
           <div className="flex gap-2 overflow-x-auto pb-2">
             {['Tudo', 'Retratos', 'Paisagens', 'Cyberpunk', '3D'].map((chip) => (

@@ -104,6 +104,8 @@ class UserSerializer(serializers.ModelSerializer):
             'last_name',
             'bio',
             'is_verified',
+            'plan',
+            'image_generation_count',
             'profile_picture',
             'cover_picture',
             'preferences',
