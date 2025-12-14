@@ -34,7 +34,7 @@ export const GalleryCard = ({
   return (
     <button
       type="button"
-      className="masonry-item group relative block w-full overflow-hidden rounded-2xl bg-surface-dark shadow-lg shadow-black/25 ring-1 ring-white/5 transition-transform duration-300 hover:-translate-y-1"
+      className="masonry-item group relative block w-full min-h-[200px] sm:min-h-[240px] overflow-hidden rounded-2xl bg-surface-dark shadow-lg shadow-black/25 ring-1 ring-white/5 transition-transform duration-300 hover:-translate-y-1"
       style={{ aspectRatio }}
       onClick={onSelect}
     >
@@ -43,10 +43,10 @@ export const GalleryCard = ({
           src={image.image_url}
           alt={image.prompt}
           loading="lazy"
-          className="h-auto w-full min-h-[240px] object-cover transition-transform duration-500 ease-in-out group-hover:scale-110"
+          className="h-auto w-full min-h-full object-cover transition-transform duration-500 ease-in-out group-hover:scale-110"
         />
       ) : (
-        <div className="flex min-h-[240px] items-center justify-center bg-gradient-to-br from-surface-dark to-black text-sm text-slate-400">
+        <div className="flex h-full min-h-[200px] sm:min-h-[240px] items-center justify-center bg-gradient-to-br from-surface-dark to-black text-sm text-slate-400">
           {image.prompt}
         </div>
       )}

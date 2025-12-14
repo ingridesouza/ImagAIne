@@ -53,7 +53,7 @@ export const AppLayout = () => {
       ) : null}
       <div className="flex min-h-0 flex-1 flex-col overflow-hidden">
         <AppHeader onOpenSidebar={() => setSidebarOpen(true)} />
-        <main className="app-shell__main flex-1 min-h-0 overflow-hidden bg-background-light dark:bg-background-dark">
+        <main className="app-shell__main flex-1 min-h-0 overflow-y-auto bg-background-light dark:bg-background-dark">
           <Outlet />
         </main>
       </div>

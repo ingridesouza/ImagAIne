@@ -10,6 +10,7 @@ import { MyImagesPage } from '@/pages/images/MyImagesPage';
 import { ExplorePage } from '@/pages/images/ExplorePage';
 import { SettingsPage } from '@/pages/settings/SettingsPage';
 import { NotFoundPage } from '@/pages/misc/NotFoundPage';
+import { ProfilePage } from '@/pages/profile/ProfilePage';
 
 export const router = createBrowserRouter([
   {
@@ -25,6 +26,7 @@ export const router = createBrowserRouter([
           { path: 'my-images', element: <MyImagesPage /> },
           { path: 'public', element: <ExplorePage /> },
           { path: 'settings', element: <SettingsPage /> },
+          { path: 'profile', element: <ProfilePage /> },
         ],
       },
     ],

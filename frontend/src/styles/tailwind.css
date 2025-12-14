@@ -37,9 +37,17 @@
   }
 }
 
+@media (min-width: 1536px) {
+  .masonry-grid {
+    column-count: 5;
+  }
+}
+
 .masonry-item {
   break-inside: avoid;
   margin-bottom: 1.5rem;
+  display: inline-block;
+  width: 100%;
 }
 
 .no-scrollbar::-webkit-scrollbar {
