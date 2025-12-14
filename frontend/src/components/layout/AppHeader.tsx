@@ -4,9 +4,11 @@ import { useAuthStore } from '@/features/auth/store';
 
 type AppHeaderProps = {
   onOpenSidebar?: () => void;
+  onToggleSidebarCollapse?: () => void;
+  isSidebarCollapsed?: boolean;
 };
 
-export const AppHeader = ({ onOpenSidebar }: AppHeaderProps) => {
+export const AppHeader = ({ onOpenSidebar, onToggleSidebarCollapse, isSidebarCollapsed }: AppHeaderProps) => {
   const user = useAuthStore((state) => state.user);
   const logout = useAuthStore((state) => state.logout);
   const searchInputRef = useRef<HTMLInputElement>(null);
@@ -34,6 +36,16 @@ export const AppHeader = ({ onOpenSidebar }: AppHeaderProps) => {
             aria-label="Abrir menu lateral"
           >
             <span className="material-symbols-outlined">menu</span>
+          </button>
+          <button
+            type="button"
+            className="hidden items-center justify-center rounded-full bg-surface-dark p-2 text-white transition-colors hover:text-accent-purple md:flex"
+            onClick={() => onToggleSidebarCollapse?.()}
+            aria-label={isSidebarCollapsed ? 'Expandir menu lateral' : 'Encolher menu lateral'}
+          >
+            <span className="material-symbols-outlined">
+              {isSidebarCollapsed ? 'chevron_right' : 'chevron_left'}
+            </span>
           </button>
 
           <div className="flex-1">

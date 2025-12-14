@@ -34,7 +34,7 @@ export const GalleryCard = ({
   return (
     <button
       type="button"
-      className="masonry-item group relative block w-full min-h-[220px] sm:min-h-[240px] overflow-hidden rounded-[22px] bg-surface-dark shadow-lg shadow-black/25 ring-1 ring-white/5 transition-transform duration-300 hover:-translate-y-1"
+      className="masonry-item group relative block w-full min-h-[220px] sm:min-h-[240px] overflow-hidden rounded-[12px] bg-surface-dark shadow-lg shadow-black/25 ring-1 ring-white/5 transition-transform duration-300 hover:-translate-y-1"
       style={{ aspectRatio }}
       onClick={onSelect}
     >
