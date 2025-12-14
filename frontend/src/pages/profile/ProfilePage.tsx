@@ -302,10 +302,10 @@ export const ProfilePage = () => {
                 key={chip}
                 type="button"
                 className={clsx(
-                  'whitespace-nowrap rounded-full border px-4 py-1.5 text-xs font-semibold transition-colors',
+                  'whitespace-nowrap rounded-full border px-4 py-1.5 text-xs font-semibold transition-colors shadow-sm',
                   chip === 'Tudo'
-                    ? 'border-white/5 bg-white/10 text-white'
-                    : 'border-white/10 bg-background-dark text-gray-400 hover:border-white/30 hover:text-white',
+                    ? 'border-white/10 bg-white text-background-dark'
+                    : 'border-white/10 bg-surface-dark text-gray-300 hover:border-white/30 hover:text-white',
                 )}
               >
                 {chip}
