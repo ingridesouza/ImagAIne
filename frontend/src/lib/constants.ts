@@ -1,5 +1,5 @@
 import type { LucideIcon } from 'lucide-react';
-import { Compass, Home, Image as ImageIcon, Settings, Sparkles, User } from 'lucide-react';
+import { Compass, Home, Settings, Sparkles, User } from 'lucide-react';
 
 export type NavLink = {
   label: string;
