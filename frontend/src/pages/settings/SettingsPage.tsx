@@ -1,5 +1,8 @@
 import { useMemo, useState } from 'react';
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { useAuthStore } from '@/features/auth/store';
+import { authApi } from '@/features/auth/api';
+import { QUERY_KEYS } from '@/lib/constants';
 
 type AspectOption = '1:1' | '16:9' | '9:16' | '21:9';
 
@@ -27,6 +30,24 @@ export const SettingsPage = () => {
   const [emailDone, setEmailDone] = useState(true);
   const [news, setNews] = useState(false);
   const [publicMode, setPublicMode] = useState(true);
+  const queryClient = useQueryClient();
+
+  useQuery({
+    queryKey: QUERY_KEYS.profile,
+    queryFn: () => authApi.fetchProfile(),
+  });
+
+  const { data: prefsData } = useQuery<Record<string, unknown>>({
+    queryKey: ['preferences'],
+    queryFn: () => authApi.fetchPreferences(),
+  });
+
+  const saveMutation = useMutation({
+    mutationFn: (prefs: Record<string, unknown>) => authApi.updatePreferences(prefs),
+    onSuccess: (data) => {
+      queryClient.setQueryData(['preferences'], data);
+    },
+  });
 
   const fullName = useMemo(() => {
     if (!user) return 'Usuário';
@@ -34,18 +55,29 @@ export const SettingsPage = () => {
     return name || user.username || 'Usuário';
   }, [user]);
 
+  useMemo(() => {
+    const prefs = prefsData ?? {};
+    setSelectedModel((prefs?.model as string) || MODEL_OPTIONS[0]);
+    setAspect((prefs?.aspect as AspectOption) || '1:1');
+    setAutoUpscale(prefs?.autoUpscale === undefined ? true : Boolean(prefs.autoUpscale));
+    setEmailDone(prefs?.emailDone === undefined ? true : Boolean(prefs.emailDone));
+    setNews(Boolean(prefs?.news));
+    setPublicMode(prefs?.publicMode === undefined ? true : Boolean(prefs.publicMode));
+  }, [prefsData]);
+
   if (!user) return null;
 
   const handleSave = () => {
-    // Placeholder: integrate with backend when endpoints estiverem disponíveis
-    console.info('Salvar preferências', {
+    const prefs = {
       selectedModel,
       aspect,
       autoUpscale,
       emailDone,
       news,
       publicMode,
-    });
+      model: selectedModel,
+    };
+    saveMutation.mutate(prefs);
   };
 
   return (

@@ -6,8 +6,10 @@ export type UserProfile = {
   last_name: string;
   bio: string;
   is_verified: boolean;
-  avatar_url?: string;
-  cover_url?: string;
+  profile_picture?: string | null;
+  cover_picture?: string | null;
+  avatar_url?: string | null;
+  cover_url?: string | null;
 };
 
 export type AuthSessionPayload = {

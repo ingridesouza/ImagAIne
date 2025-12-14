@@ -23,7 +23,6 @@ export const router = createBrowserRouter([
           { path: 'explore', element: <ExplorePage /> },
           { path: 'dashboard', element: <DashboardPage /> },
           { path: 'generate', element: <GenerateImagePage /> },
-          { path: 'my-images', element: <MyImagesPage /> },
           { path: 'public', element: <ExplorePage /> },
           { path: 'settings', element: <SettingsPage /> },
           { path: 'profile', element: <ProfilePage /> },

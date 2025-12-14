@@ -12,7 +12,6 @@ export const NAV_LINKS: NavLink[] = [
   { label: 'Explore', path: '/', icon: Compass, section: 'discover' },
   { label: 'Visão geral', path: '/dashboard', icon: Home, section: 'discover' },
   { label: 'Gerar imagem', path: '/generate', icon: Sparkles, section: 'discover' },
-  { label: 'Minhas criações', path: '/my-images', icon: ImageIcon, section: 'library' },
   { label: 'Perfil', path: '/profile', icon: User, section: 'library' },
   { label: 'Configurações', path: '/settings', icon: Settings, section: 'library' },
 ];

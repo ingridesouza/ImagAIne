@@ -22,6 +22,8 @@ class User(AbstractUser):
     last_reset_date = models.DateField(default=current_date)
     plan = models.CharField(max_length=10, default="free")
     profile_picture = models.CharField(max_length=100, blank=True, null=True)
+    cover_picture = models.CharField(max_length=100, blank=True, null=True)
+    preferences = models.JSONField(default=dict, blank=True)
     social_media_links = models.JSONField(default=dict, blank=True)
     bio = models.TextField(blank=True, default="")
 

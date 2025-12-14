@@ -20,4 +20,7 @@ urlpatterns = [
     
     # User profile endpoint
     path('profile/', views.UserProfileView.as_view(), name='user_profile'),
+    path('profile/avatar/', views.AvatarUploadView.as_view(), name='user_avatar'),
+    path('profile/cover/', views.CoverUploadView.as_view(), name='user_cover'),
+    path('preferences/', views.PreferencesView.as_view(), name='user_preferences'),
 ]

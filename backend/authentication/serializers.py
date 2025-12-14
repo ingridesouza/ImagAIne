@@ -91,6 +91,38 @@ class PasswordResetConfirmSerializer(serializers.Serializer):
 
 class UserSerializer(serializers.ModelSerializer):
     """Serializer for user details."""
+    avatar_url = serializers.SerializerMethodField()
+    cover_url = serializers.SerializerMethodField()
+
     class Meta:
         model = User
-        fields = ('id', 'email', 'username', 'first_name', 'last_name', 'bio', 'is_verified')
+        fields = (
+            'id',
+            'email',
+            'username',
+            'first_name',
+            'last_name',
+            'bio',
+            'is_verified',
+            'profile_picture',
+            'cover_picture',
+            'preferences',
+            'avatar_url',
+            'cover_url',
+        )
+
+    def get_avatar_url(self, obj):
+        if not obj.profile_picture:
+            return None
+        request = self.context.get('request')
+        if request and not str(obj.profile_picture).startswith('http'):
+            return request.build_absolute_uri(obj.profile_picture)
+        return obj.profile_picture
+
+    def get_cover_url(self, obj):
+        if not obj.cover_picture:
+            return None
+        request = self.context.get('request')
+        if request and not str(obj.cover_picture).startswith('http'):
+            return request.build_absolute_uri(obj.cover_picture)
+        return obj.cover_picture

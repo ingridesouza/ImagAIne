@@ -44,6 +44,14 @@ export const authApi = {
     const { data } = await apiClient.get<{ detail: string }>(`/auth/verify-email/${token}/`);
     return data;
   },
+  async fetchPreferences() {
+    const { data } = await apiClient.get<Record<string, unknown>>('/auth/preferences/');
+    return data;
+  },
+  async updatePreferences(preferences: Record<string, unknown>) {
+    const { data } = await apiClient.put<Record<string, unknown>>('/auth/preferences/', preferences);
+    return data;
+  },
   async uploadAvatar(file: File) {
     const formData = new FormData();
     formData.append('file', file);
