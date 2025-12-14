@@ -11,6 +11,8 @@ from rest_framework.response import Response
 from rest_framework.views import APIView
 from rest_framework_simplejwt.tokens import RefreshToken
 from rest_framework.throttling import ScopedRateThrottle
+from django.core.files.storage import default_storage
+from django.core.files.base import ContentFile
 
 from .models import PasswordResetToken, User
 from .serializers import (
@@ -209,3 +211,51 @@ class UserProfileView(generics.RetrieveUpdateAPIView):
     
     def get_object(self):
         return self.request.user
+
+
+class AvatarUploadView(APIView):
+    """Upload or replace user avatar (profile_picture)."""
+    permission_classes = [permissions.IsAuthenticated]
+
+    def post(self, request):
+        file = request.FILES.get('file')
+        if not file:
+            return Response({"detail": "Nenhum arquivo enviado."}, status=status.HTTP_400_BAD_REQUEST)
+
+        filename = f"avatars/{request.user.id}-{file.name}"
+        saved_path = default_storage.save(filename, ContentFile(file.read()))
+        request.user.profile_picture = default_storage.url(saved_path)
+        request.user.save(update_fields=["profile_picture"])
+        serializer = UserSerializer(request.user, context={"request": request})
+        return Response(serializer.data, status=status.HTTP_200_OK)
+
+
+class CoverUploadView(APIView):
+    """Upload or replace user cover image (cover_picture)."""
+    permission_classes = [permissions.IsAuthenticated]
+
+    def post(self, request):
+        file = request.FILES.get('file')
+        if not file:
+            return Response({"detail": "Nenhum arquivo enviado."}, status=status.HTTP_400_BAD_REQUEST)
+
+        filename = f"covers/{request.user.id}-{file.name}"
+        saved_path = default_storage.save(filename, ContentFile(file.read()))
+        request.user.cover_picture = default_storage.url(saved_path)
+        request.user.save(update_fields=["cover_picture"])
+        serializer = UserSerializer(request.user, context={"request": request})
+        return Response(serializer.data, status=status.HTTP_200_OK)
+
+
+class PreferencesView(APIView):
+    """Retrieve or update user preferences (models, ratios, toggles)."""
+    permission_classes = [permissions.IsAuthenticated]
+
+    def get(self, request):
+        return Response(request.user.preferences or {})
+
+    def put(self, request):
+        prefs = request.data if isinstance(request.data, dict) else {}
+        request.user.preferences = prefs
+        request.user.save(update_fields=["preferences"])
+        return Response(prefs, status=status.HTTP_200_OK)

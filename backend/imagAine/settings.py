@@ -163,10 +163,10 @@ REST_FRAMEWORK = {
     },
 }
 
-# Plan quotas (images per day); use None for unlimited plans
+# Plan quotas (images per month); use None for unlimited plans
 PLAN_QUOTAS = {
-    'free': 5,
-    'pro': 10,
+    'free': 20,
+    'pro': 50,
 }
 
 # Custom test runner with descriptive output

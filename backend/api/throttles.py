@@ -4,7 +4,7 @@ from rest_framework.throttling import BaseThrottle
 
 
 class PlanQuotaThrottle(BaseThrottle):
-    """Enforce per-plan daily generation quotas."""
+    """Enforce per-plan monthly generation quotas."""
 
     def allow_request(self, request, view):
         user = getattr(request, "user", None)
@@ -17,7 +17,8 @@ class PlanQuotaThrottle(BaseThrottle):
             return True
 
         today = timezone.now().date()
-        if getattr(user, "last_reset_date", None) != today:
+        period_start = today.replace(day=1)
+        if getattr(user, "last_reset_date", None) != period_start:
             return True
 
         return getattr(user, "image_generation_count", 0) < quota

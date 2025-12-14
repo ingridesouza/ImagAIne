@@ -1,16 +1,19 @@
 import { useEffect, useState } from 'react';
-import clsx from 'clsx';
 import { Outlet } from 'react-router-dom';
-import { X } from 'lucide-react';
-import { SidebarNav } from '@/components/layout/SidebarNav';
+import { AppSidebar } from '@/components/layout/AppSidebar';
 import { AppHeader } from '@/components/layout/AppHeader';
 
 export const AppLayout = () => {
   const [isSidebarOpen, setSidebarOpen] = useState(false);
 
   useEffect(() => {
+    document.documentElement.classList.add('dark');
+    return () => document.documentElement.classList.remove('dark');
+  }, []);
+
+  useEffect(() => {
     const handleResize = () => {
-      if (window.innerWidth >= 960) {
+      if (window.innerWidth >= 1024) {
         setSidebarOpen(false);
       }
     };
@@ -30,42 +33,27 @@ export const AppLayout = () => {
     return () => window.removeEventListener('keydown', handleEsc);
   }, []);
 
-  const openSidebar = () => setSidebarOpen(true);
-  const closeSidebar = () => setSidebarOpen(false);
+  useEffect(() => {
+    document.body.style.overflow = isSidebarOpen ? 'hidden' : '';
+    return () => {
+      document.body.style.overflow = '';
+    };
+  }, [isSidebarOpen]);
 
   return (
-    <div className={clsx('app-shell', isSidebarOpen && 'app-shell--sidebar-open')}>
-      <aside className="app-shell__sidebar" data-open={isSidebarOpen}>
-        <button
-          type="button"
-          className="app-shell__sidebar-close"
-          onClick={closeSidebar}
-          aria-label="Fechar menu lateral"
-        >
-          <X size={18} />
-        </button>
-        <div className="app-shell__branding">
-          <span className="app-shell__badge">IMAGAIne</span>
-          <h1>Mood Atlas</h1>
-          <p className="app-shell__tagline">
-            Explore, catalogue e refine universos visuais em um painel inspirado no Midjourney.
-          </p>
-        </div>
-        <SidebarNav onNavigate={closeSidebar} />
-      </aside>
-
+    <div className="flex h-screen w-full overflow-hidden bg-background-dark text-slate-200 font-display">
+      <AppSidebar isOpen={isSidebarOpen} onClose={() => setSidebarOpen(false)} />
       {isSidebarOpen ? (
         <div
-          className="app-shell__mobile-overlay"
-          aria-hidden={!isSidebarOpen}
-          onClick={closeSidebar}
+          className="fixed inset-0 z-30 bg-black/60 backdrop-blur-sm md:hidden"
+          onClick={() => setSidebarOpen(false)}
           role="presentation"
+          aria-hidden={!isSidebarOpen}
         />
       ) : null}
-
-      <div className="app-shell__content">
-        <AppHeader onOpenSidebar={openSidebar} />
-        <main className="app-shell__main">
+      <div className="flex min-h-0 flex-1 flex-col overflow-hidden">
+        <AppHeader onOpenSidebar={() => setSidebarOpen(true)} />
+        <main className="app-shell__main flex-1 min-h-0 overflow-y-auto bg-background-light dark:bg-background-dark">
           <Outlet />
         </main>
       </div>
