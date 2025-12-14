@@ -100,13 +100,7 @@ export const AppHeader = ({ onOpenSidebar, onToggleSidebarCollapse, isSidebarCol
               <span className="text-sm font-semibold text-white">{user.first_name || user.username}</span>
             </div>
           ) : null}
-          <button
-            type="button"
-            onClick={logout}
-            className="rounded-full border border-white/10 px-3 py-2 text-sm font-semibold text-slate-200 transition-colors hover:border-white/30 hover:text-white"
-          >
-            Sair
-          </button>
+          {/* logout button removido a pedido */}
         </div>
       </div>
     </header>

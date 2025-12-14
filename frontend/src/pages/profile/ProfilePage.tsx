@@ -2,6 +2,7 @@ import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { useRef, useState } from 'react';
 import clsx from 'clsx';
 import { GalleryCard } from '@/features/images/components/GalleryCard';
+import { ImageDetailsDialog } from '@/features/images/components/ImageDetailsDialog';
 import type { ImageRecord } from '@/features/images/types';
 import { imagesApi } from '@/features/images/api';
 import { authApi } from '@/features/auth/api';
@@ -38,6 +39,7 @@ export const ProfilePage = () => {
   const queryClient = useQueryClient();
   const cachedProfile = queryClient.getQueryData<UserProfile>(QUERY_KEYS.profile);
   const storeUser = useAuthStore((state) => state.user);
+  const [selectedImage, setSelectedImage] = useState<ImageRecord | null>(null);
 
   const { data: profile } = useQuery({
     queryKey: QUERY_KEYS.profile,
@@ -99,6 +101,12 @@ export const ProfilePage = () => {
   const likeMutation = useMutation({
     mutationFn: (image: ImageRecord) =>
       image.is_liked ? imagesApi.unlike(image.id) : imagesApi.like(image.id),
+    onSuccess: () => queryClient.invalidateQueries({ queryKey: QUERY_KEYS.myImages() }),
+  });
+
+  const visibilityMutation = useMutation({
+    mutationFn: ({ image, isPublic }: { image: ImageRecord; isPublic: boolean }) =>
+      imagesApi.updateShare(image.id, isPublic),
     onSuccess: () => queryClient.invalidateQueries({ queryKey: QUERY_KEYS.myImages() }),
   });
 
@@ -336,7 +344,7 @@ export const ProfilePage = () => {
                   key={image.id}
                   image={image}
                   aspectRatio={formatAspectRatio(image.aspect_ratio)}
-                  onSelect={() => {}}
+                  onSelect={() => setSelectedImage(image)}
                   onToggleLike={() => likeMutation.mutate(image)}
                   onDownload={() => handleDownload(image)}
                   isTogglingLike={likeMutation.isPending}
@@ -353,6 +361,15 @@ export const ProfilePage = () => {
           </div>
         ) : null}
       </div>
+
+      <ImageDetailsDialog
+        image={selectedImage}
+        onClose={() => setSelectedImage(null)}
+        onToggleLike={(image) => likeMutation.mutate(image)}
+        onDownload={(image) => handleDownload(image)}
+        onUpdateVisibility={(image, isPublic) => visibilityMutation.mutate({ image, isPublic })}
+        isUpdatingVisibility={visibilityMutation.isPending}
+      />
     </div>
   );
 };

@@ -1016,7 +1016,7 @@ button {
   left: 50%;
   bottom: 18px;
   transform: translateX(-50%);
-  width: min(1100px, calc(100% - 32px));
+  width: min(960px, calc(100% - 48px));
   display: flex;
   flex-direction: column;
   gap: 10px;
@@ -1109,11 +1109,10 @@ button {
 
 @media (min-width: 1024px) {
   .explore-prompt {
-    left: calc(var(--sidebar-width, 18rem) + 16px);
-    right: 18px;
-    transform: none;
-    width: auto;
-    max-width: calc(100% - var(--sidebar-width, 18rem) - 34px);
+    left: calc(50% + (var(--sidebar-width, 0) / 2));
+    right: auto;
+    transform: translateX(-50%);
+    width: min(960px, calc(100% - 48px));
   }
 }
 
