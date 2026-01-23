@@ -1,5 +1,6 @@
 # ImagAIne
 
+
 Plataforma backend para geracao, gerenciamento e compartilhamento de imagens criadas por IA. O sistema oferece APIs REST para cadastro de usuarios, autenticacao via JWT, fila de geracao com Celery e armazenamento local dos resultados.
 
 ## Visao geral
