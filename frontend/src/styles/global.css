@@ -1011,108 +1011,381 @@ button {
   position: relative;
 }
 
+/* ========================================
+   BARRA DE GERAÇÃO DE IMAGENS (EXPLORE PROMPT)
+   Design moderno com glass morphism e animações
+   ======================================== */
+
 .explore-prompt {
   position: fixed;
   left: 50%;
-  bottom: 18px;
+  bottom: 24px;
   transform: translateX(-50%);
-  width: min(960px, calc(100% - 48px));
+  width: min(880px, calc(100% - 32px));
   display: flex;
   flex-direction: column;
-  gap: 10px;
-  padding: 14px 18px;
-  border-radius: 18px;
-  background: rgba(20, 20, 24, 0.85);
-  border: none;
-  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.35);
-  backdrop-filter: blur(12px);
+  gap: 0;
+  padding: 0;
+  border-radius: 24px;
+  background: linear-gradient(
+    145deg,
+    rgba(18, 14, 28, 0.92),
+    rgba(12, 10, 18, 0.96)
+  );
+  border: 1px solid rgba(168, 85, 247, 0.15);
+  box-shadow:
+    0 8px 32px rgba(0, 0, 0, 0.4),
+    0 24px 80px rgba(168, 85, 247, 0.12),
+    inset 0 1px 0 rgba(255, 255, 255, 0.05);
+  backdrop-filter: blur(24px);
+  -webkit-backdrop-filter: blur(24px);
   z-index: 30;
-  pointer-events: none;
+  overflow: hidden;
+  transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1),
+              box-shadow 0.3s ease,
+              border-color 0.3s ease;
 }
 
+.explore-prompt:hover {
+  border-color: rgba(168, 85, 247, 0.25);
+  box-shadow:
+    0 12px 40px rgba(0, 0, 0, 0.5),
+    0 32px 100px rgba(168, 85, 247, 0.18),
+    inset 0 1px 0 rgba(255, 255, 255, 0.08);
+}
+
+.explore-prompt:focus-within {
+  border-color: rgba(168, 85, 247, 0.4);
+  box-shadow:
+    0 12px 40px rgba(0, 0, 0, 0.5),
+    0 32px 100px rgba(168, 85, 247, 0.25),
+    0 0 0 4px rgba(168, 85, 247, 0.1),
+    inset 0 1px 0 rgba(255, 255, 255, 0.08);
+}
+
+/* Glow effect animado no fundo */
+.explore-prompt::before {
+  content: '';
+  position: absolute;
+  inset: -2px;
+  border-radius: 26px;
+  background: linear-gradient(
+    135deg,
+    rgba(168, 85, 247, 0.2),
+    transparent 40%,
+    transparent 60%,
+    rgba(139, 92, 246, 0.15)
+  );
+  opacity: 0;
+  z-index: -1;
+  transition: opacity 0.4s ease;
+}
+
+.explore-prompt:focus-within::before {
+  opacity: 1;
+}
+
+/* Área de input principal */
 .explore-prompt__input {
   display: flex;
   align-items: center;
-  gap: 10px;
-  padding: 10px 12px;
-  border-radius: 14px;
-  background: rgba(20, 20, 24, 0.85);
+  gap: 12px;
+  padding: 18px 20px;
+  background: transparent;
   border: none;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.04);
   pointer-events: auto;
+  position: relative;
+}
+
+.explore-prompt__input::after {
+  content: '';
+  position: absolute;
+  bottom: -1px;
+  left: 20px;
+  right: 20px;
+  height: 1px;
+  background: linear-gradient(90deg, transparent, rgba(168, 85, 247, 0.3), transparent);
+  opacity: 0;
+  transition: opacity 0.3s ease;
+}
+
+.explore-prompt:focus-within .explore-prompt__input::after {
+  opacity: 1;
+}
+
+.explore-prompt__input .material-symbols-outlined {
+  color: rgba(168, 85, 247, 0.7);
+  font-size: 22px;
+  transition: color 0.2s ease, transform 0.2s ease;
+}
+
+.explore-prompt:focus-within .explore-prompt__input .material-symbols-outlined {
+  color: rgba(168, 85, 247, 1);
+  transform: scale(1.1);
 }
 
 .explore-prompt__input input {
+  flex: 1;
+  background: transparent;
   border: none;
+  outline: none;
+  font-size: 1rem;
+  font-weight: 500;
+  color: #fff;
+  letter-spacing: -0.01em;
 }
 
+.explore-prompt__input input::placeholder {
+  color: rgba(255, 255, 255, 0.35);
+  font-weight: 400;
+  transition: color 0.2s ease;
+}
+
+.explore-prompt__input input:focus::placeholder {
+  color: rgba(255, 255, 255, 0.5);
+}
+
+/* Controles/Pills */
 .explore-prompt__controls {
   display: flex;
   flex-wrap: wrap;
   gap: 8px;
   align-items: center;
+  padding: 14px 16px;
   pointer-events: auto;
+  background: rgba(0, 0, 0, 0.15);
 }
 
 .explore-pill {
   display: inline-flex;
   align-items: center;
   gap: 6px;
-  padding: 8px 12px;
-  border-radius: 999px;
-  background: rgba(20, 20, 24, 0.85);
-  border: none;
-  color: #fff;
-  font-size: 0.95rem;
+  padding: 8px 14px;
+  border-radius: 12px;
+  background: rgba(255, 255, 255, 0.04);
+  border: 1px solid rgba(255, 255, 255, 0.06);
+  color: rgba(255, 255, 255, 0.7);
+  font-size: 0.85rem;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+  user-select: none;
 }
 
+.explore-pill .material-symbols-outlined {
+  font-size: 16px;
+  color: rgba(168, 85, 247, 0.6);
+  transition: color 0.2s ease;
+}
+
+.explore-pill:hover {
+  background: rgba(168, 85, 247, 0.12);
+  border-color: rgba(168, 85, 247, 0.25);
+  color: #fff;
+  transform: translateY(-1px);
+}
+
+.explore-pill:hover .material-symbols-outlined {
+  color: rgba(168, 85, 247, 1);
+}
+
+.explore-pill:active {
+  transform: translateY(0) scale(0.98);
+}
+
+.explore-pill--active {
+  background: rgba(168, 85, 247, 0.2);
+  border-color: rgba(168, 85, 247, 0.4);
+  color: #fff;
+}
+
+.explore-pill--active .material-symbols-outlined {
+  color: rgba(168, 85, 247, 1);
+}
+
+/* Separador visual */
+.explore-prompt__divider {
+  width: 1px;
+  height: 24px;
+  background: rgba(255, 255, 255, 0.08);
+  margin: 0 4px;
+}
+
+/* Botão de submit */
 .explore-submit {
   display: inline-flex;
   align-items: center;
-  gap: 6px;
-  padding: 10px 14px;
-  border-radius: 999px;
-  background: linear-gradient(120deg, var(--auth-primary, #7f13ec), #9a4dff);
+  justify-content: center;
+  gap: 8px;
+  padding: 10px 20px;
+  margin-left: auto;
+  border-radius: 12px;
+  background: linear-gradient(135deg, #a855f7 0%, #7c3aed 50%, #6d28d9 100%);
   color: #fff;
-  font-weight: 700;
+  font-weight: 600;
+  font-size: 0.9rem;
+  letter-spacing: 0.02em;
   border: none;
-  box-shadow: 0 12px 30px rgba(127, 19, 236, 0.35);
+  box-shadow:
+    0 4px 16px rgba(168, 85, 247, 0.35),
+    inset 0 1px 0 rgba(255, 255, 255, 0.2);
   cursor: pointer;
-  transition: transform 0.2s ease, box-shadow 0.2s ease, opacity 0.2s ease;
+  transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+  position: relative;
+  overflow: hidden;
 }
 
-.explore-submit:disabled {
-  opacity: 0.6;
-  cursor: not-allowed;
-  box-shadow: none;
+.explore-submit::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(135deg, rgba(255, 255, 255, 0.15), transparent);
+  opacity: 0;
+  transition: opacity 0.2s ease;
 }
 
 .explore-submit:not(:disabled):hover {
-  transform: translateY(-1px);
-  box-shadow: 0 14px 36px rgba(127, 19, 236, 0.45);
+  transform: translateY(-2px) scale(1.02);
+  box-shadow:
+    0 8px 24px rgba(168, 85, 247, 0.45),
+    0 16px 48px rgba(168, 85, 247, 0.2),
+    inset 0 1px 0 rgba(255, 255, 255, 0.25);
 }
 
-@media (max-width: 700px) {
+.explore-submit:not(:disabled):hover::before {
+  opacity: 1;
+}
+
+.explore-submit:not(:disabled):active {
+  transform: translateY(0) scale(0.98);
+  box-shadow:
+    0 2px 8px rgba(168, 85, 247, 0.3),
+    inset 0 1px 0 rgba(255, 255, 255, 0.15);
+}
+
+.explore-submit:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+  box-shadow: none;
+  background: linear-gradient(135deg, #6b7280 0%, #4b5563 100%);
+}
+
+.explore-submit .material-symbols-outlined {
+  font-size: 18px;
+  transition: transform 0.2s ease;
+}
+
+.explore-submit:not(:disabled):hover .material-symbols-outlined {
+  transform: translateX(2px);
+}
+
+/* ========================================
+   RESPONSIVIDADE
+   ======================================== */
+
+/* Tablets */
+@media (max-width: 768px) {
   .explore-prompt {
-    width: min(100%, calc(100% - 16px));
-    padding: 12px 14px;
+    bottom: 16px;
+    width: calc(100% - 24px);
+    border-radius: 20px;
+  }
+
+  .explore-prompt__input {
+    padding: 14px 16px;
+    gap: 10px;
+  }
+
+  .explore-prompt__input input {
+    font-size: 0.95rem;
   }
 
   .explore-prompt__controls {
+    padding: 12px 14px;
     gap: 6px;
   }
 
   .explore-pill {
-    padding: 7px 10px;
-    font-size: 0.9rem;
+    padding: 7px 12px;
+    font-size: 0.8rem;
+    border-radius: 10px;
+  }
+
+  .explore-pill .material-symbols-outlined {
+    font-size: 14px;
+  }
+
+  .explore-submit {
+    padding: 9px 16px;
+    font-size: 0.85rem;
   }
 }
 
+/* Mobile */
+@media (max-width: 520px) {
+  .explore-prompt {
+    bottom: 12px;
+    width: calc(100% - 16px);
+    border-radius: 18px;
+  }
+
+  .explore-prompt__input {
+    padding: 12px 14px;
+  }
+
+  .explore-prompt__input .material-symbols-outlined {
+    font-size: 20px;
+  }
+
+  .explore-prompt__input input {
+    font-size: 0.9rem;
+  }
+
+  .explore-prompt__controls {
+    padding: 10px 12px;
+    gap: 6px;
+    justify-content: flex-start;
+  }
+
+  .explore-pill {
+    padding: 6px 10px;
+    font-size: 0.75rem;
+    border-radius: 8px;
+  }
+
+  .explore-pill .material-symbols-outlined {
+    font-size: 13px;
+  }
+
+  /* Esconder texto em pills menores no mobile */
+  .explore-pill--hide-text-mobile span:not(.material-symbols-outlined) {
+    display: none;
+  }
+
+  .explore-prompt__divider {
+    display: none;
+  }
+
+  .explore-submit {
+    padding: 8px 14px;
+    font-size: 0.8rem;
+    border-radius: 10px;
+    gap: 6px;
+  }
+
+  .explore-submit .material-symbols-outlined {
+    font-size: 16px;
+  }
+}
+
+/* Desktop com sidebar */
 @media (min-width: 1024px) {
   .explore-prompt {
     left: calc(50% + (var(--sidebar-width, 0) / 2));
     right: auto;
     transform: translateX(-50%);
-    width: min(960px, calc(100% - 48px));
+    width: min(880px, calc(100% - 48px));
   }
 }
 

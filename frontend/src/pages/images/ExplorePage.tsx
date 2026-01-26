@@ -185,42 +185,48 @@ export const ExplorePage = () => {
 
       <form className="explore-prompt" onSubmit={handlePromptSubmit}>
         <div className="explore-prompt__input">
-          <span className="material-symbols-outlined text-lg text-white/80">add</span>
+          <span className="material-symbols-outlined">auto_awesome</span>
           <input
-            className="w-full bg-transparent text-base text-white placeholder:text-slate-300 focus:outline-none"
-            placeholder="Descreva sua imagem..."
+            type="text"
+            placeholder="Descreva a imagem que você quer criar..."
             value={promptDraft}
             onChange={(event) => setPromptDraft(event.target.value)}
+            autoComplete="off"
           />
         </div>
         <div className="explore-prompt__controls">
-          <div className="explore-pill">
-            <span className="material-symbols-outlined !text-[18px]">photo_camera</span>
-            Image
-          </div>
-          <div className="explore-pill">
-            <span className="material-symbols-outlined !text-[18px]">stay_current_portrait</span>
-            2:3
-          </div>
-          <div className="explore-pill">
-            <span className="material-symbols-outlined !text-[18px]">grid_on</span>
-            2v
-          </div>
-          <div className="explore-pill">
-            <span className="material-symbols-outlined !text-[18px]">aspect_ratio</span>
-            1:1
-          </div>
-          <div className="explore-pill">
-            <span className="material-symbols-outlined !text-[18px]">help</span>
-            Dicas
-          </div>
+          <button type="button" className="explore-pill" title="Tipo de saída">
+            <span className="material-symbols-outlined">image</span>
+            <span>Imagem</span>
+          </button>
+          <button type="button" className="explore-pill explore-pill--active" title="Proporção">
+            <span className="material-symbols-outlined">crop_square</span>
+            <span>1:1</span>
+          </button>
+          <button type="button" className="explore-pill" title="Proporção retrato">
+            <span className="material-symbols-outlined">crop_portrait</span>
+            <span>9:16</span>
+          </button>
+          <button type="button" className="explore-pill" title="Proporção paisagem">
+            <span className="material-symbols-outlined">crop_landscape</span>
+            <span>16:9</span>
+          </button>
+          <div className="explore-prompt__divider" />
+          <button type="button" className="explore-pill explore-pill--hide-text-mobile" title="Configurações avançadas">
+            <span className="material-symbols-outlined">tune</span>
+            <span>Opções</span>
+          </button>
+          <button type="button" className="explore-pill explore-pill--hide-text-mobile" title="Dicas de prompts">
+            <span className="material-symbols-outlined">lightbulb</span>
+            <span>Dicas</span>
+          </button>
           <button
             type="submit"
             disabled={!promptDraft.trim()}
             className="explore-submit"
           >
-            <span className="material-symbols-outlined !text-[18px]">arrow_forward</span>
-            Gerar
+            <span className="material-symbols-outlined">arrow_forward</span>
+            <span>Criar</span>
           </button>
         </div>
       </form>
