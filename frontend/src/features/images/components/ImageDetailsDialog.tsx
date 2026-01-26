@@ -84,7 +84,7 @@ export const ImageDetailsDialog = ({
     return `${diffDays}d`;
   };
 
-  return (
+  return createPortal(
     <div className="image-modal__backdrop" onClick={handleBackdropClick} role="dialog" aria-modal="true">
       <div className={`image-modal ${showComments ? 'image-modal--with-comments' : ''}`}>
         {/* Botão Fechar */}
@@ -197,6 +197,7 @@ export const ImageDetailsDialog = ({
           </div>
         )}
       </div>
-    </div>
+    </div>,
+    document.body
   );
 };
