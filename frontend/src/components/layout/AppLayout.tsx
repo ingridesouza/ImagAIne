@@ -49,7 +49,7 @@ export const AppLayout = () => {
   }, [isSidebarOpen]);
 
   return (
-    <div className="flex h-screen w-full overflow-hidden bg-background-dark text-slate-200 font-display">
+    <div id="app-layout" className="flex h-screen w-full overflow-hidden bg-background-dark text-slate-200 font-display">
       <AppSidebar
         isOpen={isSidebarOpen}
         isCollapsed={isSidebarCollapsed}

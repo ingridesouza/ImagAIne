@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react';
+import { createPortal } from 'react-dom';
 import type { MouseEvent, FormEvent } from 'react';
 import { Download, Heart, X, Share2, MessageCircle, Send } from 'lucide-react';
 import { Button } from '@/components/ui/Button';
@@ -41,7 +42,14 @@ export const ImageDetailsDialog = ({
     if (image) {
       setShowComments(false);
       setNewComment('');
+      document.body.classList.add('modal-open');
+    } else {
+      document.body.classList.remove('modal-open');
     }
+
+    return () => {
+      document.body.classList.remove('modal-open');
+    };
   }, [image]);
 
   if (!image) {

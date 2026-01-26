@@ -2557,11 +2557,23 @@ button {
    Layout moderno com imagem centralizada
    ======================================== */
 
+/* Blur no conteúdo quando modal está aberto */
+body.modal-open #app-layout {
+  filter: blur(8px);
+  pointer-events: none;
+  transition: filter 0.2s ease;
+}
+
+body.modal-open {
+  overflow: hidden;
+}
+
 .image-modal__backdrop {
   position: fixed;
   inset: 0;
-  background: rgba(0, 0, 0, 0.92);
-  backdrop-filter: blur(20px);
+  background: rgba(0, 0, 0, 0.75);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
   display: flex;
   align-items: center;
   justify-content: center;
