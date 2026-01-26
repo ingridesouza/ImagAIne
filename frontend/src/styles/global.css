@@ -6,22 +6,22 @@
   font-weight: 400;
   color-scheme: dark;
   color: #f6f2ec;
-  background-color: #050505;
-  --bg-body: #050505;
-  --bg-layers: radial-gradient(circle at 15% 25%, rgba(255, 141, 64, 0.08), transparent 40%),
-    radial-gradient(circle at 80% 0%, rgba(255, 206, 118, 0.07), transparent 35%),
-    linear-gradient(160deg, #050505 0%, #0a0a0f 60%, #050505 100%);
-  --surface: rgba(17, 17, 24, 0.92);
-  --surface-strong: rgba(10, 10, 16, 0.95);
-  --surface-soft: rgba(15, 16, 23, 0.78);
-  --surface-alt: rgba(22, 18, 15, 0.65);
+  background-color: #0a090d;
+  --bg-body: #0a090d;
+  --bg-layers: radial-gradient(circle at 15% 25%, rgba(168, 85, 247, 0.06), transparent 40%),
+    radial-gradient(circle at 80% 0%, rgba(139, 92, 246, 0.05), transparent 35%),
+    linear-gradient(160deg, #0a090d 0%, #0c0b10 60%, #0a090d 100%);
+  --surface: rgba(16, 14, 22, 0.92);
+  --surface-strong: rgba(10, 9, 13, 0.95);
+  --surface-soft: rgba(14, 12, 20, 0.78);
+  --surface-alt: rgba(18, 15, 24, 0.65);
   --stroke: rgba(255, 255, 255, 0.05);
   --stroke-strong: rgba(255, 255, 255, 0.16);
   --text-primary: #f6f2ec;
   --text-muted: rgba(228, 221, 208, 0.65);
-  --accent-primary: #ff6b2c;
-  --accent-secondary: #ffb347;
-  --accent-tertiary: #ffd67a;
+  --accent-primary: #a855f7;
+  --accent-secondary: #c084fc;
+  --accent-tertiary: #d8b4fe;
   --success: #22c55e;
   --warning: #facc15;
   --danger: #fb7185;
@@ -30,9 +30,9 @@
   --radius-lg: 24px;
   --radius-xl: 32px;
   --radius-pill: 999px;
-  --shadow-soft: 0 40px 120px rgba(5, 5, 10, 0.8);
-  --shadow-card: 0 25px 70px rgba(5, 5, 10, 0.6);
-  --shadow-button: 0 18px 32px rgba(255, 107, 44, 0.35);
+  --shadow-soft: 0 40px 120px rgba(10, 9, 13, 0.8);
+  --shadow-card: 0 25px 70px rgba(10, 9, 13, 0.6);
+  --shadow-button: 0 18px 32px rgba(168, 85, 247, 0.35);
   --blur-strong: 30px;
 }
 
@@ -68,9 +68,9 @@ body::after {
   content: '';
   position: fixed;
   inset: 0;
-  background: radial-gradient(circle at 20% 15%, rgba(255, 114, 58, 0.35), transparent 60%),
-    radial-gradient(circle at 80% 10%, rgba(255, 191, 104, 0.2), transparent 45%),
-    radial-gradient(circle at 60% 80%, rgba(255, 233, 129, 0.1), transparent 40%);
+  background: radial-gradient(circle at 20% 15%, rgba(168, 85, 247, 0.15), transparent 60%),
+    radial-gradient(circle at 80% 10%, rgba(139, 92, 246, 0.1), transparent 45%),
+    radial-gradient(circle at 60% 80%, rgba(192, 132, 252, 0.08), transparent 40%);
   filter: blur(60px);
   opacity: 0.75;
   animation: gradientShift 22s ease-in-out infinite alternate;
@@ -161,7 +161,7 @@ button {
 }
 
 ::selection {
-  background: rgba(255, 107, 44, 0.35);
+  background: rgba(168, 85, 247, 0.35);
   color: #fff;
 }
 
@@ -198,7 +198,7 @@ button {
   inset: 30% auto auto -40%;
   width: 280px;
   aspect-ratio: 1 / 1;
-  background: radial-gradient(circle, rgba(255, 111, 44, 0.4), transparent 65%);
+  background: radial-gradient(circle, rgba(168, 85, 247, 0.3), transparent 65%);
   filter: blur(60px);
   opacity: 0.65;
   animation: floatOrbit 18s ease-in-out infinite;
@@ -354,7 +354,7 @@ button {
 .sidebar-link.active {
   color: #fff;
   border-color: rgba(255, 255, 255, 0.14);
-  background: linear-gradient(120deg, rgba(255, 107, 44, 0.35), rgba(255, 179, 71, 0.18));
+  background: linear-gradient(120deg, rgba(168, 85, 247, 0.35), rgba(192, 132, 252, 0.18));
   box-shadow: 0 18px 35px rgba(0, 0, 0, 0.45);
 }
 
@@ -1269,9 +1269,9 @@ button {
   border-radius: var(--radius-pill);
   font-size: 0.78rem;
   font-weight: 600;
-  background: rgba(255, 107, 44, 0.22);
+  background: rgba(168, 85, 247, 0.22);
   color: var(--text-primary);
-  border: 1px solid rgba(255, 179, 71, 0.5);
+  border: 1px solid rgba(192, 132, 252, 0.5);
   text-transform: uppercase;
   letter-spacing: 0.08em;
 }
@@ -1565,7 +1565,7 @@ button {
 }
 
 .public-gallery__search-button:not(:disabled):hover {
-  background: linear-gradient(120deg, rgba(255, 107, 44, 0.25), rgba(255, 179, 71, 0.2));
+  background: linear-gradient(120deg, rgba(168, 85, 247, 0.25), rgba(192, 132, 252, 0.2));
   border-color: rgba(255, 255, 255, 0.35);
   transform: translateY(-2px);
 }
@@ -1665,7 +1665,7 @@ button {
 }
 
 .public-gallery__mosaic-tile--copper {
-  background: linear-gradient(135deg, #ff7c48, #b3471f);
+  background: linear-gradient(135deg, #a855f7, #6b21a8);
 }
 
 .public-gallery__mosaic-tile--teal {
@@ -1718,7 +1718,7 @@ button {
   content: '';
   position: absolute;
   inset: 0;
-  background: linear-gradient(120deg, rgba(255, 107, 44, 0.2), rgba(255, 179, 71, 0.12));
+  background: linear-gradient(120deg, rgba(168, 85, 247, 0.2), rgba(192, 132, 252, 0.12));
   opacity: 0;
   transition: opacity 0.3s ease;
   animation: shimmer 3s linear infinite;

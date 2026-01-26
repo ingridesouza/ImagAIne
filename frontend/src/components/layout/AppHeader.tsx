@@ -10,7 +10,6 @@ type AppHeaderProps = {
 
 export const AppHeader = ({ onOpenSidebar, onToggleSidebarCollapse, isSidebarCollapsed }: AppHeaderProps) => {
   const user = useAuthStore((state) => state.user);
-  const logout = useAuthStore((state) => state.logout);
   const searchInputRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {

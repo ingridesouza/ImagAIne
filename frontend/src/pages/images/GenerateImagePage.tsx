@@ -120,7 +120,7 @@ export const GenerateImagePage = () => {
   return (
     <div className="flex h-full min-h-0 overflow-hidden bg-background-dark text-white font-display">
       <div className="relative flex min-h-0 flex-1 flex-col">
-        <header className="flex h-16 items-center justify-between border-b border-[#264532] bg-[#122017]/90 px-4 md:px-8">
+        <header className="flex h-16 items-center justify-between border-b border-[#1a1528] bg-[#0c0a10]/90 px-4 md:px-8">
           <div className="flex items-center gap-4">
             <button className="text-gray-400 transition-colors hover:text-white md:hidden" type="button" aria-label="Abrir menu">
               <span className="material-symbols-outlined">menu</span>
@@ -131,7 +131,7 @@ export const GenerateImagePage = () => {
             </div>
           </div>
           <div className="flex items-center gap-4">
-            <div className="flex items-center gap-2 rounded-full border border-[#264532] bg-panel-dark px-3 py-1.5">
+            <div className="flex items-center gap-2 rounded-full border border-[#1a1528] bg-panel-dark px-3 py-1.5">
               <span className="h-2 w-2 animate-pulse rounded-full bg-primary" />
               <span className="text-xs font-medium text-gray-300">
                 {queue.length ? `${queue.length} em processamento` : 'GPU pronta'}
@@ -165,7 +165,7 @@ export const GenerateImagePage = () => {
                   </button>
                 </div>
 
-                <div className="relative rounded-xl border border-[#2a4034] bg-terminal-dark shadow-xl shadow-black/20">
+                <div className="relative rounded-xl border border-[#1a1528] bg-terminal-dark shadow-xl shadow-black/20">
                   <textarea
                     id="prompt"
                     className="h-44 w-full resize-none rounded-xl bg-transparent p-5 font-mono text-base leading-relaxed text-gray-100 placeholder:text-gray-600 focus:outline-none focus:ring-1 focus:ring-purple-500"
@@ -184,7 +184,7 @@ export const GenerateImagePage = () => {
                         'flex items-center gap-1 rounded-lg border px-3 py-1.5 text-xs transition-colors',
                         showNegative
                           ? 'border-purple-500 bg-purple-500/20 text-purple-200'
-                          : 'border-[#264532] bg-panel-dark text-gray-400 hover:border-gray-500 hover:text-white',
+                          : 'border-[#1a1528] bg-panel-dark text-gray-400 hover:border-gray-500 hover:text-white',
                       )}
                     >
                       <span className="material-symbols-outlined text-[14px]">remove_circle</span>
@@ -194,7 +194,7 @@ export const GenerateImagePage = () => {
                 </div>
 
                 {showNegative ? (
-                  <div className="rounded-xl border border-[#2a4034] bg-panel-dark px-4 py-3">
+                  <div className="rounded-xl border border-[#1a1528] bg-panel-dark px-4 py-3">
                     <label className="mb-2 flex items-center gap-2 text-xs font-semibold uppercase tracking-[0.15em] text-gray-400" htmlFor="negative_prompt">
                       <span className="material-symbols-outlined text-[16px] text-purple-accent">shield</span>
                       Evite na imagem
@@ -202,7 +202,7 @@ export const GenerateImagePage = () => {
                     <textarea
                       id="negative_prompt"
                       rows={3}
-                      className="w-full resize-none rounded-lg border border-[#264532] bg-terminal-dark p-3 text-sm text-gray-100 placeholder:text-gray-500 focus:border-purple-500 focus:outline-none focus:ring-1 focus:ring-purple-500"
+                      className="w-full resize-none rounded-lg border border-[#1a1528] bg-terminal-dark p-3 text-sm text-gray-100 placeholder:text-gray-500 focus:border-purple-500 focus:outline-none focus:ring-1 focus:ring-purple-500"
                       placeholder="Elementos a evitar (ex.: blurry, text, lowres)"
                       {...register('negative_prompt')}
                     />
@@ -226,7 +226,7 @@ export const GenerateImagePage = () => {
                   </button>
                   <button
                     type="button"
-                    className="flex h-14 w-14 items-center justify-center rounded-xl border border-[#264532] bg-panel-dark text-gray-400 transition-colors hover:border-gray-500 hover:text-white"
+                    className="flex h-14 w-14 items-center justify-center rounded-xl border border-[#1a1528] bg-panel-dark text-gray-400 transition-colors hover:border-gray-500 hover:text-white"
                     title="Salvar prompt"
                     onClick={handleRandomPrompt}
                   >
@@ -240,10 +240,10 @@ export const GenerateImagePage = () => {
                   <span className="material-symbols-outlined text-[18px]">visibility</span>
                   Preview
                 </h3>
-                <div className="flex flex-1 min-h-[240px] items-center justify-center rounded-2xl border-2 border-dashed border-[#264532] bg-[#15251c] p-6 text-center transition-colors hover:border-primary/30">
+                <div className="flex flex-1 min-h-[240px] items-center justify-center rounded-2xl border-2 border-dashed border-[#1a1528] bg-[#0e0c14] p-6 text-center transition-colors hover:border-primary/30">
                   {latestReady ? (
                     <div className="flex w-full max-w-3xl flex-col items-center gap-4">
-                      <div className="w-full overflow-hidden rounded-xl border border-[#264532] bg-panel-dark shadow-lg shadow-black/30">
+                      <div className="w-full overflow-hidden rounded-xl border border-[#1a1528] bg-panel-dark shadow-lg shadow-black/30">
                         <img
                           src={latestReady.image_url ?? ''}
                           alt={latestReady.prompt}
@@ -285,8 +285,8 @@ export const GenerateImagePage = () => {
               ) : null}
             </div>
 
-            <aside className="hidden w-80 shrink-0 flex-col overflow-y-auto rounded-2xl border border-[#264532] bg-[#15251c] lg:flex">
-              <div className="border-b border-[#264532] p-6">
+            <aside className="hidden w-80 shrink-0 flex-col overflow-y-auto rounded-2xl border border-[#1a1528] bg-[#0e0c14] lg:flex">
+              <div className="border-b border-[#1a1528] p-6">
                 <h3 className="flex items-center gap-2 text-lg font-bold text-white">
                   <span className="material-symbols-outlined text-gray-400">tune</span>
                   Configurações
@@ -308,7 +308,7 @@ export const GenerateImagePage = () => {
                           'flex flex-col items-center justify-center gap-2 rounded-lg border p-2 text-gray-400 transition-colors',
                           aspectRatio === option.value
                             ? 'border-purple-500 bg-purple-500/10 text-purple-200'
-                            : 'border-[#264532] bg-panel-dark hover:border-gray-500 hover:text-white',
+                            : 'border-[#1a1528] bg-panel-dark hover:border-gray-500 hover:text-white',
                         )}
                       >
                         <div
@@ -334,7 +334,7 @@ export const GenerateImagePage = () => {
                       <label className="text-sm font-medium text-gray-300" htmlFor="guidance">
                         Guidance Scale
                       </label>
-                      <span className="rounded border border-[#264532] bg-panel-dark px-2 py-1 font-mono text-xs text-purple-400">
+                      <span className="rounded border border-[#1a1528] bg-panel-dark px-2 py-1 font-mono text-xs text-purple-400">
                         {guidance.toFixed(1)}
                       </span>
                     </div>
@@ -356,7 +356,7 @@ export const GenerateImagePage = () => {
                       <label className="text-sm font-medium text-gray-300" htmlFor="steps">
                         Steps
                       </label>
-                      <span className="rounded border border-[#264532] bg-panel-dark px-2 py-1 font-mono text-xs text-purple-400">
+                      <span className="rounded border border-[#1a1528] bg-panel-dark px-2 py-1 font-mono text-xs text-purple-400">
                         {steps}
                       </span>
                     </div>
@@ -391,7 +391,7 @@ export const GenerateImagePage = () => {
                         type="number"
                         min={0}
                         placeholder="-1"
-                        className="w-full rounded-lg border border-[#264532] bg-panel-dark p-2.5 font-mono text-sm text-white placeholder:text-gray-500 focus:border-purple-500 focus:outline-none focus:ring-1 focus:ring-purple-500"
+                        className="w-full rounded-lg border border-[#1a1528] bg-panel-dark p-2.5 font-mono text-sm text-white placeholder:text-gray-500 focus:border-purple-500 focus:outline-none focus:ring-1 focus:ring-purple-500"
                         {...register('seed')}
                       />
                     </div>
@@ -400,11 +400,11 @@ export const GenerateImagePage = () => {
                 </div>
               </div>
 
-              <div className="mt-auto border-t border-[#264532] p-6">
+              <div className="mt-auto border-t border-[#1a1528] p-6">
                 <button
                   type="button"
                   onClick={handleReset}
-                  className="w-full rounded-lg border border-[#264532] py-3 text-sm font-medium text-gray-400 transition-colors hover:bg-panel-dark hover:text-white"
+                  className="w-full rounded-lg border border-[#1a1528] py-3 text-sm font-medium text-gray-400 transition-colors hover:bg-panel-dark hover:text-white"
                 >
                   Restaurar padrões
                 </button>

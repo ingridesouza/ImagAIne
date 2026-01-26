@@ -1,6 +1,5 @@
 import { useEffect, useMemo, useState } from 'react';
 import type { FormEvent } from 'react';
-import clsx from 'clsx';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { useNavigate } from 'react-router-dom';
 import { imagesApi } from '@/features/images/api';
@@ -35,7 +34,7 @@ const formatAspectRatio = (value?: string | null) => {
 
 export const ExplorePage = () => {
   const [search, setSearch] = useState('');
-  const [activeFilter, setActiveFilter] = useState<ViewFilter>('featured');
+  const [activeFilter, _setActiveFilter] = useState<ViewFilter>('featured');
   const [selectedImage, setSelectedImage] = useState<ImageRecord | null>(null);
   const [promptDraft, setPromptDraft] = useState('');
   const debouncedSearch = useDebounce(search);
@@ -88,14 +87,6 @@ export const ExplorePage = () => {
     }
   }, [images, activeFilter]);
 
-  const totalLikes = useMemo(
-    () => readyImages.reduce((sum, image) => sum + (image.like_count ?? 0), 0),
-    [readyImages],
-  );
-  const totalDownloads = useMemo(
-    () => readyImages.reduce((sum, image) => sum + (image.download_count ?? 0), 0),
-    [readyImages],
-  );
 
   const visibilityMutation = useMutation({
     mutationFn: ({ image, isPublic }: { image: ImageRecord; isPublic: boolean }) =>
