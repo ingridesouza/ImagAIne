@@ -62,7 +62,7 @@
 /* Custom scrollbar for studio feel */
 * {
   scrollbar-width: thin;
-  scrollbar-color: #264532 transparent;
+  scrollbar-color: #1a1528 transparent;
 }
 
 *::-webkit-scrollbar {
@@ -71,14 +71,14 @@
 }
 
 *::-webkit-scrollbar-track {
-  background: #122017;
+  background: #0a090d;
 }
 
 *::-webkit-scrollbar-thumb {
-  background: #264532;
+  background: #1a1528;
   border-radius: 8px;
 }
 
 *::-webkit-scrollbar-thumb:hover {
-  background: #38e07b;
+  background: #a855f7;
 }

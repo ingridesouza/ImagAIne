@@ -8,13 +8,13 @@ export default {
   theme: {
     extend: {
       colors: {
-        primary: '#38e07b',
+        primary: '#a855f7',
         'accent-purple': '#a855f7',
-        'background-light': '#f6f8f7',
-        'background-dark': '#122017',
-        'surface-dark': '#161b18',
-        'panel-dark': '#1a2a20',
-        'terminal-dark': '#0b120d',
+        'background-light': '#f8f6fa',
+        'background-dark': '#0a090d',
+        'surface-dark': '#0c0b10',
+        'panel-dark': '#100e16',
+        'terminal-dark': '#06050a',
         'purple-accent': '#8b5cf6',
       },
       fontFamily: {

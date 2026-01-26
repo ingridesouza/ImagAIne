@@ -3,6 +3,8 @@ import { useForm } from 'react-hook-form';
 import { z } from 'zod';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { imagesApi } from '@/features/images/api';
+import { authApi } from '@/features/auth/api';
+import { useAuthStore } from '@/features/auth/store';
 import type { GenerateImagePayload } from '@/features/images/types';
 import { Input } from '@/components/ui/Input';
 import { Textarea } from '@/components/ui/Textarea';
@@ -32,6 +34,7 @@ const aspectRatioOptions = [
 
 export const GenerateImageForm = () => {
   const queryClient = useQueryClient();
+  const setUser = useAuthStore((state) => state.setUser);
 
   const {
     register,
@@ -50,9 +53,12 @@ export const GenerateImageForm = () => {
 
   const { mutateAsync, isPending, error } = useMutation({
     mutationFn: (payload: GenerateImagePayload) => imagesApi.generate(payload),
-    onSuccess: () => {
+    onSuccess: async () => {
       queryClient.invalidateQueries({ queryKey: QUERY_KEYS.myImages() });
       reset({ prompt: '', negative_prompt: '', aspect_ratio: '1:1', seed: '' });
+      // Refresh user profile to update credits count
+      const updatedProfile = await authApi.fetchProfile();
+      setUser(updatedProfile);
     },
   });
 

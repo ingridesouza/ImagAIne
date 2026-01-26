@@ -49,7 +49,7 @@ export const AppLayout = () => {
   }, [isSidebarOpen]);
 
   return (
-    <div className="flex h-screen w-full overflow-hidden bg-background-dark text-slate-200 font-display">
+    <div id="app-layout" className="flex h-screen w-full overflow-hidden bg-background-dark text-slate-200 font-display">
       <AppSidebar
         isOpen={isSidebarOpen}
         isCollapsed={isSidebarCollapsed}
@@ -70,7 +70,7 @@ export const AppLayout = () => {
           onToggleSidebarCollapse={() => setSidebarCollapsed((prev) => !prev)}
           isSidebarCollapsed={isSidebarCollapsed}
         />
-        <main className="app-shell__main flex-1 min-h-0 overflow-y-auto bg-background-light dark:bg-background-dark">
+        <main className="relative z-0 flex-1 min-h-0 overflow-y-auto bg-background-light dark:bg-background-dark">
           <Outlet />
         </main>
       </div>
