@@ -25,7 +25,7 @@ export const AppHeader = ({ onOpenSidebar, onToggleSidebarCollapse, isSidebarCol
   }, []);
 
   return (
-    <header className="sticky top-0 z-30 bg-background-dark/60 backdrop-blur-xl">
+    <header className="sticky top-0 z-50 border-b border-white/5 bg-background-dark/80 backdrop-blur-xl">
       <div className="flex items-center justify-between gap-4 px-4 py-3 md:px-8">
         <div className="flex flex-1 items-center gap-2">
           <button
