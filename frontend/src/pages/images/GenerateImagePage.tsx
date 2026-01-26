@@ -125,7 +125,7 @@ export const GenerateImagePage = () => {
             <textarea
               id="prompt"
               rows={4}
-              className="w-full resize-none bg-transparent text-lg leading-relaxed text-white placeholder:text-gray-500 focus:outline-none"
+              className="w-full resize-none border-0 bg-transparent text-lg leading-relaxed text-white placeholder:text-gray-500 focus:outline-none focus:ring-0"
               placeholder="Descreva sua imaginação em detalhes..."
               {...register('prompt')}
             />
