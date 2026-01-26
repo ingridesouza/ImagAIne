@@ -33,30 +33,26 @@ type SidebarNavProps = {
 };
 
 export const SidebarNav = ({ onNavigate, collapsed = false }: SidebarNavProps) => (
-  <nav className="flex flex-col gap-4">
+  <nav className="flex flex-col gap-6">
     {(Object.keys(sections) as (keyof typeof sections)[]).map((sectionKey) => (
-      <div key={sectionKey} className="flex flex-col gap-2">
+      <div key={sectionKey} className="flex flex-col gap-1">
         {!collapsed ? (
-          <p className="px-2 text-[11px] uppercase tracking-[0.2em] text-white/40">
+          <p className="mb-1 px-3 text-[10px] font-medium uppercase tracking-widest text-slate-600">
             {SECTION_LABELS[sectionKey]}
           </p>
         ) : null}
-        <div className="flex flex-col gap-1">
+        <div className="flex flex-col">
           {sections[sectionKey].map(({ label, path }) => (
             <RouterNavLink
               key={path}
               to={path}
               className={({ isActive }) =>
                 clsx(
-                  'flex items-center rounded-xl transition-all',
-                  collapsed ? 'justify-center gap-0 p-3' : 'gap-4 px-4 py-3',
-                  !collapsed && (isActive
-                    ? 'bg-accent-purple/20 text-accent-purple'
-                    : 'text-slate-300 hover:bg-white/5 hover:text-white'),
-                  collapsed &&
-                    (isActive
-                      ? 'bg-accent-purple/20 text-accent-purple'
-                      : 'text-slate-300 hover:bg-white/5 hover:text-white'),
+                  'group flex items-center rounded-lg transition-all duration-150',
+                  collapsed ? 'justify-center p-2.5' : 'gap-3 px-3 py-2',
+                  isActive
+                    ? 'text-white'
+                    : 'text-slate-500 hover:text-slate-200',
                 )
               }
               onClick={onNavigate}
@@ -64,13 +60,18 @@ export const SidebarNav = ({ onNavigate, collapsed = false }: SidebarNavProps) =
               {({ isActive }) => (
                 <>
                   <span
-                    className="material-symbols-outlined !text-[22px]"
+                    className={clsx(
+                      'material-symbols-outlined !text-[20px] transition-colors',
+                      isActive && 'text-primary'
+                    )}
                     style={{ fontVariationSettings: `'FILL' ${isActive ? 1 : 0}` }}
                     aria-hidden
                   >
                     {getIconName(path)}
                   </span>
-                  {!collapsed ? <span className="text-sm font-semibold">{label}</span> : null}
+                  {!collapsed ? (
+                    <span className="text-[13px] font-medium">{label}</span>
+                  ) : null}
                 </>
               )}
             </RouterNavLink>

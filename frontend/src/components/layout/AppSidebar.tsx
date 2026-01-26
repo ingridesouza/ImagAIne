@@ -20,33 +20,30 @@ export const AppSidebar = ({ isOpen, isCollapsed, onClose, onToggleCollapse }: A
   return (
     <aside
       className={clsx(
-        'fixed inset-y-0 left-0 z-40 bg-surface-dark border-r border-white/5 text-white shadow-2xl transition-transform duration-300 ease-in-out',
-        isCollapsed ? 'w-20 p-4' : 'w-72 p-6',
+        'fixed inset-y-0 left-0 z-40 bg-background-dark/95 backdrop-blur-xl text-white transition-all duration-300 ease-out',
+        isCollapsed ? 'w-[72px] px-3 py-4' : 'w-64 px-4 py-5',
         'md:static md:translate-x-0 md:flex md:flex-col',
-        isOpen ? 'translate-x-0 flex' : '-translate-x-full',
+        isOpen ? 'translate-x-0 flex shadow-2xl' : '-translate-x-full',
       )}
       aria-label="Navegação principal"
     >
       <button
         type="button"
-        className="absolute right-4 top-4 text-slate-400 hover:text-white md:hidden"
+        className="absolute right-3 top-3 flex size-8 items-center justify-center text-slate-500 transition-colors hover:text-white md:hidden"
         onClick={onClose}
-        aria-label="Fechar menu lateral"
+        aria-label="Fechar menu"
       >
-        <span className="material-symbols-outlined">close</span>
+        <span className="material-symbols-outlined !text-[20px]">close</span>
       </button>
 
-      <div className="flex h-full flex-col justify-between gap-6">
-        <div className="flex flex-col gap-6">
-          <div className={clsx('flex items-center px-2', isCollapsed ? 'justify-center' : 'gap-3')}>
-            <div className="flex size-10 items-center justify-center rounded-xl bg-gradient-to-br from-primary to-emerald-600 text-black">
-              <span className="material-symbols-outlined !text-[24px]">auto_awesome</span>
+      <div className="flex h-full flex-col justify-between gap-8">
+        <div className="flex flex-col gap-8">
+          <div className={clsx('flex items-center', isCollapsed ? 'justify-center' : 'gap-3 px-1')}>
+            <div className="flex size-9 items-center justify-center rounded-lg bg-gradient-to-br from-primary to-violet-600">
+              <span className="material-symbols-outlined !text-[20px] text-white">auto_awesome</span>
             </div>
             {!isCollapsed ? (
-              <div>
-                <h1 className="text-lg font-bold leading-none tracking-tight">AI Gen</h1>
-                <p className="text-xs font-medium text-white/40">Galeria Criativa</p>
-              </div>
+              <span className="text-base font-semibold tracking-tight">ImagAIne</span>
             ) : null}
           </div>
 
@@ -54,34 +51,35 @@ export const AppSidebar = ({ isOpen, isCollapsed, onClose, onToggleCollapse }: A
         </div>
 
         {!isCollapsed ? (
-          <div className="rounded-2xl bg-gradient-to-b from-white/5 to-transparent p-4">
-            <div className="mb-2 flex items-center justify-between">
-              <span className="text-xs font-medium text-slate-400">Créditos mensais</span>
-              <span className="text-xs font-bold text-primary">
-                {generationCount}/{quota}
+          <div className="space-y-3 px-1">
+            <div className="flex items-center justify-between text-xs">
+              <span className="text-slate-500">Créditos</span>
+              <span className="font-medium text-slate-300">
+                {generationCount}<span className="text-slate-600">/{quota}</span>
               </span>
             </div>
-            <div className="h-1.5 w-full overflow-hidden rounded-full bg-white/10">
+            <div className="h-1 w-full overflow-hidden rounded-full bg-white/[0.06]">
               <div
-                className="h-full rounded-full bg-primary transition-all"
+                className="h-full rounded-full bg-gradient-to-r from-primary to-violet-500 transition-all"
                 style={{ width: `${percent}%` }}
               />
             </div>
             <button
               type="button"
-              className="mt-4 w-full rounded-lg bg-white/5 py-2 text-xs font-semibold text-white transition-colors hover:bg-white/10"
+              className="flex w-full items-center justify-center gap-2 rounded-lg py-2 text-xs font-medium text-slate-400 transition-colors hover:bg-white/[0.04] hover:text-white"
             >
-              Upgrade Pro
+              <span className="material-symbols-outlined !text-[16px]">bolt</span>
+              Upgrade
             </button>
           </div>
         ) : (
           <button
             type="button"
             onClick={onToggleCollapse}
-            className="hidden items-center justify-center rounded-xl bg-white/5 p-3 text-white transition-colors hover:bg-white/10 md:flex"
-            aria-label="Expandir menu lateral"
+            className="hidden items-center justify-center text-slate-500 transition-colors hover:text-white md:flex"
+            aria-label="Expandir"
           >
-            <span className="material-symbols-outlined">chevron_right</span>
+            <span className="material-symbols-outlined !text-[20px]">chevron_right</span>
           </button>
         )}
       </div>
