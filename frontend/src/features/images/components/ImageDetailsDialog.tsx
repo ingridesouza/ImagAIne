@@ -1,18 +1,14 @@
 import { useEffect, useState } from 'react';
-import type { MouseEvent } from 'react';
-import { Download, Heart, X } from 'lucide-react';
+import type { MouseEvent, FormEvent } from 'react';
+import { Download, Heart, X, Share2, MessageCircle, Send } from 'lucide-react';
 import { Button } from '@/components/ui/Button';
-import { Badge } from '@/components/ui/Badge';
-import { Select } from '@/components/ui/Select';
 import type { ImageRecord } from '@/features/images/types';
 
-const STATUS_COPY: Record<
-  ImageRecord['status'],
-  { label: string; variant: 'default' | 'success' | 'warning' }
-> = {
-  READY: { label: 'Pronta', variant: 'success' },
-  GENERATING: { label: 'Em processamento', variant: 'warning' },
-  FAILED: { label: 'Falhou', variant: 'default' },
+export type ImageComment = {
+  id: number;
+  user: { username: string };
+  text: string;
+  created_at: string;
 };
 
 type ImageDetailsDialogProps = {
@@ -20,27 +16,31 @@ type ImageDetailsDialogProps = {
   onClose: () => void;
   onToggleLike?: (image: ImageRecord) => void;
   onDownload?: (image: ImageRecord) => void;
+  onShare?: (image: ImageRecord) => void;
   onUpdateVisibility?: (image: ImageRecord, isPublic: boolean) => void;
   isUpdatingVisibility?: boolean;
+  comments?: ImageComment[];
+  onAddComment?: (image: ImageRecord, text: string) => void;
+  isLoadingComments?: boolean;
 };
-
-type Tab = 'details' | 'settings';
 
 export const ImageDetailsDialog = ({
   image,
   onClose,
   onToggleLike,
   onDownload,
-  onUpdateVisibility,
-  isUpdatingVisibility = false,
+  onShare,
+  comments = [],
+  onAddComment,
+  isLoadingComments = false,
 }: ImageDetailsDialogProps) => {
-  const [activeTab, setActiveTab] = useState<Tab>('details');
-  const [visibilityChoice, setVisibilityChoice] = useState<'public' | 'private'>('public');
+  const [showComments, setShowComments] = useState(false);
+  const [newComment, setNewComment] = useState('');
 
   useEffect(() => {
     if (image) {
-      setActiveTab('details');
-      setVisibilityChoice(image.is_public ? 'public' : 'private');
+      setShowComments(false);
+      setNewComment('');
     }
   }, [image]);
 
@@ -48,158 +48,146 @@ export const ImageDetailsDialog = ({
     return null;
   }
 
-  const formattedDate = new Date(image.created_at).toLocaleString('pt-BR', {
-    dateStyle: 'long',
-    timeStyle: 'short',
-  });
-
-  const handleVisibilityChange = (value: 'public' | 'private') => {
-    setVisibilityChoice(value);
-    if (image && onUpdateVisibility) {
-      onUpdateVisibility(image, value === 'public');
-    }
-  };
-
   const handleBackdropClick = (event: MouseEvent<HTMLDivElement>) => {
     if (event.target === event.currentTarget) {
       onClose();
     }
   };
 
-  const status = STATUS_COPY[image.status];
+  const handleSubmitComment = (e: FormEvent) => {
+    e.preventDefault();
+    if (!newComment.trim() || !image || !onAddComment) return;
+
+    onAddComment(image, newComment);
+    setNewComment('');
+  };
+
+  const formatTimeAgo = (dateString: string) => {
+    const date = new Date(dateString);
+    const now = new Date();
+    const diffMs = now.getTime() - date.getTime();
+    const diffMins = Math.floor(diffMs / 60000);
+    const diffHours = Math.floor(diffMs / 3600000);
+    const diffDays = Math.floor(diffMs / 86400000);
+
+    if (diffMins < 1) return 'agora';
+    if (diffMins < 60) return `${diffMins}min`;
+    if (diffHours < 24) return `${diffHours}h`;
+    return `${diffDays}d`;
+  };
 
   return (
-    <div className="image-dialog__backdrop" onClick={handleBackdropClick} role="dialog" aria-modal="true">
-      <div className="image-dialog">
-        <div className="image-dialog__header">
-          <div>
-            <p className="image-dialog__muted">Gerado por {image.user.username}</p>
-            <h2>{image.prompt}</h2>
-          </div>
-          <Button type="button" variant="ghost" onClick={onClose} aria-label="Fechar detalhes">
-            <X size={18} />
-            Fechar
-          </Button>
-        </div>
+    <div className="image-modal__backdrop" onClick={handleBackdropClick} role="dialog" aria-modal="true">
+      <div className={`image-modal ${showComments ? 'image-modal--with-comments' : ''}`}>
+        {/* Botão Fechar */}
+        <button className="image-modal__close" onClick={onClose} aria-label="Fechar">
+          <X size={20} />
+        </button>
 
-        <div className="image-dialog__content">
-          <div className="image-dialog__preview">
+        {/* Área Principal */}
+        <div className="image-modal__main">
+          {/* Imagem */}
+          <div className="image-modal__image-container">
             {image.image_url ? (
               <img src={image.image_url} alt={image.prompt} />
             ) : (
-              <div className="image-dialog__placeholder">
-                <span>Prévia indisponível</span>
+              <div className="image-modal__placeholder">
+                <span>Imagem indisponível</span>
               </div>
             )}
           </div>
-          <div className="image-dialog__sidebar">
-            <div className="image-dialog__tabs">
-              <button
-                type="button"
-                className={activeTab === 'details' ? 'active' : ''}
-                onClick={() => setActiveTab('details')}
-              >
-                Detalhes
-              </button>
-              <button
-                type="button"
-                className={activeTab === 'settings' ? 'active' : ''}
-                onClick={() => setActiveTab('settings')}
-              >
-                Configurações
-              </button>
-            </div>
 
-            {activeTab === 'details' ? (
-              <div className="image-dialog__panel">
-                <div className="image-dialog__badge-row">
-                  <Badge variant={status.variant}>{status.label}</Badge>
-                  <span className="image-dialog__muted">{formattedDate}</span>
-                </div>
-
-                {image.negative_prompt ? (
-                  <p className="image-dialog__muted">
-                    <strong>Evitar:</strong> {image.negative_prompt}
-                  </p>
-                ) : null}
-
-                <dl className="image-dialog__list">
-                  <div>
-                    <dt>Aspect ratio</dt>
-                    <dd>{image.aspect_ratio}</dd>
-                  </div>
-                  {image.seed ? (
-                    <div>
-                      <dt>Seed</dt>
-                      <dd>{image.seed}</dd>
-                    </div>
-                  ) : null}
-                  <div>
-                    <dt>Tags</dt>
-                    <dd>{image.tags.length ? image.tags.join(', ') : 'Sem tags'}</dd>
-                  </div>
-                </dl>
-
-                <div className="image-dialog__stats">
-                  <div>
-                    <span className="image-dialog__muted">Curtidas</span>
-                    <strong>{image.like_count}</strong>
-                  </div>
-                  <div>
-                    <span className="image-dialog__muted">Comentários</span>
-                    <strong>{image.comment_count}</strong>
-                  </div>
-                  <div>
-                    <span className="image-dialog__muted">Downloads</span>
-                    <strong>{image.download_count}</strong>
-                  </div>
-                </div>
-
-                <div className="image-dialog__actions">
-                  {onToggleLike ? (
-                    <Button
-                      type="button"
-                      variant={image.is_liked ? 'primary' : 'secondary'}
-                      onClick={() => onToggleLike(image)}
-                    >
-                      <Heart size={16} fill={image.is_liked ? '#fff' : 'none'} />
-                      {image.is_liked ? 'Curtida' : 'Curtir'}
-                    </Button>
-                  ) : null}
-                  {onDownload ? (
-                    <Button type="button" variant="secondary" onClick={() => onDownload(image)}>
-                      <Download size={16} />
-                      Download
-                    </Button>
-                  ) : null}
-                </div>
-              </div>
-            ) : (
-              <div className="image-dialog__panel">
-                <p className="image-dialog__muted">
-                  Controle quem pode encontrar esta imagem na galeria pública. Tornar privada remove a imagem do feed
-                  compartilhado.
-                </p>
-                <label className="form-group">
-                  <span>Visibilidade</span>
-                  <Select
-                    value={visibilityChoice}
-                    disabled={isUpdatingVisibility}
-                    onChange={(event) =>
-                      handleVisibilityChange(event.target.value as 'public' | 'private')
-                    }
-                  >
-                    <option value="public">Pública</option>
-                    <option value="private">Privada</option>
-                  </Select>
-                </label>
-                {isUpdatingVisibility ? (
-                  <span className="image-dialog__muted">Salvando alterações...</span>
-                ) : null}
-              </div>
-            )}
+          {/* Prompt */}
+          <div className="image-modal__prompt-section">
+            <p className="image-modal__author">
+              Por <strong>{image.user.username}</strong>
+            </p>
+            <p className="image-modal__prompt" title={image.prompt}>
+              {image.prompt}
+            </p>
           </div>
         </div>
+
+        {/* Barra de Ações Vertical */}
+        <div className="image-modal__actions">
+          <button
+            className={`image-modal__action-btn ${image.is_liked ? 'image-modal__action-btn--active' : ''}`}
+            onClick={() => onToggleLike?.(image)}
+            title="Curtir"
+          >
+            <Heart size={22} fill={image.is_liked ? 'currentColor' : 'none'} />
+            <span>{image.like_count}</span>
+          </button>
+
+          <button
+            className="image-modal__action-btn"
+            onClick={() => setShowComments(!showComments)}
+            title="Comentários"
+          >
+            <MessageCircle size={22} fill={showComments ? 'currentColor' : 'none'} />
+            <span>{image.comment_count}</span>
+          </button>
+
+          <button
+            className="image-modal__action-btn"
+            onClick={() => onShare?.(image)}
+            title="Compartilhar"
+          >
+            <Share2 size={22} />
+            <span>Enviar</span>
+          </button>
+
+          <button
+            className="image-modal__action-btn"
+            onClick={() => onDownload?.(image)}
+            title="Download"
+          >
+            <Download size={22} />
+            <span>{image.download_count}</span>
+          </button>
+        </div>
+
+        {/* Painel de Comentários */}
+        {showComments && (
+          <div className="image-modal__comments">
+            <div className="image-modal__comments-header">
+              <h3>Comentários</h3>
+              <span>{comments.length}</span>
+            </div>
+
+            <div className="image-modal__comments-list">
+              {isLoadingComments ? (
+                <p className="image-modal__no-comments">Carregando comentários...</p>
+              ) : comments.length === 0 ? (
+                <p className="image-modal__no-comments">
+                  Nenhum comentário ainda. Seja o primeiro!
+                </p>
+              ) : (
+                comments.map((comment) => (
+                  <div key={comment.id} className="image-modal__comment">
+                    <div className="image-modal__comment-header">
+                      <strong>{comment.user.username}</strong>
+                      <span>{formatTimeAgo(comment.created_at)}</span>
+                    </div>
+                    <p>{comment.text}</p>
+                  </div>
+                ))
+              )}
+            </div>
+
+            <form className="image-modal__comment-form" onSubmit={handleSubmitComment}>
+              <input
+                type="text"
+                placeholder="Adicionar comentário..."
+                value={newComment}
+                onChange={(e) => setNewComment(e.target.value)}
+              />
+              <Button type="submit" variant="primary" disabled={!newComment.trim() || !onAddComment}>
+                <Send size={16} />
+              </Button>
+            </form>
+          </div>
+        )}
       </div>
     </div>
   );

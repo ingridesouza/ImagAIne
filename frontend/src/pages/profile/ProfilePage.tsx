@@ -118,6 +118,23 @@ export const ProfilePage = () => {
     queryClient.invalidateQueries({ queryKey: QUERY_KEYS.myImages() });
   };
 
+  const handleShare = async (image: ImageRecord) => {
+    const shareUrl = `${window.location.origin}/explore?image=${image.id}`;
+    if (navigator.share) {
+      try {
+        await navigator.share({
+          title: 'Confira essa imagem no ImagAIne!',
+          text: image.prompt,
+          url: shareUrl,
+        });
+      } catch {
+        // User cancelled or share failed
+      }
+    } else {
+      await navigator.clipboard.writeText(shareUrl);
+    }
+  };
+
   const coverUrl = profile?.cover_url;
   const avatarUrl = profile?.avatar_url;
   const fullName =
@@ -367,6 +384,7 @@ export const ProfilePage = () => {
         onClose={() => setSelectedImage(null)}
         onToggleLike={(image) => likeMutation.mutate(image)}
         onDownload={(image) => handleDownload(image)}
+        onShare={handleShare}
         onUpdateVisibility={(image, isPublic) => visibilityMutation.mutate({ image, isPublic })}
         isUpdatingVisibility={visibilityMutation.isPending}
       />

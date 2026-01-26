@@ -2550,7 +2550,416 @@ button {
     width: 100%;
     text-align: left;
   }
+}
 
+/* ========================================
+   MODAL DE DETALHES DA IMAGEM
+   Layout moderno com imagem centralizada
+   ======================================== */
 
+.image-modal__backdrop {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.92);
+  backdrop-filter: blur(20px);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 1.5rem;
+  z-index: 1000;
+  animation: fadeIn 0.2s ease;
+}
 
+@keyframes fadeIn {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+.image-modal {
+  position: relative;
+  display: flex;
+  align-items: stretch;
+  gap: 0;
+  max-width: 1200px;
+  max-height: 90vh;
+  background: rgba(12, 10, 18, 0.98);
+  border-radius: 24px;
+  box-shadow: 0 40px 120px rgba(0, 0, 0, 0.8);
+  overflow: hidden;
+  animation: modalSlideIn 0.3s ease;
+}
+
+@keyframes modalSlideIn {
+  from {
+    opacity: 0;
+    transform: scale(0.95) translateY(20px);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1) translateY(0);
+  }
+}
+
+.image-modal--with-comments {
+  max-width: 1400px;
+}
+
+.image-modal__close {
+  position: absolute;
+  top: 16px;
+  right: 16px;
+  z-index: 10;
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  background: rgba(0, 0, 0, 0.5);
+  color: #fff;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.image-modal__close:hover {
+  background: rgba(255, 255, 255, 0.1);
+  border-color: rgba(255, 255, 255, 0.2);
+  transform: scale(1.05);
+}
+
+/* Área Principal - Imagem + Prompt */
+.image-modal__main {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+  max-width: 800px;
+}
+
+.image-modal__image-container {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: #000;
+  min-height: 400px;
+  max-height: 70vh;
+  overflow: hidden;
+}
+
+.image-modal__image-container img {
+  max-width: 100%;
+  max-height: 100%;
+  object-fit: contain;
+}
+
+.image-modal__placeholder {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 100%;
+  height: 100%;
+  min-height: 300px;
+  color: var(--text-muted);
+  font-size: 1rem;
+}
+
+/* Seção do Prompt */
+.image-modal__prompt-section {
+  padding: 1.25rem 1.5rem;
+  background: rgba(255, 255, 255, 0.02);
+  border-top: 1px solid rgba(255, 255, 255, 0.05);
+}
+
+.image-modal__author {
+  margin: 0 0 0.5rem;
+  font-size: 0.85rem;
+  color: var(--text-muted);
+}
+
+.image-modal__author strong {
+  color: var(--accent-secondary);
+}
+
+.image-modal__prompt {
+  margin: 0;
+  font-size: 0.95rem;
+  line-height: 1.5;
+  color: var(--text-primary);
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+/* Barra de Ações Vertical */
+.image-modal__actions {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  padding: 1.5rem 1rem;
+  background: rgba(255, 255, 255, 0.02);
+  border-left: 1px solid rgba(255, 255, 255, 0.05);
+}
+
+.image-modal__action-btn {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.35rem;
+  padding: 1rem 0.75rem;
+  border-radius: 16px;
+  background: transparent;
+  border: 1px solid transparent;
+  color: var(--text-muted);
+  font-size: 0.75rem;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  min-width: 72px;
+}
+
+.image-modal__action-btn:hover {
+  background: rgba(255, 255, 255, 0.05);
+  color: var(--text-primary);
+}
+
+.image-modal__action-btn--active {
+  color: #f43f5e;
+}
+
+.image-modal__action-btn--active:hover {
+  color: #fb7185;
+}
+
+.image-modal__action-btn svg {
+  transition: transform 0.2s ease;
+}
+
+.image-modal__action-btn:hover svg {
+  transform: scale(1.1);
+}
+
+.image-modal__action-btn span {
+  font-weight: 500;
+}
+
+/* Painel de Comentários */
+.image-modal__comments {
+  width: 340px;
+  display: flex;
+  flex-direction: column;
+  background: rgba(255, 255, 255, 0.02);
+  border-left: 1px solid rgba(255, 255, 255, 0.05);
+  animation: slideIn 0.3s ease;
+}
+
+@keyframes slideIn {
+  from {
+    opacity: 0;
+    transform: translateX(20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(0);
+  }
+}
+
+.image-modal__comments-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 1.25rem 1.5rem;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+}
+
+.image-modal__comments-header h3 {
+  margin: 0;
+  font-size: 1rem;
+  font-weight: 600;
+}
+
+.image-modal__comments-header span {
+  padding: 0.25rem 0.6rem;
+  border-radius: 999px;
+  background: rgba(168, 85, 247, 0.15);
+  color: var(--accent-secondary);
+  font-size: 0.75rem;
+  font-weight: 600;
+}
+
+.image-modal__comments-list {
+  flex: 1;
+  overflow-y: auto;
+  padding: 1rem 1.5rem;
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+  max-height: 50vh;
+}
+
+.image-modal__comments-list::-webkit-scrollbar {
+  width: 6px;
+}
+
+.image-modal__comments-list::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.image-modal__comments-list::-webkit-scrollbar-thumb {
+  background: rgba(255, 255, 255, 0.1);
+  border-radius: 3px;
+}
+
+.image-modal__no-comments {
+  text-align: center;
+  color: var(--text-muted);
+  padding: 2rem 0;
+  font-size: 0.9rem;
+}
+
+.image-modal__comment {
+  padding: 0.75rem 1rem;
+  background: rgba(255, 255, 255, 0.03);
+  border-radius: 12px;
+}
+
+.image-modal__comment-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 0.35rem;
+}
+
+.image-modal__comment-header strong {
+  font-size: 0.85rem;
+  color: var(--text-primary);
+}
+
+.image-modal__comment-header span {
+  font-size: 0.75rem;
+  color: var(--text-muted);
+}
+
+.image-modal__comment p {
+  margin: 0;
+  font-size: 0.9rem;
+  line-height: 1.4;
+  color: rgba(255, 255, 255, 0.85);
+}
+
+/* Formulário de Comentário */
+.image-modal__comment-form {
+  display: flex;
+  gap: 0.5rem;
+  padding: 1rem 1.5rem;
+  border-top: 1px solid rgba(255, 255, 255, 0.05);
+  background: rgba(0, 0, 0, 0.2);
+}
+
+.image-modal__comment-form input {
+  flex: 1;
+  padding: 0.75rem 1rem;
+  border-radius: 12px;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  background: rgba(255, 255, 255, 0.04);
+  color: var(--text-primary);
+  font-size: 0.9rem;
+  outline: none;
+  transition: all 0.2s ease;
+}
+
+.image-modal__comment-form input::placeholder {
+  color: var(--text-muted);
+}
+
+.image-modal__comment-form input:focus {
+  border-color: var(--accent-primary);
+  background: rgba(255, 255, 255, 0.06);
+}
+
+.image-modal__comment-form .button {
+  padding: 0.75rem;
+  min-width: 44px;
+}
+
+/* Responsividade do Modal */
+@media (max-width: 900px) {
+  .image-modal {
+    flex-direction: column;
+    max-height: 95vh;
+    width: 100%;
+    max-width: 500px;
+  }
+
+  .image-modal__main {
+    max-width: 100%;
+  }
+
+  .image-modal__image-container {
+    min-height: 280px;
+    max-height: 50vh;
+  }
+
+  .image-modal__actions {
+    flex-direction: row;
+    justify-content: center;
+    padding: 1rem;
+    border-left: none;
+    border-top: 1px solid rgba(255, 255, 255, 0.05);
+  }
+
+  .image-modal__action-btn {
+    min-width: 60px;
+    padding: 0.75rem 0.5rem;
+  }
+
+  .image-modal__comments {
+    width: 100%;
+    border-left: none;
+    border-top: 1px solid rgba(255, 255, 255, 0.05);
+    max-height: 50vh;
+  }
+
+  .image-modal__comments-list {
+    max-height: 30vh;
+  }
+
+  .image-modal__close {
+    top: 12px;
+    right: 12px;
+    width: 36px;
+    height: 36px;
+  }
+}
+
+@media (max-width: 520px) {
+  .image-modal__backdrop {
+    padding: 0.5rem;
+  }
+
+  .image-modal {
+    border-radius: 20px;
+  }
+
+  .image-modal__prompt-section {
+    padding: 1rem;
+  }
+
+  .image-modal__prompt {
+    font-size: 0.9rem;
+    -webkit-line-clamp: 3;
+  }
+
+  .image-modal__action-btn {
+    min-width: 50px;
+    padding: 0.6rem 0.4rem;
+    font-size: 0.7rem;
+  }
+
+  .image-modal__action-btn svg {
+    width: 20px;
+    height: 20px;
+  }
 }

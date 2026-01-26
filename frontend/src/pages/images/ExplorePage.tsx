@@ -115,6 +115,24 @@ export const ExplorePage = () => {
     visibilityMutation.mutate({ image, isPublic });
   };
 
+  const handleShare = async (image: ImageRecord) => {
+    const shareUrl = `${window.location.origin}/explore?image=${image.id}`;
+    if (navigator.share) {
+      try {
+        await navigator.share({
+          title: 'Confira essa imagem no ImagAIne!',
+          text: image.prompt,
+          url: shareUrl,
+        });
+      } catch {
+        // User cancelled or share failed
+      }
+    } else {
+      await navigator.clipboard.writeText(shareUrl);
+      // TODO: Add toast notification
+    }
+  };
+
   const isLoadingGrid = isLoading;
   const showEmptyState = !isLoadingGrid && readyImages.length === 0;
 
@@ -236,6 +254,7 @@ export const ExplorePage = () => {
         onClose={() => setSelectedImage(null)}
         onToggleLike={(image) => likeMutation.mutate(image)}
         onDownload={handleDownload}
+        onShare={handleShare}
         onUpdateVisibility={handleUpdateVisibility}
         isUpdatingVisibility={visibilityMutation.isPending}
       />
