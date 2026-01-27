@@ -103,6 +103,15 @@ const creationModes: CreationMode[] = [
   },
 ];
 
+// Placeholders dinâmicos por modo
+const modePlaceholders: Record<string, string> = {
+  cinematic: 'Descreva uma cena dramática, com luz e atmosfera...',
+  concept_art: 'Descreva um mundo, criatura ou conceito fantástico...',
+  character: 'Descreva a aparência, roupas e personalidade...',
+  product: 'Descreva o produto e como deve ser apresentado...',
+  environment: 'Descreva o lugar, hora do dia e atmosfera...',
+};
+
 // Prompts padrão quando nenhum modo está selecionado
 const defaultSamplePrompts = [
   'Um astronauta meditando em um jardim zen flutuante, luz dourada, estilo cinematográfico',
@@ -162,6 +171,9 @@ export const GenerateImagePage = () => {
   });
 
   const currentMode = creationModes.find((m) => m.id === selectedMode);
+  const placeholder = selectedMode
+    ? modePlaceholders[selectedMode]
+    : 'Descreva sua imaginação em detalhes...';
 
   const onSubmit = (values: FormValues) => {
     // Adiciona o sufixo do modo selecionado ao prompt
@@ -204,55 +216,31 @@ export const GenerateImagePage = () => {
           </h1>
         </div>
 
-        {/* Seletor de Modos de Criação */}
-        <div className="mb-8">
-          <p className="mb-4 text-center text-sm text-gray-400">Escolha um estilo de criação</p>
-          <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-5">
-            {creationModes.map((mode) => (
-              <button
-                key={mode.id}
-                type="button"
-                onClick={() => setSelectedMode(selectedMode === mode.id ? null : mode.id)}
+        {/* Seletor de Modos de Criação - Chips compactos */}
+        <div className="mb-6 flex flex-wrap items-center justify-center gap-2">
+          {creationModes.map((mode) => (
+            <button
+              key={mode.id}
+              type="button"
+              onClick={() => setSelectedMode(selectedMode === mode.id ? null : mode.id)}
+              className={clsx(
+                'group flex items-center gap-2 rounded-full px-4 py-2 text-sm transition-all',
+                selectedMode === mode.id
+                  ? 'bg-purple-500/20 text-purple-300 ring-1 ring-purple-500/50'
+                  : 'bg-white/[0.03] text-gray-400 ring-1 ring-white/5 hover:bg-white/[0.06] hover:text-white',
+              )}
+            >
+              <span
                 className={clsx(
-                  'group relative flex flex-col items-center gap-2 rounded-xl p-4 transition-all',
-                  selectedMode === mode.id
-                    ? 'bg-purple-500/20 ring-2 ring-purple-500'
-                    : 'bg-white/[0.03] ring-1 ring-white/10 hover:bg-white/[0.06] hover:ring-white/20',
+                  'material-symbols-outlined text-[18px] transition-colors',
+                  selectedMode === mode.id ? 'text-purple-400' : 'text-gray-500 group-hover:text-gray-300',
                 )}
               >
-                <span
-                  className={clsx(
-                    'material-symbols-outlined text-[28px] transition-colors',
-                    selectedMode === mode.id ? 'text-purple-400' : 'text-gray-400 group-hover:text-white',
-                  )}
-                >
-                  {mode.icon}
-                </span>
-                <span
-                  className={clsx(
-                    'text-center text-xs font-medium leading-tight transition-colors',
-                    selectedMode === mode.id ? 'text-purple-300' : 'text-gray-300',
-                  )}
-                >
-                  {mode.label}
-                </span>
-                <span className="hidden text-center text-[10px] text-gray-500 sm:block">
-                  {mode.description}
-                </span>
-                {selectedMode === mode.id && (
-                  <span className="absolute -right-1 -top-1 flex h-5 w-5 items-center justify-center rounded-full bg-purple-500 text-white">
-                    <span className="material-symbols-outlined text-[14px]">check</span>
-                  </span>
-                )}
-              </button>
-            ))}
-          </div>
-          {currentMode && (
-            <div className="mt-4 flex items-center justify-center gap-2 text-sm text-purple-300">
-              <span className="material-symbols-outlined text-[16px]">auto_fix_high</span>
-              <span>Estilo &quot;{currentMode.label}&quot; será aplicado automaticamente</span>
-            </div>
-          )}
+                {mode.icon}
+              </span>
+              <span>{mode.label}</span>
+            </button>
+          ))}
         </div>
 
         <form onSubmit={handleSubmit(onSubmit)} className="flex flex-col gap-8">
@@ -262,7 +250,7 @@ export const GenerateImagePage = () => {
               id="prompt"
               rows={4}
               className="w-full resize-none border-0 bg-transparent text-lg leading-relaxed text-white placeholder:text-gray-500 focus:outline-none focus:ring-0"
-              placeholder="Descreva sua imaginação em detalhes..."
+              placeholder={placeholder}
               {...register('prompt')}
             />
 
@@ -276,19 +264,24 @@ export const GenerateImagePage = () => {
                 <button
                   type="button"
                   onClick={handleRandomPrompt}
-                  className="flex items-center gap-1.5 text-sm text-gray-500 transition-colors hover:text-purple-400"
+                  className={clsx(
+                    'flex items-center gap-1.5 text-sm transition-colors',
+                    currentMode ? 'text-purple-400 hover:text-purple-300' : 'text-gray-500 hover:text-purple-400',
+                  )}
                 >
                   <span className="material-symbols-outlined text-[16px]">lightbulb</span>
-                  Me inspire
+                  {currentMode ? `Exemplo de ${currentMode.label.toLowerCase()}` : 'Me inspire'}
                 </button>
               ) : (
                 <span className="text-xs text-gray-600">{promptValue.length} caracteres</span>
               )}
 
-              <div className="flex items-center gap-1 text-xs text-gray-600">
-                <span className="material-symbols-outlined text-[14px]">keyboard</span>
-                Enter para gerar
-              </div>
+              {currentMode && (
+                <span className="flex items-center gap-1 text-xs text-purple-400/70">
+                  <span className="material-symbols-outlined text-[12px]">auto_fix_high</span>
+                  Estilo aplicado
+                </span>
+              )}
             </div>
           </div>
 
