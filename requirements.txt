@@ -13,3 +13,7 @@ accelerate
 huggingface-hub>=0.16.0
 python-dotenv
 redis
+# Memória Criativa - Embeddings
+pgvector>=0.2.0
+sentence-transformers>=2.2.0
+numpy>=1.24.0

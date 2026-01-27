@@ -175,3 +175,8 @@ TEST_RUNNER = 'tests.runner.DescriptiveTestRunner'
 CORS_ALLOWED_ORIGINS = csv_list(config('CORS_ALLOWED_ORIGINS', default='http://localhost:5173'))
 CORS_ALLOW_CREDENTIALS = True
 CSRF_TRUSTED_ORIGINS = csv_list(config('CSRF_TRUSTED_ORIGINS', default='http://localhost:5173'))
+
+# Creative Memory - Embeddings Settings
+EMBEDDINGS_ENABLED = config('EMBEDDINGS_ENABLED', default=True, cast=bool)
+EMBEDDINGS_DEVICE = config('EMBEDDINGS_DEVICE', default='auto')
+EMBEDDINGS_CACHE_DIR = config('EMBEDDINGS_CACHE_DIR', default=None)

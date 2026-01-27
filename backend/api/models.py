@@ -4,7 +4,18 @@ import uuid
 from django.contrib.auth import get_user_model
 from django.db import models
 
+try:
+    from pgvector.django import VectorField
+    PGVECTOR_AVAILABLE = True
+except ImportError:
+    PGVECTOR_AVAILABLE = False
+    VectorField = None
+
 User = get_user_model()
+
+# Embedding dimensions (must match model outputs)
+TEXT_EMBEDDING_DIM = 384  # sentence-transformers/all-MiniLM-L6-v2
+IMAGE_EMBEDDING_DIM = 768  # BLIP visual encoder (ViT-B/16)
 
 
 def image_upload_to(instance, filename):
@@ -113,3 +124,50 @@ class ImageTag(models.Model):
 
     def __str__(self):
         return self.name
+
+
+class ImageEmbedding(models.Model):
+    """
+    Stores embeddings for the Creative Memory feature.
+
+    - prompt_embedding: vector from sentence-transformers (all-MiniLM-L6-v2)
+    - image_embedding: vector from BLIP visual encoder
+
+    Both vectors are L2-normalized for cosine similarity via inner product.
+    """
+    image = models.OneToOneField(
+        Image,
+        on_delete=models.CASCADE,
+        related_name='embedding',
+        primary_key=True,
+    )
+    prompt_text = models.TextField(
+        blank=True,
+        help_text="The prompt text used to generate the embedding (for debugging/analysis)"
+    )
+    # When pgvector is not available, fallback to JSON storage
+    # These fields will be created properly by migration based on DB support
+    prompt_embedding_json = models.JSONField(
+        null=True,
+        blank=True,
+        help_text="Fallback: prompt embedding as JSON list when pgvector unavailable"
+    )
+    image_embedding_json = models.JSONField(
+        null=True,
+        blank=True,
+        help_text="Fallback: image embedding as JSON list when pgvector unavailable"
+    )
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        verbose_name = "Image Embedding"
+        verbose_name_plural = "Image Embeddings"
+
+    def __str__(self):
+        return f"Embedding for Image {self.image_id}"
+
+    @property
+    def has_embeddings(self):
+        """Check if at least one embedding is available."""
+        return bool(self.prompt_embedding_json or self.image_embedding_json)
