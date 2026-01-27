@@ -10,7 +10,7 @@ import type { GenerateImagePayload, ImageRecord } from '@/features/images/types'
 import { QUERY_KEYS } from '@/lib/constants';
 
 const schema = z.object({
-  prompt: z.string().min(10, 'Descreva melhor o que deseja gerar'),
+  prompt: z.string().min(20, 'Conte um pouco mais sobre sua imagem'),
   negative_prompt: z.string().optional(),
   aspect_ratio: z.enum(['1:1', '16:9', '4:3', '9:16', '3:4', '2:1', '3:2']),
   seed: z
@@ -119,9 +119,47 @@ const defaultSamplePrompts = [
   'Cidade cyberpunk submersa à noite, letreiros neon refletindo na água, chuva leve',
 ];
 
+// ========== CHIPS DE REFINAMENTO ==========
+type RefinementChip = {
+  id: string;
+  label: string;
+  tags: string;
+  tooltip: string;
+};
+
+const styleChips: RefinementChip[] = [
+  { id: 'photorealistic', label: 'Fotorrealista', tags: 'photorealistic, hyperrealistic', tooltip: 'Aparência muito real' },
+  { id: 'illustration', label: 'Ilustração', tags: 'digital illustration, detailed illustration', tooltip: 'Estilo ilustrado' },
+  { id: 'oil_painting', label: 'Pintura a óleo', tags: 'oil painting style', tooltip: 'Textura de pintura' },
+  { id: 'anime', label: 'Anime', tags: 'anime style, cel shading', tooltip: 'Traço tipo anime' },
+  { id: '3d_render', label: '3D render', tags: '3D render, studio render', tooltip: 'Visual 3D' },
+  { id: 'minimalist', label: 'Minimalista', tags: 'minimalist, clean composition', tooltip: 'Simples e limpo' },
+];
+
+const lightChips: RefinementChip[] = [
+  { id: 'natural', label: 'Luz natural', tags: 'natural daylight', tooltip: 'Luz do dia' },
+  { id: 'golden', label: 'Luz dourada', tags: 'golden hour lighting', tooltip: 'Tom quente do pôr do sol' },
+  { id: 'neon', label: 'Neon', tags: 'neon lights', tooltip: 'Cores neon' },
+  { id: 'dramatic', label: 'Dramática', tags: 'dramatic lighting, chiaroscuro', tooltip: 'Contraste forte' },
+  { id: 'soft', label: 'Suave', tags: 'soft diffused light', tooltip: 'Luz macia' },
+  { id: 'night', label: 'Noturna', tags: 'night scene, moonlight', tooltip: 'Clima noturno' },
+];
+
+const framingChips: RefinementChip[] = [
+  { id: 'closeup', label: 'Close-up', tags: 'close-up shot', tooltip: 'Foco em detalhe' },
+  { id: 'portrait', label: 'Retrato', tags: 'portrait shot', tooltip: 'Foco na pessoa' },
+  { id: 'fullbody', label: 'Corpo inteiro', tags: 'full body shot', tooltip: 'Mostra o corpo todo' },
+  { id: 'panoramic', label: 'Panorâmico', tags: 'wide angle, panoramic', tooltip: 'Mostra o cenário' },
+  { id: 'birdseye', label: 'De cima', tags: "bird's eye view", tooltip: 'Visão de cima' },
+  { id: 'lowangle', label: 'De baixo', tags: 'low angle shot', tooltip: 'Visão de baixo' },
+];
+
 export const GenerateImagePage = () => {
   const [showAdvanced, setShowAdvanced] = useState(false);
   const [selectedMode, setSelectedMode] = useState<string | null>(null);
+  const [selectedStyle, setSelectedStyle] = useState<string | null>(null);
+  const [selectedLight, setSelectedLight] = useState<string | null>(null);
+  const [selectedFraming, setSelectedFraming] = useState<string | null>(null);
   const location = useLocation();
   const presetPrompt = (location.state as { promptDraft?: string } | undefined)?.promptDraft ?? '';
   const queryClient = useQueryClient();
@@ -167,6 +205,9 @@ export const GenerateImagePage = () => {
       reset({ prompt: '', negative_prompt: '', aspect_ratio: '1:1', seed: '' });
       setShowAdvanced(false);
       setSelectedMode(null);
+      setSelectedStyle(null);
+      setSelectedLight(null);
+      setSelectedFraming(null);
     },
   });
 
@@ -175,11 +216,39 @@ export const GenerateImagePage = () => {
     ? modePlaceholders[selectedMode]
     : 'Descreva sua imaginação em detalhes...';
 
+  // Função para evitar duplicatas case-insensitive
+  const buildFinalPrompt = (basePrompt: string): string => {
+    let finalPrompt = basePrompt;
+
+    // Adiciona sufixo do modo
+    const modeSuffix = currentMode?.promptSuffix ?? '';
+    if (modeSuffix) {
+      finalPrompt += modeSuffix;
+    }
+
+    // Coleta tags dos chips selecionados
+    const chipTags: string[] = [];
+    const styleChip = styleChips.find((c) => c.id === selectedStyle);
+    const lightChip = lightChips.find((c) => c.id === selectedLight);
+    const framingChip = framingChips.find((c) => c.id === selectedFraming);
+
+    if (styleChip) chipTags.push(...styleChip.tags.split(', '));
+    if (lightChip) chipTags.push(...lightChip.tags.split(', '));
+    if (framingChip) chipTags.push(...framingChip.tags.split(', '));
+
+    // Filtra duplicatas case-insensitive
+    const existingLower = finalPrompt.toLowerCase();
+    const uniqueTags = chipTags.filter((tag) => !existingLower.includes(tag.toLowerCase()));
+
+    if (uniqueTags.length > 0) {
+      finalPrompt += ', ' + uniqueTags.join(', ');
+    }
+
+    return finalPrompt;
+  };
+
   const onSubmit = (values: FormValues) => {
-    // Adiciona o sufixo do modo selecionado ao prompt
-    const finalPrompt = currentMode
-      ? values.prompt + currentMode.promptSuffix
-      : values.prompt;
+    const finalPrompt = buildFinalPrompt(values.prompt);
 
     const payload: GenerateImagePayload = {
       prompt: finalPrompt,
@@ -187,6 +256,15 @@ export const GenerateImagePage = () => {
       aspect_ratio: values.aspect_ratio,
       seed: values.seed ? Number(values.seed) : undefined,
     };
+
+    // TODO: add refinements to payload when backend supports
+    // refinements: {
+    //   style: selectedStyle ?? undefined,
+    //   light: selectedLight ?? undefined,
+    //   framing: selectedFraming ?? undefined,
+    //   mode: selectedMode ?? undefined,
+    // }
+
     void mutateAsync(payload);
   };
 
@@ -196,6 +274,54 @@ export const GenerateImagePage = () => {
     const random = prompts[Math.floor(Math.random() * prompts.length)];
     setValue('prompt', random, { shouldValidate: true });
   };
+
+  const handleChipClick = (
+    category: 'style' | 'light' | 'framing',
+    chipId: string,
+  ) => {
+    if (isPending) return;
+
+    if (category === 'style') {
+      setSelectedStyle(selectedStyle === chipId ? null : chipId);
+    } else if (category === 'light') {
+      setSelectedLight(selectedLight === chipId ? null : chipId);
+    } else {
+      setSelectedFraming(selectedFraming === chipId ? null : chipId);
+    }
+  };
+
+  const renderChipGroup = (
+    category: 'style' | 'light' | 'framing',
+    chips: RefinementChip[],
+    selectedId: string | null,
+    microcopy: string,
+  ) => (
+    <div className="space-y-2">
+      <span className="text-xs text-gray-500">{microcopy}</span>
+      <div className="flex flex-wrap gap-2">
+        {chips.map((chip) => (
+          <button
+            key={chip.id}
+            type="button"
+            title={chip.tooltip}
+            disabled={isPending}
+            onClick={() => handleChipClick(category, chip.id)}
+            className={clsx(
+              'rounded-full px-3 py-1.5 text-sm transition-all',
+              selectedId === chip.id
+                ? 'bg-purple-500/20 text-purple-300 ring-1 ring-purple-500/50'
+                : 'bg-white/[0.03] text-gray-400 ring-1 ring-white/5 hover:bg-white/[0.06] hover:text-white',
+              isPending && 'cursor-not-allowed opacity-50',
+            )}
+          >
+            {chip.label}
+          </button>
+        ))}
+      </div>
+    </div>
+  );
+
+  const hasRefinements = selectedStyle || selectedLight || selectedFraming;
 
   return (
     <div className="relative min-h-full overflow-y-auto text-white">
@@ -222,12 +348,14 @@ export const GenerateImagePage = () => {
             <button
               key={mode.id}
               type="button"
+              disabled={isPending}
               onClick={() => setSelectedMode(selectedMode === mode.id ? null : mode.id)}
               className={clsx(
                 'group flex items-center gap-2 rounded-full px-4 py-2 text-sm transition-all',
                 selectedMode === mode.id
                   ? 'bg-purple-500/20 text-purple-300 ring-1 ring-purple-500/50'
                   : 'bg-white/[0.03] text-gray-400 ring-1 ring-white/5 hover:bg-white/[0.06] hover:text-white',
+                isPending && 'cursor-not-allowed opacity-50',
               )}
             >
               <span
@@ -246,6 +374,9 @@ export const GenerateImagePage = () => {
         <form onSubmit={handleSubmit(onSubmit)} className="flex flex-col gap-8">
           {/* Card do prompt */}
           <div className="group relative rounded-2xl bg-white/[0.03] p-6 ring-1 ring-white/10 transition-all focus-within:bg-white/[0.05] focus-within:ring-purple-500/50">
+            <label htmlFor="prompt" className="mb-2 block text-sm text-gray-400">
+              Descreva sua imagem
+            </label>
             <textarea
               id="prompt"
               rows={4}
@@ -272,16 +403,36 @@ export const GenerateImagePage = () => {
                   <span className="material-symbols-outlined text-[16px]">lightbulb</span>
                   {currentMode ? `Exemplo de ${currentMode.label.toLowerCase()}` : 'Me inspire'}
                 </button>
-              ) : (
+              ) : promptValue.length >= 80 ? (
                 <span className="text-xs text-gray-600">{promptValue.length} caracteres</span>
+              ) : (
+                <span />
               )}
 
-              {currentMode && (
+              {(currentMode || hasRefinements) && (
                 <span className="flex items-center gap-1 text-xs text-purple-400/70">
                   <span className="material-symbols-outlined text-[12px]">auto_fix_high</span>
-                  Estilo aplicado
+                  {currentMode && hasRefinements
+                    ? 'Modo + refinamentos aplicados'
+                    : currentMode
+                      ? 'Estilo aplicado'
+                      : 'Refinamentos aplicados'}
                 </span>
               )}
+            </div>
+          </div>
+
+          {/* Seção: Refine sua ideia */}
+          <div className="space-y-4">
+            <div className="flex items-center gap-2 text-sm text-gray-400">
+              <span className="material-symbols-outlined text-[16px]">tune</span>
+              Refine sua ideia (opcional)
+            </div>
+
+            <div className="grid gap-5 rounded-xl bg-white/[0.02] p-5 ring-1 ring-white/5 sm:grid-cols-3">
+              {renderChipGroup('style', styleChips, selectedStyle, 'Qual a aparência?')}
+              {renderChipGroup('light', lightChips, selectedLight, 'Como é a luz?')}
+              {renderChipGroup('framing', framingChips, selectedFraming, 'De que ângulo?')}
             </div>
           </div>
 
@@ -328,7 +479,7 @@ export const GenerateImagePage = () => {
                   : 'text-gray-500 hover:text-white',
               )}
             >
-              <span className="material-symbols-outlined text-[16px]">tune</span>
+              <span className="material-symbols-outlined text-[16px]">settings</span>
               Avançado
             </button>
           </div>
@@ -390,6 +541,14 @@ export const GenerateImagePage = () => {
               </>
             )}
           </button>
+
+          {/* Skeleton placeholder enquanto gera */}
+          {isPending && (
+            <div className="flex flex-col items-center gap-4">
+              <div className="h-48 w-48 animate-pulse rounded-xl bg-white/5" />
+              <div className="h-3 w-32 animate-pulse rounded bg-white/5" />
+            </div>
+          )}
 
           {/* Status */}
           {queue.length > 0 && (
