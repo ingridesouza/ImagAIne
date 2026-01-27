@@ -138,3 +138,20 @@ class UserRegistrationSerializer(serializers.ModelSerializer):
             password=validated_data['password']
         )
         return user
+
+
+# Creative Memory - Related Images Serializers
+
+class RelatedImageSerializer(serializers.Serializer):
+    """Serializer for a related image with similarity score."""
+    image = ImageSerializer(read_only=True)
+    similarity_score = serializers.FloatField(read_only=True)
+
+
+class StyleSuggestionSerializer(serializers.Serializer):
+    """Serializer for a style suggestion."""
+    label = serializers.CharField(read_only=True)
+    example_prompt = serializers.CharField(read_only=True)
+    example_image_id = serializers.IntegerField(read_only=True)
+    frequency = serializers.IntegerField(read_only=True)
+    confidence = serializers.FloatField(read_only=True)

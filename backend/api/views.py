@@ -26,9 +26,12 @@ from .serializers import (
     ImageCommentSerializer,
     ImageSerializer,
     ImageShareUpdateSerializer,
+    RelatedImageSerializer,
+    StyleSuggestionSerializer,
 )
 from .throttles import PlanQuotaThrottle
 from .tasks import generate_image_task
+from .similarity import find_related_images, get_user_style_suggestions
 
 
 class GenerateImageView(APIView):
@@ -347,3 +350,136 @@ class ImageDownloadView(APIView):
             },
             status=status.HTTP_200_OK,
         )
+
+
+# =============================================================================
+# Creative Memory - Related Images and Style Suggestions
+# =============================================================================
+
+class RelatedImagesView(APIView):
+    """
+    GET /api/images/<id>/related/
+
+    Returns up to 12 images similar to the specified image based on embeddings.
+
+    Permission rules:
+    - The source image must be public OR owned by the requesting user
+    - Results include only public images OR the user's own images
+
+    Similarity is computed using:
+    1. Image embedding (visual similarity) - preferred
+    2. Prompt embedding (text similarity) - fallback if image embedding unavailable
+    """
+    permission_classes = [AllowAny]
+
+    def get(self, request, pk, *args, **kwargs):
+        # Get the source image
+        image = get_object_or_404(Image, pk=pk)
+
+        # Check permission to view this image
+        user = request.user
+        if not image.is_public:
+            if not (user.is_authenticated and image.user == user):
+                raise Http404
+
+        # Get user_id for permission filtering in similarity search
+        user_id = str(user.id) if user.is_authenticated else None
+
+        # Limit from query params (max 20, default 12)
+        try:
+            limit = min(int(request.query_params.get('limit', 12)), 20)
+        except (ValueError, TypeError):
+            limit = 12
+
+        # Find related images
+        related = find_related_images(
+            image_id=pk,
+            user_id=user_id,
+            limit=limit,
+        )
+
+        if not related:
+            return Response({
+                'count': 0,
+                'results': [],
+            })
+
+        # Fetch the actual Image objects
+        image_ids = [r['image_id'] for r in related]
+        similarity_map = {r['image_id']: r['similarity_score'] for r in related}
+
+        images = (
+            Image.objects.filter(id__in=image_ids)
+            .select_related('user')
+            .prefetch_related('tags')
+            .annotate(
+                like_count=Count('likes', distinct=True),
+                comment_count=Count('comments', distinct=True),
+            )
+        )
+
+        # Annotate is_liked for authenticated users
+        if user.is_authenticated:
+            images = images.annotate(
+                is_liked=Exists(
+                    ImageLike.objects.filter(
+                        image=OuterRef('pk'), user=user
+                    )
+                )
+            )
+
+        # Build response maintaining similarity order
+        images_by_id = {img.id: img for img in images}
+        results = []
+        for r in related:
+            img = images_by_id.get(r['image_id'])
+            if img:
+                results.append({
+                    'image': ImageSerializer(img, context={'request': request}).data,
+                    'similarity_score': r['similarity_score'],
+                })
+
+        return Response({
+            'count': len(results),
+            'results': results,
+        })
+
+
+class StyleSuggestionsView(APIView):
+    """
+    GET /api/users/me/style-suggestions/
+
+    Returns style suggestions based on the user's prompt history.
+
+    Analyzes the user's past prompts to identify:
+    - Recurring style keywords (e.g., "realistic", "anime", "cinematic")
+    - Frequent modifiers and techniques
+    - Common themes in their generations
+
+    Returns up to 5 suggestions with:
+    - label: The identified style/keyword
+    - example_prompt: An example prompt using this style
+    - example_image_id: ID of an image with this style
+    - frequency: How often this style appears
+    - confidence: Score from 0-1 based on frequency
+    """
+    permission_classes = [IsAuthenticated]
+
+    def get(self, request, *args, **kwargs):
+        user_id = str(request.user.id)
+
+        # Limit from query params (max 10, default 5)
+        try:
+            limit = min(int(request.query_params.get('limit', 5)), 10)
+        except (ValueError, TypeError):
+            limit = 5
+
+        suggestions = get_user_style_suggestions(
+            user_id=user_id,
+            limit=limit,
+        )
+
+        return Response({
+            'count': len(suggestions),
+            'results': StyleSuggestionSerializer(suggestions, many=True).data,
+        })
