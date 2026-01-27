@@ -30,7 +30,81 @@ const aspectRatioOptions: { label: string; value: FormValues['aspect_ratio']; sh
     { label: '3:4', value: '3:4', shape: 'portrait' },
   ];
 
-const samplePrompts = [
+// Modos de criação com intenção
+type CreationMode = {
+  id: string;
+  label: string;
+  icon: string;
+  description: string;
+  promptSuffix: string;
+  samplePrompts: string[];
+};
+
+const creationModes: CreationMode[] = [
+  {
+    id: 'cinematic',
+    label: 'Cena cinematográfica',
+    icon: 'movie',
+    description: 'Momentos dramáticos de filme',
+    promptSuffix: ', cinematic lighting, dramatic atmosphere, film still, movie scene, depth of field, anamorphic lens',
+    samplePrompts: [
+      'Um detetive solitário observando a cidade chuvosa através de uma janela escura',
+      'Dois samurais se enfrentando ao pôr do sol em um campo de bambu',
+      'Uma astronauta flutuando em silêncio no espaço, olhando para a Terra distante',
+    ],
+  },
+  {
+    id: 'concept_art',
+    label: 'Conceito artístico',
+    icon: 'palette',
+    description: 'Arte conceitual e ilustrações',
+    promptSuffix: ', concept art, digital painting, highly detailed, artstation trending, illustration',
+    samplePrompts: [
+      'Floresta mágica com árvores cristalinas e criaturas luminescentes',
+      'Fortaleza steampunk flutuante entre as nuvens ao amanhecer',
+      'Portal dimensional abrindo em uma biblioteca antiga e misteriosa',
+    ],
+  },
+  {
+    id: 'character',
+    label: 'Personagem',
+    icon: 'person',
+    description: 'Design de personagens únicos',
+    promptSuffix: ', character design, full body portrait, detailed features, expressive pose, professional character art',
+    samplePrompts: [
+      'Guerreira élfica com armadura de cristal e cabelos prateados',
+      'Inventor excêntrico com óculos mecânicos e avental de ferramentas',
+      'Jovem maga urbana com tatuagens rúnicas brilhantes nos braços',
+    ],
+  },
+  {
+    id: 'product',
+    label: 'Produto / Publicidade',
+    icon: 'shopping_bag',
+    description: 'Imagens comerciais e produtos',
+    promptSuffix: ', product photography, professional lighting, commercial shot, clean background, advertising quality',
+    samplePrompts: [
+      'Frasco de perfume luxuoso com respingos de água e pétalas de rosa',
+      'Tênis esportivo futurista flutuando com partículas de energia',
+      'Relógio elegante em superfície refletiva com iluminação dramática',
+    ],
+  },
+  {
+    id: 'environment',
+    label: 'Ambiente / Cenário',
+    icon: 'landscape',
+    description: 'Paisagens e ambientes imersivos',
+    promptSuffix: ', environment art, scenic view, atmospheric perspective, detailed landscape, matte painting quality',
+    samplePrompts: [
+      'Cidade flutuante acima das nuvens durante o pôr do sol dourado',
+      'Caverna de cristais gigantes refletindo luz bioluminescente',
+      'Ruínas de um templo antigo sendo reclamadas pela selva tropical',
+    ],
+  },
+];
+
+// Prompts padrão quando nenhum modo está selecionado
+const defaultSamplePrompts = [
   'Um astronauta meditando em um jardim zen flutuante, luz dourada, estilo cinematográfico',
   'Retrato hiper-realista de uma inventora steampunk com óculos de latão, fumaça ao fundo',
   'Cidade cyberpunk submersa à noite, letreiros neon refletindo na água, chuva leve',
@@ -38,6 +112,7 @@ const samplePrompts = [
 
 export const GenerateImagePage = () => {
   const [showAdvanced, setShowAdvanced] = useState(false);
+  const [selectedMode, setSelectedMode] = useState<string | null>(null);
   const location = useLocation();
   const presetPrompt = (location.state as { promptDraft?: string } | undefined)?.promptDraft ?? '';
   const queryClient = useQueryClient();
@@ -82,12 +157,20 @@ export const GenerateImagePage = () => {
       queryClient.invalidateQueries({ queryKey: QUERY_KEYS.myImages() });
       reset({ prompt: '', negative_prompt: '', aspect_ratio: '1:1', seed: '' });
       setShowAdvanced(false);
+      setSelectedMode(null);
     },
   });
 
+  const currentMode = creationModes.find((m) => m.id === selectedMode);
+
   const onSubmit = (values: FormValues) => {
+    // Adiciona o sufixo do modo selecionado ao prompt
+    const finalPrompt = currentMode
+      ? values.prompt + currentMode.promptSuffix
+      : values.prompt;
+
     const payload: GenerateImagePayload = {
-      prompt: values.prompt,
+      prompt: finalPrompt,
       negative_prompt: values.negative_prompt,
       aspect_ratio: values.aspect_ratio,
       seed: values.seed ? Number(values.seed) : undefined,
@@ -96,7 +179,9 @@ export const GenerateImagePage = () => {
   };
 
   const handleRandomPrompt = () => {
-    const random = samplePrompts[Math.floor(Math.random() * samplePrompts.length)];
+    // Usa prompts do modo selecionado ou os padrão
+    const prompts = currentMode ? currentMode.samplePrompts : defaultSamplePrompts;
+    const random = prompts[Math.floor(Math.random() * prompts.length)];
     setValue('prompt', random, { shouldValidate: true });
   };
 
@@ -117,6 +202,57 @@ export const GenerateImagePage = () => {
           <h1 className="text-3xl font-semibold tracking-tight text-white md:text-4xl">
             O que você quer criar?
           </h1>
+        </div>
+
+        {/* Seletor de Modos de Criação */}
+        <div className="mb-8">
+          <p className="mb-4 text-center text-sm text-gray-400">Escolha um estilo de criação</p>
+          <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-5">
+            {creationModes.map((mode) => (
+              <button
+                key={mode.id}
+                type="button"
+                onClick={() => setSelectedMode(selectedMode === mode.id ? null : mode.id)}
+                className={clsx(
+                  'group relative flex flex-col items-center gap-2 rounded-xl p-4 transition-all',
+                  selectedMode === mode.id
+                    ? 'bg-purple-500/20 ring-2 ring-purple-500'
+                    : 'bg-white/[0.03] ring-1 ring-white/10 hover:bg-white/[0.06] hover:ring-white/20',
+                )}
+              >
+                <span
+                  className={clsx(
+                    'material-symbols-outlined text-[28px] transition-colors',
+                    selectedMode === mode.id ? 'text-purple-400' : 'text-gray-400 group-hover:text-white',
+                  )}
+                >
+                  {mode.icon}
+                </span>
+                <span
+                  className={clsx(
+                    'text-center text-xs font-medium leading-tight transition-colors',
+                    selectedMode === mode.id ? 'text-purple-300' : 'text-gray-300',
+                  )}
+                >
+                  {mode.label}
+                </span>
+                <span className="hidden text-center text-[10px] text-gray-500 sm:block">
+                  {mode.description}
+                </span>
+                {selectedMode === mode.id && (
+                  <span className="absolute -right-1 -top-1 flex h-5 w-5 items-center justify-center rounded-full bg-purple-500 text-white">
+                    <span className="material-symbols-outlined text-[14px]">check</span>
+                  </span>
+                )}
+              </button>
+            ))}
+          </div>
+          {currentMode && (
+            <div className="mt-4 flex items-center justify-center gap-2 text-sm text-purple-300">
+              <span className="material-symbols-outlined text-[16px]">auto_fix_high</span>
+              <span>Estilo &quot;{currentMode.label}&quot; será aplicado automaticamente</span>
+            </div>
+          )}
         </div>
 
         <form onSubmit={handleSubmit(onSubmit)} className="flex flex-col gap-8">
