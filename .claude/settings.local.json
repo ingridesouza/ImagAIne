@@ -2,7 +2,20 @@
   "permissions": {
     "allow": [
       "Bash(npm run build:*)",
-      "Bash(npx tsc:*)"
+      "Bash(npx tsc:*)",
+      "Bash(ls -la \"c:\\\\Users\\\\INGRIDE\\\\Documents\\\\GitHub\\\\ImagAIne\\\\backend\\\\api\\\\migrations\"\" 2>/dev/null || dir \"c:UsersINGRIDEDocumentsGitHubImagAInebackendapimigrations\"\")",
+      "Bash(python manage.py makemigrations:*)",
+      "Bash(python manage.py migrate:*)",
+      "Bash(docker exec:*)",
+      "Bash(docker restart:*)",
+      "Bash(timeout:*)",
+      "Bash(ping:*)",
+      "Bash(docker ps:*)",
+      "Bash(python:*)",
+      "Bash(docker-compose up:*)",
+      "Bash(git add:*)",
+      "Bash(git commit:*)",
+      "Bash(docker compose:*)"
     ]
   }
 }

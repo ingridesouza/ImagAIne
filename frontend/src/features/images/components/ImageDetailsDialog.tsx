@@ -58,6 +58,18 @@ export const ImageDetailsDialog = ({
   const [replyingTo, setReplyingTo] = useState<number | null>(null);
   const [replyText, setReplyText] = useState('');
 
+  // Estado local para like - atualiza imediatamente na UI
+  const [isLiked, setIsLiked] = useState(image?.is_liked ?? false);
+  const [likeCount, setLikeCount] = useState(image?.like_count ?? 0);
+
+  // Sincroniza estado local APENAS quando uma NOVA imagem é selecionada (id muda)
+  useEffect(() => {
+    if (image) {
+      setIsLiked(image.is_liked ?? false);
+      setLikeCount(image.like_count ?? 0);
+    }
+  }, [image?.id]); // Apenas quando o ID muda (nova imagem)
+
   useEffect(() => {
     if (image) {
       setShowComments(false);
@@ -139,12 +151,18 @@ export const ImageDetailsDialog = ({
         {/* Barra de Ações Vertical */}
         <div className="image-modal__actions">
           <button
-            className={`image-modal__action-btn ${image.is_liked ? 'image-modal__action-btn--active' : ''}`}
-            onClick={() => onToggleLike?.(image)}
+            className={`image-modal__action-btn ${isLiked ? 'image-modal__action-btn--active' : ''}`}
+            onClick={() => {
+              // Atualiza UI imediatamente (otimista)
+              setIsLiked(!isLiked);
+              setLikeCount(isLiked ? Math.max(0, likeCount - 1) : likeCount + 1);
+              // Chama o handler do pai
+              onToggleLike?.(image);
+            }}
             title="Curtir"
           >
-            <Heart size={22} fill={image.is_liked ? 'currentColor' : 'none'} />
-            <span>{image.like_count}</span>
+            <Heart size={22} fill={isLiked ? 'currentColor' : 'none'} />
+            <span>{likeCount}</span>
           </button>
 
           <button

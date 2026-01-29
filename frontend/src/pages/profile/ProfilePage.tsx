@@ -104,14 +104,24 @@ export const ProfilePage = () => {
     mutationFn: async (image: ImageRecord) => {
       if (image.is_liked) {
         await imagesApi.unlike(image.id);
-        return { ...image, is_liked: false, like_count: Math.max(0, (image.like_count ?? 1) - 1) };
+      } else {
+        await imagesApi.like(image.id);
       }
-      return imagesApi.like(image.id);
     },
-    onSuccess: (updatedImage) => {
-      if (selectedImage && updatedImage && selectedImage.id === updatedImage.id) {
-        setSelectedImage(updatedImage);
+    onMutate: (image) => {
+      // Optimistic update - atualiza a UI imediatamente
+      const optimisticImage = {
+        ...image,
+        is_liked: !image.is_liked,
+        like_count: image.is_liked
+          ? Math.max(0, (image.like_count ?? 1) - 1)
+          : (image.like_count ?? 0) + 1,
+      };
+      if (selectedImage && selectedImage.id === image.id) {
+        setSelectedImage(optimisticImage);
       }
+    },
+    onSettled: () => {
       queryClient.invalidateQueries({ queryKey: QUERY_KEYS.myImages() });
     },
   });
