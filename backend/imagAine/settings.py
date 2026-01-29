@@ -160,6 +160,7 @@ REST_FRAMEWORK = {
         'social_like': '60/hour',
         'social_comment': '30/hour',
         'social_download': '120/hour',
+        'llm_refine': '100/hour',
     },
 }
 
@@ -180,3 +181,8 @@ CSRF_TRUSTED_ORIGINS = csv_list(config('CSRF_TRUSTED_ORIGINS', default='http://l
 EMBEDDINGS_ENABLED = config('EMBEDDINGS_ENABLED', default=True, cast=bool)
 EMBEDDINGS_DEVICE = config('EMBEDDINGS_DEVICE', default='auto')
 EMBEDDINGS_CACHE_DIR = config('EMBEDDINGS_CACHE_DIR', default=None)
+
+# DeepSeek LLM Settings for Prompt Assistant
+DEEPSEEK_API_KEY = config('DEEPSEEK_API_KEY', default='')
+DEEPSEEK_BASE_URL = config('DEEPSEEK_BASE_URL', default='https://api.deepseek.com')
+DEEPSEEK_MODEL = config('DEEPSEEK_MODEL', default='deepseek-chat')

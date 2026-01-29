@@ -64,8 +64,13 @@ export const MyImagesPage = () => {
   });
 
   const likeMutation = useMutation({
-    mutationFn: (image: ImageRecord) =>
-      image.is_liked ? imagesApi.unlike(image.id) : imagesApi.like(image.id),
+    mutationFn: async (image: ImageRecord) => {
+      if (image.is_liked) {
+        await imagesApi.unlike(image.id);
+        return;
+      }
+      await imagesApi.like(image.id);
+    },
     onSuccess: () => queryClient.invalidateQueries({ queryKey: QUERY_KEYS.myImages() }),
   });
 

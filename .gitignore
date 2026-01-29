@@ -27,3 +27,7 @@ db.sqlite3-journal
 # OS
 .DS_Store
 Thumbs.db
+
+# Claude
+.claude/
+\claude\settings.local.json

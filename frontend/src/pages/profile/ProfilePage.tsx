@@ -2,7 +2,7 @@ import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { useRef, useState } from 'react';
 import clsx from 'clsx';
 import { GalleryCard } from '@/features/images/components/GalleryCard';
-import { ImageDetailsDialog } from '@/features/images/components/ImageDetailsDialog';
+import { ImageDetailsDialog, type ImageComment } from '@/features/images/components/ImageDetailsDialog';
 import type { ImageRecord } from '@/features/images/types';
 import { imagesApi } from '@/features/images/api';
 import { authApi } from '@/features/auth/api';
@@ -40,6 +40,8 @@ export const ProfilePage = () => {
   const cachedProfile = queryClient.getQueryData<UserProfile>(QUERY_KEYS.profile);
   const storeUser = useAuthStore((state) => state.user);
   const [selectedImage, setSelectedImage] = useState<ImageRecord | null>(null);
+  const [comments, setComments] = useState<ImageComment[]>([]);
+  const [isLoadingComments, setIsLoadingComments] = useState(false);
 
   const { data: profile } = useQuery({
     queryKey: QUERY_KEYS.profile,
@@ -99,9 +101,29 @@ export const ProfilePage = () => {
   const totalDownloads = readyImages.reduce((sum, image) => sum + (image.download_count ?? 0), 0);
 
   const likeMutation = useMutation({
-    mutationFn: (image: ImageRecord) =>
-      image.is_liked ? imagesApi.unlike(image.id) : imagesApi.like(image.id),
-    onSuccess: () => queryClient.invalidateQueries({ queryKey: QUERY_KEYS.myImages() }),
+    mutationFn: async (image: ImageRecord) => {
+      if (image.is_liked) {
+        await imagesApi.unlike(image.id);
+      } else {
+        await imagesApi.like(image.id);
+      }
+    },
+    onMutate: (image) => {
+      // Optimistic update - atualiza a UI imediatamente
+      const optimisticImage = {
+        ...image,
+        is_liked: !image.is_liked,
+        like_count: image.is_liked
+          ? Math.max(0, (image.like_count ?? 1) - 1)
+          : (image.like_count ?? 0) + 1,
+      };
+      if (selectedImage && selectedImage.id === image.id) {
+        setSelectedImage(optimisticImage);
+      }
+    },
+    onSettled: () => {
+      queryClient.invalidateQueries({ queryKey: QUERY_KEYS.myImages() });
+    },
   });
 
   const visibilityMutation = useMutation({
@@ -109,6 +131,99 @@ export const ProfilePage = () => {
       imagesApi.updateShare(image.id, isPublic),
     onSuccess: () => queryClient.invalidateQueries({ queryKey: QUERY_KEYS.myImages() }),
   });
+
+  const fetchCommentsForImage = async (imageId: number) => {
+    setIsLoadingComments(true);
+    try {
+      const data = await imagesApi.fetchComments(imageId);
+      setComments(data);
+    } catch {
+      setComments([]);
+    } finally {
+      setIsLoadingComments(false);
+    }
+  };
+
+  const handleSelectImage = (image: ImageRecord) => {
+    setSelectedImage(image);
+    setComments([]);
+    fetchCommentsForImage(image.id);
+  };
+
+  const handleCloseDialog = () => {
+    setSelectedImage(null);
+    setComments([]);
+  };
+
+  const addCommentMutation = useMutation({
+    mutationFn: ({ imageId, text }: { imageId: number; text: string }) =>
+      imagesApi.addComment(imageId, text),
+    onSuccess: (newComment) => {
+      setComments((prev) => [...prev, newComment]);
+      queryClient.invalidateQueries({ queryKey: QUERY_KEYS.myImages() });
+    },
+  });
+
+  const handleAddComment = (image: ImageRecord, text: string) => {
+    addCommentMutation.mutate({ imageId: image.id, text });
+  };
+
+  const likeCommentMutation = useMutation({
+    mutationFn: ({ imageId, commentId, isLiked }: { imageId: number; commentId: number; isLiked: boolean }) =>
+      isLiked ? imagesApi.unlikeComment(imageId, commentId) : imagesApi.likeComment(imageId, commentId),
+    onSuccess: (data) => {
+      setComments((prev) =>
+        prev.map((comment) => {
+          if (comment.id === data.comment_id) {
+            return { ...comment, is_liked: data.is_liked, like_count: data.like_count };
+          }
+          if (comment.replies) {
+            return {
+              ...comment,
+              replies: comment.replies.map((reply) =>
+                reply.id === data.comment_id
+                  ? { ...reply, is_liked: data.is_liked, like_count: data.like_count }
+                  : reply
+              ),
+            };
+          }
+          return comment;
+        })
+      );
+    },
+  });
+
+  const handleLikeComment = (commentId: number) => {
+    if (!selectedImage) return;
+    const comment = comments.find((c) => c.id === commentId);
+    const reply = comments.flatMap((c) => c.replies || []).find((r) => r.id === commentId);
+    const isLiked = comment?.is_liked || reply?.is_liked || false;
+    likeCommentMutation.mutate({ imageId: selectedImage.id, commentId, isLiked });
+  };
+
+  const addReplyMutation = useMutation({
+    mutationFn: ({ imageId, parentId, text }: { imageId: number; parentId: number; text: string }) =>
+      imagesApi.addReply(imageId, parentId, text),
+    onSuccess: (newReply, { parentId }) => {
+      setComments((prev) =>
+        prev.map((comment) =>
+          comment.id === parentId
+            ? {
+                ...comment,
+                replies: [...(comment.replies || []), newReply],
+                reply_count: (comment.reply_count || 0) + 1,
+              }
+            : comment
+        )
+      );
+      queryClient.invalidateQueries({ queryKey: QUERY_KEYS.myImages() });
+    },
+  });
+
+  const handleAddReply = (parentId: number, text: string) => {
+    if (!selectedImage) return;
+    addReplyMutation.mutate({ imageId: selectedImage.id, parentId, text });
+  };
 
   const handleDownload = async (image: ImageRecord) => {
     const data = await imagesApi.registerDownload(image.id);
@@ -361,7 +476,7 @@ export const ProfilePage = () => {
                   key={image.id}
                   image={image}
                   aspectRatio={formatAspectRatio(image.aspect_ratio)}
-                  onSelect={() => setSelectedImage(image)}
+                  onSelect={() => handleSelectImage(image)}
                   onToggleLike={() => likeMutation.mutate(image)}
                   onDownload={() => handleDownload(image)}
                   isTogglingLike={likeMutation.isPending}
@@ -381,12 +496,17 @@ export const ProfilePage = () => {
 
       <ImageDetailsDialog
         image={selectedImage}
-        onClose={() => setSelectedImage(null)}
+        onClose={handleCloseDialog}
         onToggleLike={(image) => likeMutation.mutate(image)}
         onDownload={(image) => handleDownload(image)}
         onShare={handleShare}
         onUpdateVisibility={(image, isPublic) => visibilityMutation.mutate({ image, isPublic })}
         isUpdatingVisibility={visibilityMutation.isPending}
+        comments={comments}
+        onAddComment={handleAddComment}
+        onLikeComment={handleLikeComment}
+        onAddReply={handleAddReply}
+        isLoadingComments={isLoadingComments}
       />
     </div>
   );

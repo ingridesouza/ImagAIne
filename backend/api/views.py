@@ -18,7 +18,7 @@ from rest_framework.response import Response
 from rest_framework.views import APIView
 from rest_framework.throttling import ScopedRateThrottle
 
-from .models import Image, ImageComment, ImageLike
+from .models import Image, ImageComment, ImageLike, CommentLike
 from .relevance import update_image_relevance
 from .serializers import (
     GenerateImageSerializer,
@@ -210,6 +210,20 @@ class ImageLikeView(APIView):
         )
         update_image_relevance(image)
         status_code = status.HTTP_201_CREATED if created else status.HTTP_200_OK
+        # Refresh to get updated like_count and annotate is_liked
+        image = (
+            Image.objects.filter(pk=pk)
+            .select_related("user")
+            .prefetch_related("tags")
+            .annotate(
+                like_count=Count("likes", distinct=True),
+                comment_count=Count("comments", distinct=True),
+                is_liked=Exists(
+                    ImageLike.objects.filter(image=OuterRef("pk"), user=request.user)
+                ),
+            )
+            .first()
+        )
         serializer = ImageSerializer(
             image, context={"request": request}
         )
@@ -260,17 +274,56 @@ class ImageCommentListCreateView(generics.ListCreateAPIView):
 
     def get_queryset(self):
         image = self._get_image()
-        return (
-            ImageComment.objects.filter(image=image)
+        queryset = (
+            ImageComment.objects.filter(image=image, parent__isnull=True)
             .select_related("user")
+            .prefetch_related("replies", "replies__user")
+            .annotate(
+                like_count=Count("likes", distinct=True),
+                reply_count=Count("replies", distinct=True),
+            )
             .order_by("created_at")
         )
+
+        # Annotate is_liked for authenticated users
+        user = self.request.user
+        if user.is_authenticated:
+            queryset = queryset.annotate(
+                is_liked=Exists(
+                    CommentLike.objects.filter(
+                        comment=OuterRef("pk"), user=user
+                    )
+                )
+            )
+        else:
+            queryset = queryset.annotate(
+                is_liked=Value(False, output_field=BooleanField())
+            )
+
+        return queryset
 
     def create(self, request, *args, **kwargs):
         serializer = self.get_serializer(data=request.data)
         serializer.is_valid(raise_exception=True)
         image = self._get_image()
-        comment = serializer.save(user=request.user, image=image)
+
+        # Handle parent_id for replies
+        parent_id = serializer.validated_data.pop("parent_id", None)
+        parent = None
+        if parent_id:
+            parent = get_object_or_404(ImageComment, pk=parent_id, image=image)
+            if parent.parent is not None:
+                return Response(
+                    {"detail": "Cannot reply to a reply."},
+                    status=status.HTTP_400_BAD_REQUEST,
+                )
+
+        comment = ImageComment.objects.create(
+            user=request.user,
+            image=image,
+            parent=parent,
+            text=serializer.validated_data["text"],
+        )
         update_image_relevance(image)
         output_serializer = ImageCommentSerializer(
             comment, context={"request": request}
@@ -313,6 +366,58 @@ class ImageCommentDetailView(generics.DestroyAPIView):
         image = instance.image
         super().perform_destroy(instance)
         update_image_relevance(image)
+
+
+class CommentLikeView(APIView):
+    """Like/unlike a comment."""
+    permission_classes = [IsAuthenticated]
+    throttle_classes = [ScopedRateThrottle]
+    throttle_scope = "social_like"
+
+    def _get_comment(self, comment_id, image_pk):
+        comment = get_object_or_404(
+            ImageComment.objects.select_related("image"),
+            pk=comment_id,
+            image__pk=image_pk,
+        )
+        # Check if image is accessible
+        image = comment.image
+        if image.is_public or image.user == self.request.user:
+            return comment
+        raise PermissionDenied("This comment is not available for interaction.")
+
+    def post(self, request, pk, comment_id, *args, **kwargs):
+        comment = self._get_comment(comment_id, pk)
+        like, created = CommentLike.objects.get_or_create(
+            comment=comment, user=request.user
+        )
+        status_code = status.HTTP_201_CREATED if created else status.HTTP_200_OK
+        return Response(
+            {
+                "comment_id": comment.id,
+                "is_liked": True,
+                "like_count": comment.likes.count(),
+            },
+            status=status_code,
+        )
+
+    def delete(self, request, pk, comment_id, *args, **kwargs):
+        comment = self._get_comment(comment_id, pk)
+        deleted, _ = CommentLike.objects.filter(
+            comment=comment, user=request.user
+        ).delete()
+        if deleted:
+            return Response(
+                {
+                    "comment_id": comment.id,
+                    "is_liked": False,
+                    "like_count": comment.likes.count(),
+                },
+                status=status.HTTP_200_OK,
+            )
+        return Response(
+            {"detail": "Like not found."}, status=status.HTTP_404_NOT_FOUND
+        )
 
 
 class ImageDownloadView(APIView):
@@ -483,3 +588,154 @@ class StyleSuggestionsView(APIView):
             'count': len(suggestions),
             'results': StyleSuggestionSerializer(suggestions, many=True).data,
         })
+
+
+# =============================================================================
+# Prompt Assistant - DeepSeek LLM Integration
+# =============================================================================
+
+class RefinePromptView(APIView):
+    """
+    POST /api/refine-prompt/
+
+    Uses DeepSeek LLM to transform a casual user description into an optimized
+    image generation prompt.
+
+    Request body:
+    - description: User's casual description (e.g., "um gato fofo na praia")
+    - style: Optional style preference (photorealistic, anime, etc.)
+
+    Response:
+    - refined_prompt: Optimized prompt for image generation
+    - negative_prompt: Suggested negative prompt
+    """
+    permission_classes = [IsAuthenticated]
+    throttle_classes = [ScopedRateThrottle]
+    throttle_scope = "llm_refine"
+
+    def post(self, request, *args, **kwargs):
+        from .serializers import RefinePromptRequestSerializer, RefinePromptResponseSerializer
+        import requests
+        import logging
+
+        logger = logging.getLogger(__name__)
+
+        serializer = RefinePromptRequestSerializer(data=request.data)
+        if not serializer.is_valid():
+            return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
+        description = serializer.validated_data['description']
+        style = serializer.validated_data.get('style', 'photorealistic')
+
+        # Get API configuration from settings
+        api_key = getattr(settings, 'DEEPSEEK_API_KEY', '')
+        base_url = getattr(settings, 'DEEPSEEK_BASE_URL', 'https://api.deepseek.com')
+        model = getattr(settings, 'DEEPSEEK_MODEL', 'deepseek-chat')
+
+        if not api_key:
+            logger.error("DEEPSEEK_API_KEY not configured")
+            return Response(
+                {"detail": "Prompt assistant is not configured."},
+                status=status.HTTP_503_SERVICE_UNAVAILABLE,
+            )
+
+        # Build system prompt for the LLM
+        style_descriptions = {
+            'photorealistic': 'fotorrealista, como uma fotografia profissional',
+            'anime': 'estilo anime/mangá japonês',
+            'digital_art': 'arte digital moderna e detalhada',
+            'oil_painting': 'pintura a óleo clássica',
+            'watercolor': 'aquarela suave e artística',
+            '3d_render': 'renderização 3D de alta qualidade',
+            'pixel_art': 'pixel art estilo retro/jogos',
+            'sketch': 'esboço ou desenho a lápis',
+        }
+        style_desc = style_descriptions.get(style, style_descriptions['photorealistic'])
+
+        system_prompt = f"""Você é um especialista em criar prompts otimizados para geração de imagens com IA (como Stable Diffusion, DALL-E, Midjourney).
+
+Sua tarefa é transformar a descrição casual do usuário em um prompt estruturado e detalhado em INGLÊS.
+
+Estilo solicitado: {style_desc}
+
+Regras:
+1. O prompt DEVE estar em inglês
+2. Inclua detalhes sobre: composição, iluminação, atmosfera, cores, texturas
+3. Use termos técnicos de fotografia/arte quando apropriado
+4. Adicione modificadores de qualidade (highly detailed, 8k, professional, etc.)
+5. Mantenha o prompt com 50-150 palavras
+6. Retorne APENAS o prompt, sem explicações
+
+Também sugira um negative_prompt curto com elementos a evitar (blur, low quality, watermark, etc.)
+
+Formato de resposta (JSON):
+{{"refined_prompt": "seu prompt aqui", "negative_prompt": "elementos a evitar"}}"""
+
+        try:
+            response = requests.post(
+                f"{base_url}/v1/chat/completions",
+                headers={
+                    "Authorization": f"Bearer {api_key}",
+                    "Content-Type": "application/json",
+                },
+                json={
+                    "model": model,
+                    "messages": [
+                        {"role": "system", "content": system_prompt},
+                        {"role": "user", "content": description},
+                    ],
+                    "temperature": 0.7,
+                    "max_tokens": 500,
+                },
+                timeout=30,
+            )
+            response.raise_for_status()
+
+        except requests.exceptions.Timeout:
+            logger.error("DeepSeek API timeout")
+            return Response(
+                {"detail": "Request timeout. Please try again."},
+                status=status.HTTP_504_GATEWAY_TIMEOUT,
+            )
+        except requests.exceptions.RequestException as e:
+            logger.error(f"DeepSeek API error: {e}")
+            return Response(
+                {"detail": "Failed to connect to prompt assistant."},
+                status=status.HTTP_502_BAD_GATEWAY,
+            )
+
+        try:
+            result = response.json()
+            content = result['choices'][0]['message']['content']
+
+            # Parse JSON response from LLM
+            import json
+            # Try to extract JSON from the response
+            if '{' in content and '}' in content:
+                json_start = content.index('{')
+                json_end = content.rindex('}') + 1
+                json_str = content[json_start:json_end]
+                parsed = json.loads(json_str)
+                refined_prompt = parsed.get('refined_prompt', content)
+                negative_prompt = parsed.get('negative_prompt', 'blur, low quality, watermark, text, logo')
+            else:
+                refined_prompt = content.strip()
+                negative_prompt = 'blur, low quality, watermark, text, logo, distorted, ugly'
+
+        except (KeyError, IndexError, json.JSONDecodeError) as e:
+            logger.error(f"Failed to parse DeepSeek response: {e}")
+            return Response(
+                {"detail": "Failed to process response from assistant."},
+                status=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            )
+
+        response_data = {
+            'refined_prompt': refined_prompt,
+            'negative_prompt': negative_prompt,
+        }
+
+        output_serializer = RefinePromptResponseSerializer(data=response_data)
+        if output_serializer.is_valid():
+            return Response(output_serializer.validated_data, status=status.HTTP_200_OK)
+
+        return Response(response_data, status=status.HTTP_200_OK)
