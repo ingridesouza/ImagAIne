@@ -39,7 +39,15 @@ export const AppSidebar = ({ isOpen, isCollapsed, onClose, onToggleCollapse }: A
       <div className="flex h-full flex-col justify-between gap-8">
         <div className="flex flex-col gap-8">
           <div className={clsx('flex items-center', isCollapsed ? 'justify-center' : 'gap-3 px-1')}>
-            <div className="flex size-9 items-center justify-center rounded-lg bg-gradient-to-br from-primary to-violet-600">
+            <button
+              type="button"
+              onClick={onToggleCollapse}
+              className="hidden size-9 items-center justify-center rounded-lg bg-gradient-to-br from-primary to-violet-600 transition-all duration-200 ease-out hover:scale-[1.03] hover:shadow-lg hover:shadow-primary/20 active:scale-[0.97] md:flex"
+              aria-label={isCollapsed ? 'Expandir menu' : 'Recolher menu'}
+            >
+              <span className="material-symbols-outlined !text-[20px] text-white">auto_awesome</span>
+            </button>
+            <div className="flex size-9 items-center justify-center rounded-lg bg-gradient-to-br from-primary to-violet-600 md:hidden">
               <span className="material-symbols-outlined !text-[20px] text-white">auto_awesome</span>
             </div>
             {!isCollapsed ? (
