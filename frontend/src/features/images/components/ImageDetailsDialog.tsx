@@ -1,15 +1,29 @@
 import { useEffect, useState } from 'react';
 import { createPortal } from 'react-dom';
 import type { MouseEvent, FormEvent } from 'react';
-import { Download, Heart, X, Share2, MessageCircle, Send } from 'lucide-react';
+import { Download, Heart, X, Share2, MessageCircle, Send, CornerDownRight } from 'lucide-react';
 import { Button } from '@/components/ui/Button';
 import type { ImageRecord } from '@/features/images/types';
+
+export type ImageCommentReply = {
+  id: number;
+  user: { username: string };
+  text: string;
+  created_at: string;
+  like_count: number;
+  is_liked: boolean;
+};
 
 export type ImageComment = {
   id: number;
   user: { username: string };
   text: string;
   created_at: string;
+  like_count: number;
+  is_liked: boolean;
+  parent_id: number | null;
+  reply_count: number;
+  replies: ImageCommentReply[];
 };
 
 type ImageDetailsDialogProps = {
@@ -22,6 +36,8 @@ type ImageDetailsDialogProps = {
   isUpdatingVisibility?: boolean;
   comments?: ImageComment[];
   onAddComment?: (image: ImageRecord, text: string) => void;
+  onLikeComment?: (commentId: number) => void;
+  onAddReply?: (parentId: number, text: string) => void;
   isLoadingComments?: boolean;
 };
 
@@ -33,10 +49,14 @@ export const ImageDetailsDialog = ({
   onShare,
   comments = [],
   onAddComment,
+  onLikeComment,
+  onAddReply,
   isLoadingComments = false,
 }: ImageDetailsDialogProps) => {
   const [showComments, setShowComments] = useState(false);
   const [newComment, setNewComment] = useState('');
+  const [replyingTo, setReplyingTo] = useState<number | null>(null);
+  const [replyText, setReplyText] = useState('');
 
   useEffect(() => {
     if (image) {
@@ -178,6 +198,77 @@ export const ImageDetailsDialog = ({
                       <span>{formatTimeAgo(comment.created_at)}</span>
                     </div>
                     <p>{comment.text}</p>
+
+                    {/* Comment Actions */}
+                    <div className="image-modal__comment-actions">
+                      <button
+                        type="button"
+                        className={`image-modal__comment-like ${comment.is_liked ? 'image-modal__comment-like--active' : ''}`}
+                        onClick={() => onLikeComment?.(comment.id)}
+                      >
+                        <Heart size={14} fill={comment.is_liked ? 'currentColor' : 'none'} />
+                        <span>{comment.like_count || 0}</span>
+                      </button>
+                      <button
+                        type="button"
+                        className="image-modal__comment-reply-btn"
+                        onClick={() => setReplyingTo(replyingTo === comment.id ? null : comment.id)}
+                      >
+                        <CornerDownRight size={14} />
+                        <span>Responder</span>
+                      </button>
+                    </div>
+
+                    {/* Replies */}
+                    {comment.replies && comment.replies.length > 0 && (
+                      <div className="image-modal__replies">
+                        {comment.replies.map((reply) => (
+                          <div key={reply.id} className="image-modal__reply">
+                            <div className="image-modal__comment-header">
+                              <strong>{reply.user.username}</strong>
+                              <span>{formatTimeAgo(reply.created_at)}</span>
+                            </div>
+                            <p>{reply.text}</p>
+                            <div className="image-modal__comment-actions">
+                              <button
+                                type="button"
+                                className={`image-modal__comment-like ${reply.is_liked ? 'image-modal__comment-like--active' : ''}`}
+                                onClick={() => onLikeComment?.(reply.id)}
+                              >
+                                <Heart size={14} fill={reply.is_liked ? 'currentColor' : 'none'} />
+                                <span>{reply.like_count || 0}</span>
+                              </button>
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+                    )}
+
+                    {/* Reply Form */}
+                    {replyingTo === comment.id && (
+                      <form
+                        className="image-modal__reply-form"
+                        onSubmit={(e) => {
+                          e.preventDefault();
+                          if (replyText.trim() && onAddReply) {
+                            onAddReply(comment.id, replyText);
+                            setReplyText('');
+                            setReplyingTo(null);
+                          }
+                        }}
+                      >
+                        <input
+                          type="text"
+                          placeholder={`Responder @${comment.user.username}...`}
+                          value={replyText}
+                          onChange={(e) => setReplyText(e.target.value)}
+                          autoFocus
+                        />
+                        <Button type="submit" variant="primary" disabled={!replyText.trim() || !onAddReply}>
+                          <Send size={14} />
+                        </Button>
+                      </form>
+                    )}
                   </div>
                 ))
               )}

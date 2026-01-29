@@ -1,12 +1,14 @@
 from django.urls import path
 from rest_framework_simplejwt.views import TokenObtainPairView, TokenRefreshView
 from .views import (
+    CommentLikeView,
     GenerateImageView,
     ImageCommentDetailView,
     ImageCommentListCreateView,
     ImageDownloadView,
     ImageLikeView,
     PublicImageListView,
+    RefinePromptView,
     RelatedImagesView,
     ShareImageView,
     StyleSuggestionsView,
@@ -23,9 +25,12 @@ urlpatterns = [
     path('images/<int:pk>/like/', ImageLikeView.as_view(), name='image-like'),
     path('images/<int:pk>/comments/', ImageCommentListCreateView.as_view(), name='image-comments'),
     path('images/<int:pk>/comments/<int:comment_id>/', ImageCommentDetailView.as_view(), name='image-comment-detail'),
+    path('images/<int:pk>/comments/<int:comment_id>/like/', CommentLikeView.as_view(), name='comment-like'),
     path('images/<int:pk>/download/', ImageDownloadView.as_view(), name='image-download'),
     # Creative Memory - Related Images and Style Suggestions
     path('images/<int:pk>/related/', RelatedImagesView.as_view(), name='image-related'),
     path('users/me/style-suggestions/', StyleSuggestionsView.as_view(), name='style-suggestions'),
+    # Prompt Assistant - DeepSeek LLM
+    path('refine-prompt/', RefinePromptView.as_view(), name='refine-prompt'),
 ]
 

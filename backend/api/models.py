@@ -103,6 +103,13 @@ class ImageComment(models.Model):
     user = models.ForeignKey(
         User, on_delete=models.CASCADE, related_name='image_comments'
     )
+    parent = models.ForeignKey(
+        'self',
+        on_delete=models.CASCADE,
+        null=True,
+        blank=True,
+        related_name='replies'
+    )
     text = models.TextField()
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
@@ -113,6 +120,27 @@ class ImageComment(models.Model):
     def __str__(self):
         preview = (self.text or '')[:30]
         return f'Comment by {self.user.username}: {preview}'
+
+
+class CommentLike(models.Model):
+    comment = models.ForeignKey(
+        ImageComment, on_delete=models.CASCADE, related_name='likes'
+    )
+    user = models.ForeignKey(
+        User, on_delete=models.CASCADE, related_name='comment_likes'
+    )
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        constraints = [
+            models.UniqueConstraint(
+                fields=['comment', 'user'], name='unique_like_per_user_comment'
+            )
+        ]
+        ordering = ['-created_at']
+
+    def __str__(self):
+        return f'Like by {self.user.username} on comment {self.comment_id}'
 
 
 class ImageTag(models.Model):

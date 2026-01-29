@@ -3,7 +3,7 @@ import type { FormEvent } from 'react';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { useNavigate } from 'react-router-dom';
 import { imagesApi } from '@/features/images/api';
-import { ImageDetailsDialog } from '@/features/images/components/ImageDetailsDialog';
+import { ImageDetailsDialog, type ImageComment } from '@/features/images/components/ImageDetailsDialog';
 import { GalleryCard } from '@/features/images/components/GalleryCard';
 import type { ImageRecord } from '@/features/images/types';
 import { QUERY_KEYS } from '@/lib/constants';
@@ -32,11 +32,19 @@ const formatAspectRatio = (value?: string | null) => {
   return `${width} / ${height}`;
 };
 
+type AspectRatioOption = '1:1' | '9:16' | '16:9';
+
 export const ExplorePage = () => {
   const [search, setSearch] = useState('');
   const [activeFilter, _setActiveFilter] = useState<ViewFilter>('featured');
   const [selectedImage, setSelectedImage] = useState<ImageRecord | null>(null);
+  const [comments, setComments] = useState<ImageComment[]>([]);
+  const [isLoadingComments, setIsLoadingComments] = useState(false);
   const [promptDraft, setPromptDraft] = useState('');
+  const [negativePrompt, setNegativePrompt] = useState('');
+  const [selectedRatio, setSelectedRatio] = useState<AspectRatioOption>('1:1');
+  const [showOptions, setShowOptions] = useState(false);
+  const [showTips, setShowTips] = useState(false);
   const debouncedSearch = useDebounce(search);
   const queryClient = useQueryClient();
   const navigate = useNavigate();
@@ -95,11 +103,123 @@ export const ExplorePage = () => {
       queryClient.invalidateQueries({ queryKey: QUERY_KEYS.publicImages(debouncedSearch) }),
   });
 
+  const fetchCommentsForImage = async (imageId: number) => {
+    setIsLoadingComments(true);
+    try {
+      const data = await imagesApi.fetchComments(imageId);
+      setComments(data);
+    } catch {
+      setComments([]);
+    } finally {
+      setIsLoadingComments(false);
+    }
+  };
+
+  const handleSelectImage = (image: ImageRecord) => {
+    setSelectedImage(image);
+    setComments([]);
+    fetchCommentsForImage(image.id);
+  };
+
+  const handleCloseDialog = () => {
+    setSelectedImage(null);
+    setComments([]);
+  };
+
+  const addCommentMutation = useMutation({
+    mutationFn: ({ imageId, text }: { imageId: number; text: string }) =>
+      imagesApi.addComment(imageId, text),
+    onSuccess: (newComment) => {
+      setComments((prev) => [...prev, newComment]);
+      queryClient.invalidateQueries({ queryKey: QUERY_KEYS.publicImages(debouncedSearch) });
+    },
+  });
+
+  const handleAddComment = (image: ImageRecord, text: string) => {
+    addCommentMutation.mutate({ imageId: image.id, text });
+  };
+
+  const likeCommentMutation = useMutation({
+    mutationFn: ({ imageId, commentId, isLiked }: { imageId: number; commentId: number; isLiked: boolean }) =>
+      isLiked ? imagesApi.unlikeComment(imageId, commentId) : imagesApi.likeComment(imageId, commentId),
+    onSuccess: (data) => {
+      setComments((prev) =>
+        prev.map((comment) => {
+          if (comment.id === data.comment_id) {
+            return { ...comment, is_liked: data.is_liked, like_count: data.like_count };
+          }
+          if (comment.replies) {
+            return {
+              ...comment,
+              replies: comment.replies.map((reply) =>
+                reply.id === data.comment_id
+                  ? { ...reply, is_liked: data.is_liked, like_count: data.like_count }
+                  : reply
+              ),
+            };
+          }
+          return comment;
+        })
+      );
+    },
+  });
+
+  const handleLikeComment = (commentId: number) => {
+    if (!selectedImage) return;
+    const comment = comments.find((c) => c.id === commentId);
+    const reply = comments.flatMap((c) => c.replies || []).find((r) => r.id === commentId);
+    const isLiked = comment?.is_liked || reply?.is_liked || false;
+    likeCommentMutation.mutate({ imageId: selectedImage.id, commentId, isLiked });
+  };
+
+  const addReplyMutation = useMutation({
+    mutationFn: ({ imageId, parentId, text }: { imageId: number; parentId: number; text: string }) =>
+      imagesApi.addReply(imageId, parentId, text),
+    onSuccess: (newReply, { parentId }) => {
+      setComments((prev) =>
+        prev.map((comment) =>
+          comment.id === parentId
+            ? {
+                ...comment,
+                replies: [...(comment.replies || []), newReply],
+                reply_count: (comment.reply_count || 0) + 1,
+              }
+            : comment
+        )
+      );
+      queryClient.invalidateQueries({ queryKey: QUERY_KEYS.publicImages(debouncedSearch) });
+    },
+  });
+
+  const handleAddReply = (parentId: number, text: string) => {
+    if (!selectedImage) return;
+    addReplyMutation.mutate({ imageId: selectedImage.id, parentId, text });
+  };
+
   const likeMutation = useMutation({
-    mutationFn: (image: ImageRecord) =>
-      image.is_liked ? imagesApi.unlike(image.id) : imagesApi.like(image.id),
-    onSuccess: () =>
-      queryClient.invalidateQueries({ queryKey: QUERY_KEYS.publicImages(debouncedSearch) }),
+    mutationFn: async (image: ImageRecord) => {
+      if (image.is_liked) {
+        await imagesApi.unlike(image.id);
+        return { ...image, is_liked: false, like_count: Math.max(0, (image.like_count ?? 1) - 1) };
+      }
+      return imagesApi.like(image.id);
+    },
+    onSuccess: (updatedImage) => {
+      if (selectedImage && updatedImage && selectedImage.id === updatedImage.id) {
+        setSelectedImage(updatedImage);
+      }
+      queryClient.invalidateQueries({ queryKey: QUERY_KEYS.publicImages(debouncedSearch) });
+    },
+  });
+
+  const generateMutation = useMutation({
+    mutationFn: (payload: { prompt: string; aspect_ratio: string }) =>
+      imagesApi.generate(payload),
+    onSuccess: (newImage) => {
+      setPromptDraft('');
+      queryClient.invalidateQueries({ queryKey: QUERY_KEYS.publicImages(debouncedSearch) });
+      navigate('/my-images', { state: { highlightId: newImage.id } });
+    },
   });
 
   const handleDownload = async (image: ImageRecord) => {
@@ -138,7 +258,17 @@ export const ExplorePage = () => {
 
   const handlePromptSubmit = (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
-    navigate('/generate', { state: { promptDraft } });
+    if (!promptDraft.trim() || generateMutation.isPending) return;
+    generateMutation.mutate({
+      prompt: promptDraft.trim(),
+      aspect_ratio: selectedRatio,
+      ...(negativePrompt.trim() ? { negative_prompt: negativePrompt.trim() } : {}),
+    });
+  };
+
+  const handleTipClick = (tip: string) => {
+    setPromptDraft(tip);
+    setShowTips(false);
   };
 
   return (
@@ -183,7 +313,7 @@ export const ExplorePage = () => {
                   key={image.id}
                   image={image}
                   aspectRatio={formatAspectRatio(image.aspect_ratio)}
-                  onSelect={() => setSelectedImage(image)}
+                  onSelect={() => handleSelectImage(image)}
                   onToggleLike={() => likeMutation.mutate(image)}
                   onDownload={() => handleDownload(image)}
                   isTogglingLike={likeMutation.isPending}
@@ -201,6 +331,78 @@ export const ExplorePage = () => {
         ) : null}
       </div>
 
+      {showOptions && (
+        <div className="explore-panel explore-panel--options">
+          <div className="explore-panel__header">
+            <span className="material-symbols-outlined">tune</span>
+            <span>Opções Avançadas</span>
+            <button type="button" className="explore-panel__close" onClick={() => setShowOptions(false)}>
+              <span className="material-symbols-outlined">close</span>
+            </button>
+          </div>
+          <div className="explore-panel__content">
+            <label className="explore-panel__label">
+              <span>Prompt Negativo</span>
+              <small>Descreva o que você NÃO quer na imagem</small>
+            </label>
+            <input
+              type="text"
+              className="explore-panel__input"
+              placeholder="Ex: blur, low quality, watermark, text..."
+              value={negativePrompt}
+              onChange={(e) => setNegativePrompt(e.target.value)}
+            />
+          </div>
+        </div>
+      )}
+
+      {showTips && (
+        <div className="explore-panel explore-panel--tips">
+          <div className="explore-panel__header">
+            <span className="material-symbols-outlined">lightbulb</span>
+            <span>Dicas de Prompts</span>
+            <button type="button" className="explore-panel__close" onClick={() => setShowTips(false)}>
+              <span className="material-symbols-outlined">close</span>
+            </button>
+          </div>
+          <div className="explore-panel__content">
+            <button
+              type="button"
+              className="explore-panel__assistant-btn"
+              onClick={() => { setShowTips(false); navigate('/prompt-assistant'); }}
+            >
+              <span className="material-symbols-outlined">auto_awesome</span>
+              <div>
+                <strong>Assistente de Prompts com IA</strong>
+                <small>Descreva sua ideia e a IA cria o prompt perfeito</small>
+              </div>
+              <span className="material-symbols-outlined">arrow_forward</span>
+            </button>
+            <p className="explore-panel__hint">Ou use uma dica rapida:</p>
+            <div className="explore-panel__tips-grid">
+              <button type="button" className="explore-panel__tip" onClick={() => handleTipClick('A serene Japanese garden with cherry blossoms, koi pond, wooden bridge, soft morning light, photorealistic')}>
+                Jardim Japones
+              </button>
+              <button type="button" className="explore-panel__tip" onClick={() => handleTipClick('Cyberpunk city at night, neon lights, rain reflections, flying cars, detailed architecture, cinematic')}>
+                Cidade Cyberpunk
+              </button>
+              <button type="button" className="explore-panel__tip" onClick={() => handleTipClick('Portrait of a mystical forest elf, ethereal glow, intricate jewelry, fantasy art style, highly detailed')}>
+                Elfo da Floresta
+              </button>
+              <button type="button" className="explore-panel__tip" onClick={() => handleTipClick('Cozy coffee shop interior, warm lighting, bookshelves, plants, rainy window view, illustration style')}>
+                Cafe Aconchegante
+              </button>
+              <button type="button" className="explore-panel__tip" onClick={() => handleTipClick('Majestic dragon flying over mountains, sunset, epic scale, detailed scales, fantasy digital art')}>
+                Dragao Epico
+              </button>
+              <button type="button" className="explore-panel__tip" onClick={() => handleTipClick('Astronaut floating in space, Earth in background, stars, nebula colors, realistic, cinematic lighting')}>
+                Astronauta no Espaco
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
       <form className="explore-prompt" onSubmit={handlePromptSubmit}>
         <div className="explore-prompt__input">
           <span className="material-symbols-outlined">auto_awesome</span>
@@ -210,6 +412,7 @@ export const ExplorePage = () => {
             value={promptDraft}
             onChange={(event) => setPromptDraft(event.target.value)}
             autoComplete="off"
+            disabled={generateMutation.isPending}
           />
         </div>
         <div className="explore-prompt__controls">
@@ -217,46 +420,85 @@ export const ExplorePage = () => {
             <span className="material-symbols-outlined">image</span>
             <span>Imagem</span>
           </button>
-          <button type="button" className="explore-pill explore-pill--active" title="Proporção">
+          <button
+            type="button"
+            className={`explore-pill${selectedRatio === '1:1' ? ' explore-pill--active' : ''}`}
+            title="Proporção quadrada"
+            onClick={() => setSelectedRatio('1:1')}
+          >
             <span className="material-symbols-outlined">crop_square</span>
             <span>1:1</span>
           </button>
-          <button type="button" className="explore-pill" title="Proporção retrato">
+          <button
+            type="button"
+            className={`explore-pill${selectedRatio === '9:16' ? ' explore-pill--active' : ''}`}
+            title="Proporção retrato"
+            onClick={() => setSelectedRatio('9:16')}
+          >
             <span className="material-symbols-outlined">crop_portrait</span>
             <span>9:16</span>
           </button>
-          <button type="button" className="explore-pill" title="Proporção paisagem">
+          <button
+            type="button"
+            className={`explore-pill${selectedRatio === '16:9' ? ' explore-pill--active' : ''}`}
+            title="Proporção paisagem"
+            onClick={() => setSelectedRatio('16:9')}
+          >
             <span className="material-symbols-outlined">crop_landscape</span>
             <span>16:9</span>
           </button>
           <div className="explore-prompt__divider" />
-          <button type="button" className="explore-pill explore-pill--hide-text-mobile" title="Configurações avançadas">
+          <button
+            type="button"
+            className={`explore-pill explore-pill--hide-text-mobile${showOptions ? ' explore-pill--active' : ''}`}
+            title="Configurações avançadas"
+            onClick={() => { setShowOptions(!showOptions); setShowTips(false); }}
+          >
             <span className="material-symbols-outlined">tune</span>
             <span>Opções</span>
           </button>
-          <button type="button" className="explore-pill explore-pill--hide-text-mobile" title="Dicas de prompts">
+          <button
+            type="button"
+            className={`explore-pill explore-pill--hide-text-mobile${showTips ? ' explore-pill--active' : ''}`}
+            title="Dicas de prompts"
+            onClick={() => { setShowTips(!showTips); setShowOptions(false); }}
+          >
             <span className="material-symbols-outlined">lightbulb</span>
             <span>Dicas</span>
           </button>
           <button
             type="submit"
-            disabled={!promptDraft.trim()}
+            disabled={!promptDraft.trim() || generateMutation.isPending}
             className="explore-submit"
           >
-            <span className="material-symbols-outlined">arrow_forward</span>
-            <span>Criar</span>
+            {generateMutation.isPending ? (
+              <>
+                <span className="material-symbols-outlined animate-spin">progress_activity</span>
+                <span>Gerando...</span>
+              </>
+            ) : (
+              <>
+                <span className="material-symbols-outlined">arrow_forward</span>
+                <span>Criar</span>
+              </>
+            )}
           </button>
         </div>
       </form>
 
       <ImageDetailsDialog
         image={selectedImage}
-        onClose={() => setSelectedImage(null)}
+        onClose={handleCloseDialog}
         onToggleLike={(image) => likeMutation.mutate(image)}
         onDownload={handleDownload}
         onShare={handleShare}
         onUpdateVisibility={handleUpdateVisibility}
         isUpdatingVisibility={visibilityMutation.isPending}
+        comments={comments}
+        onAddComment={handleAddComment}
+        onLikeComment={handleLikeComment}
+        onAddReply={handleAddReply}
+        isLoadingComments={isLoadingComments}
       />
     </div>
   );

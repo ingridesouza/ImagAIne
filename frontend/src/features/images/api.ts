@@ -4,6 +4,7 @@ import type {
   ImageRecord,
   PaginatedResponse,
 } from '@/features/images/types';
+import type { ImageComment } from '@/features/images/components/ImageDetailsDialog';
 
 export const imagesApi = {
   async fetchMyImages(page = 1) {
@@ -36,7 +37,8 @@ export const imagesApi = {
     return data;
   },
   async like(imageId: number) {
-    await apiClient.post(`/images/${imageId}/like/`);
+    const { data } = await apiClient.post<ImageRecord>(`/images/${imageId}/like/`);
+    return data;
   },
   async unlike(imageId: number) {
     await apiClient.delete(`/images/${imageId}/like/`);
@@ -45,6 +47,52 @@ export const imagesApi = {
     const { data } = await apiClient.post<{ download_url: string }>(
       `/images/${imageId}/download/`,
     );
+    return data;
+  },
+  async fetchComments(imageId: number) {
+    const { data } = await apiClient.get<PaginatedResponse<ImageComment>>(
+      `/images/${imageId}/comments/`
+    );
+    return data.results;
+  },
+  async addComment(imageId: number, text: string) {
+    const { data } = await apiClient.post<ImageComment>(
+      `/images/${imageId}/comments/`,
+      { text }
+    );
+    return data;
+  },
+  async likeComment(imageId: number, commentId: number) {
+    const { data } = await apiClient.post<{
+      comment_id: number;
+      is_liked: boolean;
+      like_count: number;
+    }>(`/images/${imageId}/comments/${commentId}/like/`);
+    return data;
+  },
+  async unlikeComment(imageId: number, commentId: number) {
+    const { data } = await apiClient.delete<{
+      comment_id: number;
+      is_liked: boolean;
+      like_count: number;
+    }>(`/images/${imageId}/comments/${commentId}/like/`);
+    return data;
+  },
+  async addReply(imageId: number, parentId: number, text: string) {
+    const { data } = await apiClient.post<ImageComment>(
+      `/images/${imageId}/comments/`,
+      { text, parent_id: parentId }
+    );
+    return data;
+  },
+  async refinePrompt(description: string, style?: string) {
+    const { data } = await apiClient.post<{
+      refined_prompt: string;
+      negative_prompt: string;
+    }>('/refine-prompt/', {
+      description,
+      ...(style ? { style } : {}),
+    });
     return data;
   },
 };
