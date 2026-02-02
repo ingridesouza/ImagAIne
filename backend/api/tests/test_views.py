@@ -15,12 +15,14 @@ from tests.utils import create_user
 class GenerateImageViewTests(APITestCase):
     @patch("api.views.generate_image_task.delay")
     def test_generate_image_creates_placeholder_and_updates_counter(self, mock_delay):
-        """Endpoint cria placeholder, reseta contador diario e enfileira worker."""
+        """Endpoint cria placeholder, reseta contador mensal e enfileira worker."""
+        # Use a date from the previous month to ensure monthly reset triggers
+        last_month = (timezone.now().date().replace(day=1) - timedelta(days=1))
         user = create_user(
             email="generator@example.com",
             username="generator",
             image_generation_count=5,
-            last_reset_date=timezone.now().date() - timedelta(days=1),
+            last_reset_date=last_month,
         )
         self.client.force_authenticate(user=user)
 
@@ -46,21 +48,23 @@ class GenerateImageViewTests(APITestCase):
 
         user.refresh_from_db()
         self.assertEqual(user.image_generation_count, 1)
-        self.assertEqual(user.last_reset_date, timezone.now().date())
+        # last_reset_date is set to the first day of the current month (period_start)
+        self.assertEqual(user.last_reset_date, timezone.now().date().replace(day=1))
 
         self.assertEqual(response.data["negative_prompt"], payload["negative_prompt"])
         self.assertEqual(response.data["aspect_ratio"], payload["aspect_ratio"])
         self.assertEqual(response.data["seed"], payload["seed"])
 
     def test_generate_image_respects_plan_quota(self):
-        """Usuario acima do limite diario recebe 429."""
+        """Usuario acima do limite mensal recebe 429."""
         today = timezone.now().date()
+        period_start = today.replace(day=1)
         user = create_user(
             email="limited@example.com",
             username="limited",
             plan="free",
-            image_generation_count=5,
-            last_reset_date=today,
+            image_generation_count=20,  # Free plan quota is 20
+            last_reset_date=period_start,
         )
         self.client.force_authenticate(user=user)
 
