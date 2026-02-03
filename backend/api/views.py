@@ -641,7 +641,7 @@ class RefinePromptView(APIView):
     throttle_scope = "llm_refine"
 
     def post(self, request, *args, **kwargs):
-        from .serializers import RefinePromptRequestSerializer, RefinePromptResponseSerializer
+        from .serializers import RefinePromptRequestSerializer
         import requests
         import logging
 
@@ -760,9 +760,5 @@ Formato de resposta (JSON):
             'refined_prompt': refined_prompt,
             'negative_prompt': negative_prompt,
         }
-
-        output_serializer = RefinePromptResponseSerializer(data=response_data)
-        if output_serializer.is_valid():
-            return Response(output_serializer.validated_data, status=status.HTTP_200_OK)
 
         return Response(response_data, status=status.HTTP_200_OK)
