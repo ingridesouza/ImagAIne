@@ -89,10 +89,16 @@ export const imagesApi = {
     const { data } = await apiClient.post<{
       refined_prompt: string;
       negative_prompt: string;
-    }>('/refine-prompt/', {
-      description,
-      ...(style ? { style } : {}),
-    });
+    }>(
+      '/refine-prompt/',
+      {
+        description,
+        ...(style ? { style } : {}),
+      },
+      {
+        timeout: 60000, // 60 segundos para chamadas LLM
+      }
+    );
     return data;
   },
 };
