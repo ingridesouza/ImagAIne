@@ -35,7 +35,7 @@ def generate_image_task(image_id):
         prompt = image_instance.prompt
 
         logger.info(
-            f'[TASK_START] Gerando imagem via Hugging Face Nebius - Prompt: "{prompt}"'
+            f'[TASK_START] Gerando imagem via FLUX.1-schnell - Prompt: "{prompt}"'
         )
 
         client = InferenceClient(token=config("HF_TOKEN"))
@@ -45,7 +45,7 @@ def generate_image_task(image_id):
                 image_instance.aspect_ratio, (1024, 1024)
             )
             generation_kwargs = {
-                "model": "black-forest-labs/FLUX.1-dev",
+                "model": "black-forest-labs/FLUX.1-schnell",
                 "width": width,
                 "height": height,
             }
@@ -66,7 +66,7 @@ def generate_image_task(image_id):
             image_instance.save(update_fields=["status", "image", "retry_count"])
             return
 
-        logger.info("Imagem recebida com sucesso da API Nebius.")
+        logger.info("Imagem recebida com sucesso da API Hugging Face.")
 
         image_name = f"{uuid.uuid4()}.png"
         buffer = BytesIO()
