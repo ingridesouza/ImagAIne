@@ -1,12 +1,15 @@
 import { useMemo, useState } from 'react';
 import clsx from 'clsx';
 import { Link } from 'react-router-dom';
-import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
+import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { imagesApi } from '@/features/images/api';
 import { ImageGrid } from '@/features/images/components/ImageGrid';
 import type { ImageRecord } from '@/features/images/types';
 import { QUERY_KEYS } from '@/lib/constants';
 import { Input } from '@/components/ui/Input';
+import { LoadMoreButton } from '@/components/ui/LoadMoreButton';
+import { useInfiniteMyImages } from '@/hooks/useInfiniteImages';
+import { useImagePolling } from '@/hooks/useImagePolling';
 
 const VISIBILITY_FILTERS = [
   { label: 'Todas', value: 'all' as const, description: 'Coleção completa' },
@@ -21,11 +24,18 @@ export const MyImagesPage = () => {
   const [search, setSearch] = useState('');
   const [activeFilter, setActiveFilter] = useState<VisibilityFilter>('all');
 
-  const { data: response, isLoading } = useQuery({
-    queryKey: QUERY_KEYS.myImages(),
-    queryFn: () => imagesApi.fetchMyImages(),
-  });
-  const images: ImageRecord[] = useMemo(() => response?.results ?? [], [response?.results]);
+  // Infinite query para carregar imagens com paginacao
+  const {
+    images,
+    totalCount,
+    isLoading,
+    hasMore,
+    loadMore,
+    isLoadingMore,
+  } = useInfiniteMyImages();
+
+  // Polling para detectar mudancas de status e notificar o usuario
+  useImagePolling({ images });
 
   const totalDownloads = useMemo(
     () => images.reduce((sum, image) => sum + (image.download_count ?? 0), 0),
@@ -60,7 +70,10 @@ export const MyImagesPage = () => {
 
   const visibilityMutation = useMutation({
     mutationFn: (image: ImageRecord) => imagesApi.updateShare(image.id, !image.is_public),
-    onSuccess: () => queryClient.invalidateQueries({ queryKey: QUERY_KEYS.myImages() }),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: QUERY_KEYS.myImages() });
+      queryClient.invalidateQueries({ queryKey: QUERY_KEYS.myImagesInfinite() });
+    },
   });
 
   const likeMutation = useMutation({
@@ -71,7 +84,10 @@ export const MyImagesPage = () => {
       }
       await imagesApi.like(image.id);
     },
-    onSuccess: () => queryClient.invalidateQueries({ queryKey: QUERY_KEYS.myImages() }),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: QUERY_KEYS.myImages() });
+      queryClient.invalidateQueries({ queryKey: QUERY_KEYS.myImagesInfinite() });
+    },
   });
 
   const handleDownload = async (image: ImageRecord) => {
@@ -80,17 +96,17 @@ export const MyImagesPage = () => {
       window.open(data.download_url, '_blank');
     }
     queryClient.invalidateQueries({ queryKey: QUERY_KEYS.myImages() });
+    queryClient.invalidateQueries({ queryKey: QUERY_KEYS.myImagesInfinite() });
   };
 
   const heroStats = [
-    { label: 'Total na biblioteca', value: images.length },
+    { label: 'Total na biblioteca', value: totalCount },
     { label: 'Visíveis no feed', value: totalPublic },
     { label: 'Downloads gerados', value: totalDownloads },
   ];
 
   const summary = [
     { label: 'Privadas', value: totalPrivate },
-    { label: 'Curtidas médias', value: images.length ? Math.round(totalDownloads / images.length) : 0 },
   ];
 
   return (
@@ -183,6 +199,17 @@ export const MyImagesPage = () => {
           onToggleLike={(image) => likeMutation.mutate(image)}
           onDownload={handleDownload}
         />
+
+        {/* Botao de carregar mais */}
+        {!isLoading && images.length > 0 && (
+          <LoadMoreButton
+            onClick={() => loadMore()}
+            isLoading={isLoadingMore}
+            hasMore={hasMore ?? false}
+            loadedCount={images.length}
+            totalCount={totalCount}
+          />
+        )}
       </div>
     </section>
   );

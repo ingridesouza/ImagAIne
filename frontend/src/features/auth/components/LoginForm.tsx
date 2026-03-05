@@ -11,7 +11,7 @@ import { useAuthStore } from '@/features/auth/store';
 
 const schema = z.object({
   email: z.string().email('Informe um e-mail válido'),
-  password: z.string().min(6, 'Senha obrigatória'),
+  password: z.string().min(1, 'Senha obrigatória'),
 });
 
 type FormValues = z.infer<typeof schema>;

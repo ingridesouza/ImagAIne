@@ -8,6 +8,8 @@ import { useLocation } from 'react-router-dom';
 import { imagesApi } from '@/features/images/api';
 import type { GenerateImagePayload, ImageRecord } from '@/features/images/types';
 import { QUERY_KEYS } from '@/lib/constants';
+import { notifications } from '@/lib/notifications';
+import { useImagePolling } from '@/hooks/useImagePolling';
 
 const schema = z.object({
   prompt: z.string().min(20, 'Conte um pouco mais sobre sua imagem'),
@@ -210,18 +212,28 @@ export const GenerateImagePage = () => {
   });
 
   const myImages: ImageRecord[] = myImagesResponse?.results ?? [];
-  const queue = myImages.filter((image) => image.status === 'GENERATING');
+
+  // Polling para detectar mudancas de status e notificar o usuario
+  useImagePolling({ images: myImages });
 
   const { mutateAsync, isPending, error } = useMutation({
     mutationFn: (payload: GenerateImagePayload) => imagesApi.generate(payload),
-    onSuccess: () => {
+    onSuccess: (newImage) => {
       queryClient.invalidateQueries({ queryKey: QUERY_KEYS.myImages() });
+      queryClient.invalidateQueries({ queryKey: QUERY_KEYS.myImagesInfinite() });
+
+      // Notificacao de imagem na fila
+      notifications.imageQueued(newImage.prompt);
+
       reset({ prompt: '', negative_prompt: '', aspect_ratio: '1:1', seed: '' });
       setShowAdvanced(false);
       setSelectedMode(null);
       setSelectedStyle(null);
       setSelectedLight(null);
       setSelectedFraming(null);
+    },
+    onError: () => {
+      notifications.error('Nao foi possivel enviar sua solicitacao');
     },
   });
 
@@ -316,7 +328,7 @@ export const GenerateImagePage = () => {
     microcopy: string,
   ) => (
     <div className="space-y-2">
-      <span className="text-[11px] text-gray-600">{microcopy}</span>
+      <span className="text-[11px] text-white/25">{microcopy}</span>
       <div className="flex flex-wrap gap-2">
         {chips.map((chip) => {
           const isSelected = selectedId === chip.id;
@@ -329,16 +341,16 @@ export const GenerateImagePage = () => {
               onClick={() => handleChipClick(category, chip.id)}
               className={clsx(
                 'relative rounded-md border px-3 py-1.5 text-[13px] transition-all duration-150',
-                'focus:outline-none focus-visible:ring-2 focus-visible:ring-purple-500/60',
+                'focus:outline-none focus-visible:ring-2 focus-visible:ring-flow-300/40',
                 isSelected
-                  ? 'border-purple-500/50 bg-purple-500/15 text-purple-300'
-                  : 'border-white/[0.06] bg-white/[0.02] text-gray-400 hover:border-white/10 hover:bg-white/[0.05] hover:text-gray-200',
+                  ? 'border-flow-300/30 bg-flow-300/10 text-flow-300'
+                  : 'border-white/[0.06] bg-white/[0.02] text-white/45 hover:border-white/10 hover:bg-white/[0.05] hover:text-white/70',
                 isPending && 'cursor-not-allowed opacity-50',
               )}
             >
               {chip.label}
               {isSelected && (
-                <span className="absolute -right-1 -top-1 flex h-3.5 w-3.5 items-center justify-center rounded-full bg-purple-500 text-[9px] text-white">
+                <span className="absolute -right-1 -top-1 flex h-3.5 w-3.5 items-center justify-center rounded-full bg-flow-300 text-[9px] text-white">
                   ✓
                 </span>
               )}
@@ -352,16 +364,11 @@ export const GenerateImagePage = () => {
   const hasRefinements = selectedStyle || selectedLight || selectedFraming;
 
   return (
-    <div className="relative min-h-full overflow-y-auto text-white">
-      {/* Background glow sutil - apenas um */}
-      <div className="pointer-events-none absolute inset-0 overflow-hidden">
-        <div className="absolute left-1/2 top-0 h-[600px] w-[900px] -translate-x-1/2 -translate-y-1/2 rounded-full bg-purple-600/8 blur-[150px]" />
-      </div>
-
-      <div className="relative mx-auto max-w-[720px] px-4 py-10 sm:px-6 md:py-16">
+    <div className="relative min-h-full overflow-y-auto text-[#e3e3e8]">
+      <div className="relative mx-auto max-w-[720px] px-4 py-8 sm:px-6 md:py-12">
         {/* ===== A) HEADER ===== */}
         <header className="mb-8 text-center">
-          <div className="mb-3 inline-flex items-center gap-1.5 rounded-full bg-purple-500/10 px-3 py-1 text-[11px] font-medium uppercase tracking-wider text-purple-400">
+          <div className="mb-3 inline-flex items-center gap-1.5 rounded-full bg-flow-300/8 px-3 py-1 text-[11px] font-medium uppercase tracking-wider text-flow-300">
             <span className="material-symbols-outlined text-[12px]">auto_awesome</span>
             Studio
           </div>
@@ -379,17 +386,17 @@ export const GenerateImagePage = () => {
               disabled={isPending}
               onClick={() => setSelectedMode(selectedMode === mode.id ? null : mode.id)}
               className={clsx(
-                'group flex items-center gap-1.5 rounded-full px-3 py-1.5 text-sm font-medium transition-all focus:outline-none focus:ring-2 focus:ring-purple-500/50 focus:ring-offset-1 focus:ring-offset-[#0d0d0f]',
+                'group flex items-center gap-1.5 rounded-full px-3 py-1.5 text-sm font-medium transition-all duration-150 focus:outline-none',
                 selectedMode === mode.id
-                  ? 'bg-purple-500/20 text-purple-300 ring-1 ring-purple-400/50'
-                  : 'bg-white/[0.04] text-gray-400 hover:bg-white/[0.08] hover:text-white',
+                  ? 'bg-flow-300/12 text-flow-300 ring-1 ring-flow-300/30'
+                  : 'bg-white/[0.04] text-white/40 hover:bg-white/[0.06] hover:text-white/70',
                 isPending && 'cursor-not-allowed opacity-50',
               )}
             >
               <span
                 className={clsx(
                   'material-symbols-outlined text-[16px] transition-colors',
-                  selectedMode === mode.id ? 'text-purple-400' : 'text-gray-500 group-hover:text-gray-300',
+                  selectedMode === mode.id ? 'text-flow-300' : 'text-white/30 group-hover:text-white/50',
                 )}
               >
                 {mode.icon}
@@ -401,10 +408,10 @@ export const GenerateImagePage = () => {
 
         <form onSubmit={handleSubmit(onSubmit)} className="flex flex-col gap-5">
           {/* ===== C) CARD PRINCIPAL DO PROMPT ===== */}
-          <div className="group relative rounded-2xl bg-white/[0.03] ring-1 ring-white/10 transition-all focus-within:bg-white/[0.05] focus-within:ring-purple-500/40">
+          <div className="group relative rounded-2xl border border-white/[0.06] bg-white/[0.03] transition-all focus-within:border-flow-300/30 focus-within:bg-white/[0.04]">
             {/* Label interno */}
             <div className="px-5 pt-4">
-              <label htmlFor="prompt" className="text-sm font-medium text-gray-300">
+              <label htmlFor="prompt" className="text-sm font-medium text-white/60">
                 Descreva sua imagem
               </label>
             </div>
@@ -414,7 +421,7 @@ export const GenerateImagePage = () => {
               <textarea
                 id="prompt"
                 rows={3}
-                className="w-full resize-none border-0 bg-transparent text-[15px] leading-relaxed text-white placeholder:text-gray-600 focus:outline-none focus:ring-0"
+                className="w-full resize-none border-0 bg-transparent text-[15px] leading-relaxed text-white placeholder:text-white/25 focus:outline-none focus:ring-0"
                 placeholder={placeholder}
                 {...register('prompt')}
               />
@@ -432,19 +439,19 @@ export const GenerateImagePage = () => {
                     onClick={handleRandomPrompt}
                     className={clsx(
                       'flex items-center gap-1.5 text-sm transition-colors focus:outline-none',
-                      currentMode ? 'text-purple-400 hover:text-purple-300' : 'text-gray-500 hover:text-purple-400',
+                      currentMode ? 'text-flow-300 hover:text-flow-300' : 'text-white/35 hover:text-flow-300',
                     )}
                   >
                     <span className="material-symbols-outlined text-[14px]">lightbulb</span>
                     Me inspire
                   </button>
                 ) : promptValue.length >= 80 ? (
-                  <span className="text-xs text-gray-600">{promptValue.length} caracteres</span>
+                  <span className="text-xs text-white/25">{promptValue.length} caracteres</span>
                 ) : null}
               </div>
 
               {(currentMode || hasRefinements) && (
-                <span className="flex items-center gap-1 text-[11px] text-purple-400/80">
+                <span className="flex items-center gap-1 text-[11px] text-flow-300/80">
                   <span className="material-symbols-outlined text-[12px]">auto_fix_high</span>
                   {currentMode && hasRefinements
                     ? 'Modo + refinamentos'
@@ -458,7 +465,7 @@ export const GenerateImagePage = () => {
 
           {/* ===== D) PROPORÇÃO ===== */}
           <div className="flex items-center gap-3">
-            <span className="text-xs text-gray-500">Proporção</span>
+            <span className="text-xs text-white/35">Proporção</span>
             <div className="relative flex rounded-lg bg-white/[0.04] p-0.5">
               {/* Sliding indicator */}
               <div
@@ -474,10 +481,10 @@ export const GenerateImagePage = () => {
                   type="button"
                   onClick={() => setValue('aspect_ratio', option.value, { shouldValidate: true })}
                   className={clsx(
-                    'relative z-10 flex items-center gap-1 rounded-md px-2 py-1 text-xs transition-colors duration-150 focus:outline-none focus-visible:ring-2 focus-visible:ring-purple-500/60',
+                    'relative z-10 flex items-center gap-1 rounded-md px-2 py-1 text-xs transition-colors duration-150 focus:outline-none focus-visible:ring-2 focus-visible:ring-flow-300/40',
                     aspectRatio === option.value
                       ? 'text-white'
-                      : 'text-gray-500 hover:text-gray-300',
+                      : 'text-white/35 hover:text-white/60',
                   )}
                 >
                   <div
@@ -496,7 +503,7 @@ export const GenerateImagePage = () => {
 
           {/* ===== E) REFINE SUA IDEIA ===== */}
           <div className="space-y-3">
-            <span className="text-xs text-gray-500">Refinamentos (opcional)</span>
+            <span className="text-xs text-white/35">Refinamentos (opcional)</span>
             <div className="grid gap-x-6 gap-y-4 sm:grid-cols-2 lg:grid-cols-3">
               {renderChipGroup('style', styleChips, selectedStyle, 'Aparência')}
               {renderChipGroup('light', lightChips, selectedLight, 'Iluminação')}
@@ -509,7 +516,7 @@ export const GenerateImagePage = () => {
             <button
               type="button"
               onClick={() => setShowAdvanced(!showAdvanced)}
-              className="flex items-center gap-1.5 text-xs text-purple-400 transition-all hover:text-purple-300 focus:outline-none"
+              className="flex items-center gap-1.5 text-xs text-flow-300 transition-all hover:text-flow-300 focus:outline-none"
             >
               <span
                 className={clsx(
@@ -525,27 +532,27 @@ export const GenerateImagePage = () => {
             {showAdvanced && (
               <div className="grid gap-4 rounded-md bg-white/[0.02] p-4 ring-1 ring-white/5 sm:grid-cols-2">
               <div>
-                <label className="mb-1.5 block text-xs font-medium text-gray-400" htmlFor="negative_prompt">
+                <label className="mb-1.5 block text-xs font-medium text-white/45" htmlFor="negative_prompt">
                   Evitar na imagem
                 </label>
                 <input
                   id="negative_prompt"
                   type="text"
-                  className="w-full rounded-lg bg-white/5 px-3 py-2 text-sm text-white placeholder:text-gray-600 focus:outline-none focus:ring-1 focus:ring-purple-500/50"
+                  className="w-full rounded-lg bg-white/5 px-3 py-2 text-sm text-white placeholder:text-white/25 focus:outline-none focus:ring-1 focus:ring-flow-300/40"
                   placeholder="blur, text, lowres..."
                   {...register('negative_prompt')}
                 />
               </div>
 
               <div>
-                <label className="mb-1.5 block text-xs font-medium text-gray-400" htmlFor="seed">
+                <label className="mb-1.5 block text-xs font-medium text-white/45" htmlFor="seed">
                   Seed
                 </label>
                 <input
                   id="seed"
                   type="number"
                   min={0}
-                  className="w-full rounded-lg bg-white/5 px-3 py-2 text-sm text-white placeholder:text-gray-600 focus:outline-none focus:ring-1 focus:ring-purple-500/50"
+                  className="w-full rounded-lg bg-white/5 px-3 py-2 text-sm text-white placeholder:text-white/25 focus:outline-none focus:ring-1 focus:ring-flow-300/40"
                   placeholder="Aleatório"
                   {...register('seed')}
                 />
@@ -561,11 +568,8 @@ export const GenerateImagePage = () => {
           <button
             type="submit"
             disabled={isPending}
-            className="group relative mt-2 flex items-center justify-center gap-2.5 overflow-hidden rounded-xl bg-gradient-to-r from-purple-600 to-purple-500 px-6 py-3.5 text-sm font-semibold text-white shadow-lg shadow-purple-500/20 transition-all hover:shadow-xl hover:shadow-purple-500/25 focus:outline-none focus:ring-2 focus:ring-purple-500 focus:ring-offset-2 focus:ring-offset-[#0d0d0f] active:scale-[0.98] disabled:opacity-50 disabled:shadow-none"
+            className="group relative mt-2 flex items-center justify-center gap-2.5 overflow-hidden rounded-xl bg-flow-300 px-6 py-3 text-sm font-semibold text-[#131316] transition-all duration-150 hover:bg-flow-200 focus:outline-none active:scale-[0.98] disabled:opacity-38 disabled:pointer-events-none"
           >
-            {/* Shine effect */}
-            <div className="absolute inset-0 -translate-x-full bg-gradient-to-r from-transparent via-white/10 to-transparent transition-transform duration-700 group-hover:translate-x-full" />
-
             {isPending ? (
               <>
                 <span className="material-symbols-outlined animate-spin text-[18px]">progress_activity</span>
@@ -584,14 +588,6 @@ export const GenerateImagePage = () => {
             <div className="flex flex-col items-center gap-3 py-4">
               <div className="h-40 w-40 animate-pulse rounded-xl bg-white/5" />
               <div className="h-2 w-24 animate-pulse rounded bg-white/5" />
-            </div>
-          )}
-
-          {/* Status */}
-          {queue.length > 0 && (
-            <div className="flex items-center justify-center gap-2 text-xs text-gray-500">
-              <span className="h-1.5 w-1.5 animate-pulse rounded-full bg-purple-500" />
-              {queue.length} {queue.length === 1 ? 'imagem' : 'imagens'} em fila
             </div>
           )}
 

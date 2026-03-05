@@ -46,7 +46,7 @@ export const GalleryCard = ({
           className="h-auto w-full min-h-full object-cover transition-transform duration-500 ease-in-out group-hover:scale-105"
         />
       ) : (
-        <div className="flex h-full min-h-[220px] sm:min-h-[240px] items-center justify-center bg-gradient-to-br from-surface-dark to-black text-sm text-slate-400">
+        <div className="flex h-full min-h-[220px] sm:min-h-[240px] items-center justify-center bg-gradient-to-br from-surface-dark to-black text-sm text-white/50">
           {image.prompt}
         </div>
       )}
@@ -57,7 +57,7 @@ export const GalleryCard = ({
         <div className="flex flex-wrap items-center justify-between gap-3 translate-y-4 transition-transform duration-300 group-hover:translate-y-0">
           <div className="flex flex-col text-left">
             <span className="truncate text-sm font-semibold text-white">{image.prompt}</span>
-            <span className="text-xs text-slate-400">@{image.user.username}</span>
+            <span className="text-xs text-white/50">@{image.user.username}</span>
           </div>
           <div className="flex flex-wrap items-center justify-end gap-2">
             <button
@@ -74,7 +74,7 @@ export const GalleryCard = ({
               className={clsx(
                 'pointer-events-auto flex size-9 items-center justify-center rounded-full transition-colors backdrop-blur-sm',
                 image.is_liked
-                  ? 'bg-accent-purple text-white'
+                  ? 'bg-flow-300 text-white'
                   : 'bg-white/10 text-white hover:bg-white/20',
               )}
               aria-label={image.is_liked ? 'Remover dos favoritos' : 'Favoritar imagem'}

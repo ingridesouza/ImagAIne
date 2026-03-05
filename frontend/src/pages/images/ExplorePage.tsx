@@ -1,6 +1,6 @@
-import { useEffect, useMemo, useState } from 'react';
+import { useCallback, useEffect, useMemo, useState } from 'react';
 import type { FormEvent } from 'react';
-import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
+import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { useNavigate } from 'react-router-dom';
 import { imagesApi } from '@/features/images/api';
 import { ImageDetailsDialog, type ImageComment } from '@/features/images/components/ImageDetailsDialog';
@@ -8,6 +8,10 @@ import { GalleryCard } from '@/features/images/components/GalleryCard';
 import type { ImageRecord } from '@/features/images/types';
 import { QUERY_KEYS } from '@/lib/constants';
 import { useDebounce } from '@/hooks/useDebounce';
+import { useInfinitePublicImages } from '@/hooks/useInfiniteImages';
+import { InfiniteScrollTrigger } from '@/components/ui/InfiniteScrollTrigger';
+import { GalleryGridSkeleton } from '@/components/ui/Skeleton';
+import { notifications } from '@/lib/notifications';
 
 const VIEW_OPTIONS = [
   { label: 'Tendências', value: 'featured' as const },
@@ -16,8 +20,6 @@ const VIEW_OPTIONS = [
   { label: 'Likes', value: 'liked' as const },
 ];
 
-const SKELETON_RATIOS = ['3 / 4', '4 / 5', '1 / 1', '16 / 9'];
-const PLACEHOLDER_TILES = Array.from({ length: 12 }, (_, index) => index);
 
 type ViewFilter = (typeof VIEW_OPTIONS)[number]['value'];
 
@@ -66,11 +68,22 @@ export const ExplorePage = () => {
     }
   }, [search]);
 
-  const { data: response, isLoading } = useQuery({
-    queryKey: QUERY_KEYS.publicImages(debouncedSearch),
-    queryFn: () => imagesApi.fetchPublicImages(debouncedSearch),
-  });
-  const images = useMemo<ImageRecord[]>(() => response?.results ?? [], [response?.results]);
+  // Infinite query para carregar imagens com scroll infinito
+  const {
+    images,
+    totalCount: _totalCount,
+    isLoading,
+    hasMore,
+    loadMore,
+    isLoadingMore,
+  } = useInfinitePublicImages({ search: debouncedSearch });
+
+  // Callback estavel para o InfiniteScrollTrigger
+  const handleLoadMore = useCallback(() => {
+    if (hasMore && !isLoadingMore) {
+      loadMore();
+    }
+  }, [hasMore, isLoadingMore, loadMore]);
 
   const readyImages = useMemo(() => {
     const curated = images.filter((image) => image.status === 'READY');
@@ -99,8 +112,10 @@ export const ExplorePage = () => {
   const visibilityMutation = useMutation({
     mutationFn: ({ image, isPublic }: { image: ImageRecord; isPublic: boolean }) =>
       imagesApi.updateShare(image.id, isPublic),
-    onSuccess: () =>
-      queryClient.invalidateQueries({ queryKey: QUERY_KEYS.publicImages(debouncedSearch) }),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: QUERY_KEYS.publicImages(debouncedSearch) });
+      queryClient.invalidateQueries({ queryKey: QUERY_KEYS.publicImagesInfinite(debouncedSearch) });
+    },
   });
 
   const fetchCommentsForImage = async (imageId: number) => {
@@ -219,6 +234,7 @@ export const ExplorePage = () => {
     },
     onSettled: () => {
       queryClient.invalidateQueries({ queryKey: QUERY_KEYS.publicImages(debouncedSearch) });
+      queryClient.invalidateQueries({ queryKey: QUERY_KEYS.publicImagesInfinite(debouncedSearch) });
     },
   });
 
@@ -228,7 +244,14 @@ export const ExplorePage = () => {
     onSuccess: (newImage) => {
       setPromptDraft('');
       queryClient.invalidateQueries({ queryKey: QUERY_KEYS.publicImages(debouncedSearch) });
-      navigate('/my-images', { state: { highlightId: newImage.id } });
+      queryClient.invalidateQueries({ queryKey: QUERY_KEYS.publicImagesInfinite(debouncedSearch) });
+      queryClient.invalidateQueries({ queryKey: QUERY_KEYS.myImages() });
+      queryClient.invalidateQueries({ queryKey: QUERY_KEYS.myImagesInfinite() });
+      notifications.imageQueued(newImage.prompt);
+      navigate('/profile', { state: { highlightId: newImage.id } });
+    },
+    onError: () => {
+      notifications.error('Nao foi possivel enviar sua solicitacao');
     },
   });
 
@@ -238,6 +261,7 @@ export const ExplorePage = () => {
       window.open(data.download_url, '_blank');
     }
     queryClient.invalidateQueries({ queryKey: QUERY_KEYS.publicImages(debouncedSearch) });
+    queryClient.invalidateQueries({ queryKey: QUERY_KEYS.publicImagesInfinite(debouncedSearch) });
   };
 
   const handleUpdateVisibility = (image: ImageRecord, isPublic: boolean) => {
@@ -282,12 +306,12 @@ export const ExplorePage = () => {
   };
 
   return (
-    <div className="explore-page flex h-full min-h-0 flex-col overflow-hidden bg-background-light text-slate-900 dark:bg-background-dark dark:text-slate-200">
-      <div className="flex items-start justify-between pt-2">
+    <div className="explore-page flex h-full min-h-0 flex-col overflow-hidden bg-background-dark text-white/80">
+      <div className="flex items-start justify-between px-4 pt-6 pb-2 sm:px-6 md:px-8">
         <div className="space-y-1">
-          <p className="text-xs font-semibold uppercase tracking-[0.35em] text-primary">Galeria AI Gen</p>
+          <p className="text-xs font-semibold uppercase tracking-[0.35em] text-flow-300">Galeria AI Gen</p>
           <h1 className="text-2xl font-bold text-white">Explorar</h1>
-          <p className="text-sm text-slate-400">Descubra estilos, artistas e prompts da comunidade.</p>
+          <p className="text-sm text-white/50">Descubra estilos, artistas e prompts da comunidade.</p>
         </div>
 
         {search ? (
@@ -302,21 +326,12 @@ export const ExplorePage = () => {
         ) : null}
       </div>
 
-      <div className="no-scrollbar flex-1 overflow-y-auto pb-32 pt-4">
-        <div className="masonry-grid pt-6" role="list">
-          {isLoadingGrid
-            ? PLACEHOLDER_TILES.map((placeholder) => (
-                <div
-                  key={placeholder}
-                  className="masonry-item rounded-xl bg-surface-dark/80 shadow-lg shadow-black/20"
-                  style={{ aspectRatio: SKELETON_RATIOS[placeholder % SKELETON_RATIOS.length] }}
-                  aria-hidden
-                >
-                  <div className="h-full w-full animate-pulse rounded-xl bg-gradient-to-br from-white/5 via-white/10 to-white/5" />
-                </div>
-              ))
-            : null}
+      <div className="no-scrollbar flex-1 overflow-y-auto px-4 pb-32 pt-4 sm:px-6 md:px-8">
+        {isLoadingGrid ? (
+          <GalleryGridSkeleton count={12} />
+        ) : null}
 
+        <div className="masonry-grid" role="list">
           {!isLoadingGrid && !showEmptyState
             ? readyImages.map((image) => (
                 <GalleryCard
@@ -332,11 +347,20 @@ export const ExplorePage = () => {
             : null}
         </div>
 
+        {/* Trigger para scroll infinito automatico */}
+        {!isLoadingGrid && !showEmptyState && (
+          <InfiniteScrollTrigger
+            onTrigger={handleLoadMore}
+            hasMore={hasMore ?? false}
+            isLoading={isLoadingMore}
+          />
+        )}
+
         {showEmptyState ? (
-          <div className="mt-10 flex flex-col items-center justify-center gap-2 rounded-2xl border border-dashed border-white/10 bg-surface-dark/60 px-6 py-10 text-center text-slate-300">
+          <div className="mt-10 flex flex-col items-center justify-center gap-2 rounded-2xl border border-dashed border-white/10 bg-surface-dark/60 px-6 py-10 text-center text-white/70">
             <span className="material-symbols-outlined !text-[32px] text-primary">auto_awesome</span>
             <p className="text-lg font-semibold text-white">Nenhuma imagem pública encontrada.</p>
-            <p className="text-sm text-slate-400">Tente outro termo de busca ou altere o filtro acima.</p>
+            <p className="text-sm text-white/50">Tente outro termo de busca ou altere o filtro acima.</p>
           </div>
         ) : null}
       </div>

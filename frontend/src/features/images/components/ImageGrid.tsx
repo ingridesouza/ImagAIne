@@ -1,6 +1,7 @@
 import type { ImageRecord } from '@/features/images/types';
 import { ImageCard } from '@/features/images/components/ImageCard';
 import { EmptyState } from '@/components/ui/EmptyState';
+import { ImageGridSkeleton } from '@/components/ui/Skeleton';
 
 type Props = {
   images: ImageRecord[];
@@ -23,6 +24,10 @@ export const ImageGrid = ({
   onShare,
   onSelectImage,
 }: Props) => {
+  if (isLoading && images.length === 0) {
+    return <ImageGridSkeleton count={6} />;
+  }
+
   if (!isLoading && images.length === 0) {
     return (
       <EmptyState

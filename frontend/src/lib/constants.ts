@@ -20,5 +20,7 @@ export const NAV_LINKS: NavLink[] = [
 export const QUERY_KEYS = {
   profile: ['auth', 'profile'] as const,
   myImages: () => ['images', 'my'] as const,
+  myImagesInfinite: () => ['images', 'my', 'infinite'] as const,
   publicImages: (search: string) => ['images', 'public', search] as const,
+  publicImagesInfinite: (search: string) => ['images', 'public', 'infinite', search] as const,
 };

@@ -13,10 +13,31 @@ export const imagesApi = {
     });
     return data;
   },
+  async fetchMyImagesPage({ pageParam = 1 }: { pageParam?: number }) {
+    const { data } = await apiClient.get<PaginatedResponse<ImageRecord>>('/images/my-images/', {
+      params: { page: pageParam },
+    });
+    return data;
+  },
   async fetchPublicImages(search?: string, page = 1) {
     const { data } = await apiClient.get<PaginatedResponse<ImageRecord>>('/images/public/', {
       params: {
         page,
+        ...(search ? { search } : {}),
+      },
+    });
+    return data;
+  },
+  async fetchPublicImagesPage({
+    pageParam = 1,
+    search,
+  }: {
+    pageParam?: number;
+    search?: string;
+  }) {
+    const { data } = await apiClient.get<PaginatedResponse<ImageRecord>>('/images/public/', {
+      params: {
+        page: pageParam,
         ...(search ? { search } : {}),
       },
     });
