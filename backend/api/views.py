@@ -1,4 +1,5 @@
 from django.conf import settings
+from django.db import transaction
 from django.db.models import (
     BooleanField,
     Count,
@@ -11,6 +12,8 @@ from django.db.models.functions import Coalesce
 from django.http import Http404
 from django.shortcuts import get_object_or_404
 from django.utils import timezone
+
+from authentication.models import User
 from rest_framework import filters, generics, status
 from rest_framework.exceptions import PermissionDenied, Throttled
 from rest_framework.permissions import AllowAny, IsAuthenticated
@@ -68,7 +71,34 @@ class GenerateImageView(APIView):
                     status=status.HTTP_429_TOO_MANY_REQUESTS,
                 )
 
-            # Create a new image placeholder while async generation runs
+            # Atomically increment the counter to prevent race conditions
+            # Uses SELECT FOR UPDATE to lock the row during the transaction
+            with transaction.atomic():
+                # Lock the user row and verify quota again
+                locked_user = User.objects.select_for_update().get(pk=user.pk)
+
+                # Handle monthly reset if needed
+                today = timezone.now().date()
+                period_start = today.replace(day=1)
+                if locked_user.last_reset_date != period_start:
+                    locked_user.image_generation_count = 0
+                    locked_user.last_reset_date = period_start
+
+                # Re-check quota with locked row to prevent race condition
+                if quota is not None and locked_user.image_generation_count >= quota:
+                    return Response(
+                        {"detail": "Monthly quota reached. Faça upgrade para o plano Pro."},
+                        status=status.HTTP_429_TOO_MANY_REQUESTS,
+                    )
+
+                # Increment counter (safe because we hold the row lock)
+                locked_user.image_generation_count += 1
+                locked_user.save(update_fields=["image_generation_count", "last_reset_date"])
+
+            # Refresh user object to reflect the changes made to locked_user
+            user.refresh_from_db(fields=["image_generation_count", "last_reset_date"])
+
+            # Create image placeholder after quota is secured
             image = Image.objects.create(
                 user=user,
                 prompt=prompt,
@@ -77,9 +107,6 @@ class GenerateImageView(APIView):
                 seed=seed,
             )
             update_image_relevance(image)
-
-            user.image_generation_count += 1
-            user.save(update_fields=["image_generation_count", "last_reset_date"])
 
             generate_image_task.delay(image.id)
 
@@ -148,6 +175,29 @@ class UserImageListView(generics.ListAPIView):
                     image=OuterRef("pk"), user=self.request.user
                 )
             )
+        )
+
+
+class UserLikedImagesView(generics.ListAPIView):
+    serializer_class = ImageSerializer
+    permission_classes = [IsAuthenticated]
+
+    def get_queryset(self):
+        liked_image_ids = ImageLike.objects.filter(
+            user=self.request.user
+        ).values_list("image_id", flat=True)
+
+        return (
+            Image.objects.filter(id__in=liked_image_ids, status="READY")
+            .select_related("user")
+            .prefetch_related("tags")
+            .annotate(
+                like_count=Count("likes", distinct=True),
+                comment_count=Count("comments", distinct=True),
+                effective_score=Coalesce(F("relevance_score"), Value(0.0)),
+                is_liked=Value(True, output_field=BooleanField()),
+            )
+            .order_by("-likes__created_at")
         )
 
 
@@ -614,7 +664,7 @@ class RefinePromptView(APIView):
     throttle_scope = "llm_refine"
 
     def post(self, request, *args, **kwargs):
-        from .serializers import RefinePromptRequestSerializer, RefinePromptResponseSerializer
+        from .serializers import RefinePromptRequestSerializer
         import requests
         import logging
 
@@ -733,9 +783,5 @@ Formato de resposta (JSON):
             'refined_prompt': refined_prompt,
             'negative_prompt': negative_prompt,
         }
-
-        output_serializer = RefinePromptResponseSerializer(data=response_data)
-        if output_serializer.is_valid():
-            return Response(output_serializer.validated_data, status=status.HTTP_200_OK)
 
         return Response(response_data, status=status.HTTP_200_OK)

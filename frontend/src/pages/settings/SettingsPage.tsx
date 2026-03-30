@@ -86,7 +86,7 @@ export const SettingsPage = () => {
         <div className="mx-auto max-w-5xl space-y-8 pb-16">
           <header className="flex flex-col gap-2 border-b border-white/5 pb-6 pt-2">
             <h1 className="text-3xl font-black tracking-tight md:text-4xl">Configurações</h1>
-            <p className="text-base text-slate-400">Gerencie sua conta, preferências de IA e notificações.</p>
+            <p className="text-base text-white/50">Gerencie sua conta, preferências de IA e notificações.</p>
           </header>
 
           <section className="space-y-4">
@@ -109,7 +109,7 @@ export const SettingsPage = () => {
                   </div>
                   <div>
                     <h3 className="text-xl font-bold">{fullName}</h3>
-                    <p className="text-slate-400">{user.email}</p>
+                    <p className="text-white/50">{user.email}</p>
                     <span className="mt-2 inline-flex items-center rounded-full border border-primary/20 bg-primary/15 px-2.5 py-0.5 text-xs font-semibold text-primary">
                       {user.is_verified ? 'Plano Pro' : 'Plano Free'}
                     </span>
@@ -125,18 +125,18 @@ export const SettingsPage = () => {
 
               <div className="grid grid-cols-1 gap-6 md:grid-cols-2">
                 <label className="block">
-                  <span className="mb-2 block text-sm font-medium text-slate-400">Nome de usuário</span>
+                  <span className="mb-2 block text-sm font-medium text-white/50">Nome de usuário</span>
                   <input
-                    className="form-input h-12 w-full rounded-lg border border-white/10 bg-background-dark px-4 text-white placeholder:text-slate-500 focus:border-primary focus:ring-0"
+                    className="form-input h-12 w-full rounded-lg border border-white/10 bg-background-dark px-4 text-white placeholder:text-white/40 focus:border-primary focus:ring-0"
                     type="text"
                     value={user.username}
                     readOnly
                   />
                 </label>
                 <label className="block">
-                  <span className="mb-2 block text-sm font-medium text-slate-400">Email principal</span>
+                  <span className="mb-2 block text-sm font-medium text-white/50">Email principal</span>
                   <input
-                    className="form-input h-12 w-full rounded-lg border border-white/10 bg-background-dark px-4 text-white placeholder:text-slate-500 focus:border-primary focus:ring-0"
+                    className="form-input h-12 w-full rounded-lg border border-white/10 bg-background-dark px-4 text-white placeholder:text-white/40 focus:border-primary focus:ring-0"
                     type="email"
                     value={user.email}
                     readOnly
@@ -156,7 +156,7 @@ export const SettingsPage = () => {
                 <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
                   <div>
                     <h3 className="font-semibold">Modelo padrão</h3>
-                    <p className="text-sm text-slate-400">Usado quando nenhum modelo é especificado.</p>
+                    <p className="text-sm text-white/50">Usado quando nenhum modelo é especificado.</p>
                   </div>
                   <div className="relative min-w-[220px]">
                     <select
@@ -179,7 +179,7 @@ export const SettingsPage = () => {
               <div className="space-y-4">
                 <div>
                   <h3 className="mb-1 font-semibold">Proporção padrão</h3>
-                  <p className="mb-3 text-sm text-slate-400">Formato inicial das suas criações.</p>
+                  <p className="mb-3 text-sm text-white/50">Formato inicial das suas criações.</p>
                 </div>
                 <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
                   {ASPECT_OPTIONS.map((option) => (
@@ -192,7 +192,7 @@ export const SettingsPage = () => {
                         checked={aspect === option.value}
                         onChange={() => setAspect(option.value)}
                       />
-                      <div className="flex flex-col items-center justify-center gap-2 rounded-xl border border-white/10 bg-background-dark p-4 transition-all hover:border-slate-500 peer-checked:border-primary peer-checked:bg-primary/10">
+                      <div className="flex flex-col items-center justify-center gap-2 rounded-xl border border-white/10 bg-background-dark p-4 transition-all hover:border-white/40 peer-checked:border-primary peer-checked:bg-primary/10">
                         <div
                           className={`border-2 border-current bg-current/20 ${
                             option.shape === 'square'
@@ -202,7 +202,7 @@ export const SettingsPage = () => {
                               : 'h-10 w-6 rounded-sm'
                           }`}
                         />
-                        <span className="text-xs font-semibold text-slate-400 peer-checked:text-primary">
+                        <span className="text-xs font-semibold text-white/50 peer-checked:text-primary">
                           {option.label}
                         </span>
                       </div>
@@ -216,7 +216,7 @@ export const SettingsPage = () => {
               <div className="flex items-center justify-between gap-4">
                 <div className="pr-2">
                   <h3 className="font-semibold">Upscaling automático</h3>
-                  <p className="text-sm text-slate-400">Aumentar a resolução das imagens ao gerar.</p>
+                  <p className="text-sm text-white/50">Aumentar a resolução das imagens ao gerar.</p>
                 </div>
                 <label className="relative inline-flex cursor-pointer items-center">
                   <input
@@ -242,7 +242,7 @@ export const SettingsPage = () => {
               <div className="flex items-center justify-between gap-4 p-4 sm:p-6">
                 <div>
                   <h3 className="font-semibold">Email de geração concluída</h3>
-                  <p className="text-sm text-slate-400">Receba um email quando seus lotes estiverem prontos.</p>
+                  <p className="text-sm text-white/50">Receba um email quando seus lotes estiverem prontos.</p>
                 </div>
                 <label className="relative inline-flex cursor-pointer items-center">
                   <input
@@ -259,7 +259,7 @@ export const SettingsPage = () => {
               <div className="flex items-center justify-between gap-4 p-4 sm:p-6">
                 <div>
                   <h3 className="font-semibold">Novidades e recursos</h3>
-                  <p className="text-sm text-slate-400">Fique por dentro das atualizações da plataforma.</p>
+                  <p className="text-sm text-white/50">Fique por dentro das atualizações da plataforma.</p>
                 </div>
                 <label className="relative inline-flex cursor-pointer items-center">
                   <input
@@ -285,7 +285,7 @@ export const SettingsPage = () => {
               <div className="flex items-center justify-between gap-4">
                 <div>
                   <h3 className="font-semibold">Modo público</h3>
-                  <p className="text-sm text-slate-400">Suas gerações aparecem na galeria por padrão.</p>
+                  <p className="text-sm text-white/50">Suas gerações aparecem na galeria por padrão.</p>
                 </div>
                 <label className="relative inline-flex cursor-pointer items-center">
                   <input
@@ -305,7 +305,7 @@ export const SettingsPage = () => {
                 <div className="flex flex-col items-center justify-between gap-4 rounded-xl border border-red-900/40 bg-red-950/30 p-4 sm:flex-row">
                   <div>
                     <h4 className="font-semibold text-white">Deletar conta</h4>
-                    <p className="text-sm text-slate-400">
+                    <p className="text-sm text-white/50">
                       Esta ação é irreversível. Todos os seus dados e imagens serão perdidos.
                     </p>
                   </div>
@@ -338,7 +338,7 @@ export const SettingsPage = () => {
               <button
                 type="button"
                 onClick={handleSave}
-                className="rounded-full bg-primary px-8 py-3 text-sm font-bold text-background-dark shadow-lg shadow-primary/30 transition-all hover:-translate-y-0.5 hover:bg-emerald-400"
+                className="rounded-full bg-flow-300 px-8 py-3 text-sm font-bold text-[#131316] shadow-lg transition-all hover:-translate-y-0.5 hover:bg-flow-200"
               >
                 Salvar alterações
               </button>

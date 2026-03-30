@@ -112,6 +112,15 @@ class UserSerializer(serializers.ModelSerializer):
             'avatar_url',
             'cover_url',
         )
+        read_only_fields = (
+            'id',
+            'email',
+            'is_verified',
+            'plan',
+            'image_generation_count',
+            'avatar_url',
+            'cover_url',
+        )
 
     def get_avatar_url(self, obj):
         if not obj.profile_picture:

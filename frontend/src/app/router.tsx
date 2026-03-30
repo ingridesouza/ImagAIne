@@ -8,6 +8,7 @@ import { DashboardPage } from '@/pages/dashboard/DashboardPage';
 import { GenerateImagePage } from '@/pages/images/GenerateImagePage';
 import { ExplorePage } from '@/pages/images/ExplorePage';
 import { PromptAssistantPage } from '@/pages/images/PromptAssistantPage';
+import { GuidedWizardPage } from '@/pages/images/GuidedWizardPage';
 import { SettingsPage } from '@/pages/settings/SettingsPage';
 import { NotFoundPage } from '@/pages/misc/NotFoundPage';
 import { ProfilePage } from '@/pages/profile/ProfilePage';
@@ -24,6 +25,7 @@ export const router = createBrowserRouter([
           { path: 'dashboard', element: <DashboardPage /> },
           { path: 'generate', element: <GenerateImagePage /> },
           { path: 'prompt-assistant', element: <PromptAssistantPage /> },
+          { path: 'wizard', element: <GuidedWizardPage /> },
           { path: 'public', element: <ExplorePage /> },
           { path: 'settings', element: <SettingsPage /> },
           { path: 'profile', element: <ProfilePage /> },

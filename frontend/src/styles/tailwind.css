@@ -1,5 +1,4 @@
-@import url('https://fonts.googleapis.com/css2?family=Spline+Sans:wght@300;400;500;600;700&display=swap');
-@import url('https://fonts.googleapis.com/css2?family=Noto+Sans:wght@400;500;600;700&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap');
 @import url('https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&display=swap');
 @import url('https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500&display=swap');
 
@@ -16,9 +15,29 @@
 }
 
 .masonry-grid {
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
-  gap: 1.5rem;
+  column-count: 1;
+  column-gap: 1rem;
+}
+
+@media (min-width: 480px) {
+  .masonry-grid {
+    column-count: 2;
+    column-gap: 1.25rem;
+  }
+}
+
+@media (min-width: 768px) {
+  .masonry-grid {
+    column-count: 3;
+    column-gap: 1.25rem;
+  }
+}
+
+@media (min-width: 1280px) {
+  .masonry-grid {
+    column-count: 4;
+    column-gap: 1.5rem;
+  }
 }
 
 .profile-grid {
@@ -48,6 +67,19 @@
   break-inside: avoid;
   display: block;
   width: 100%;
+  margin-bottom: 1rem;
+}
+
+@media (min-width: 480px) {
+  .masonry-item {
+    margin-bottom: 1.25rem;
+  }
+}
+
+@media (min-width: 1280px) {
+  .masonry-item {
+    margin-bottom: 1.5rem;
+  }
 }
 
 .no-scrollbar::-webkit-scrollbar {
@@ -59,26 +91,47 @@
   scrollbar-width: none;
 }
 
-/* Custom scrollbar for studio feel */
+/* Clean scrollbar */
 * {
   scrollbar-width: thin;
-  scrollbar-color: #1a1528 transparent;
+  scrollbar-color: rgba(255, 255, 255, 0.08) transparent;
 }
 
 *::-webkit-scrollbar {
-  width: 8px;
-  height: 8px;
+  width: 6px;
+  height: 6px;
 }
 
 *::-webkit-scrollbar-track {
-  background: #0a090d;
+  background: transparent;
 }
 
 *::-webkit-scrollbar-thumb {
-  background: #1a1528;
-  border-radius: 8px;
+  background: rgba(255, 255, 255, 0.1);
+  border-radius: 6px;
 }
 
 *::-webkit-scrollbar-thumb:hover {
-  background: #a855f7;
+  background: rgba(255, 255, 255, 0.18);
+}
+
+/* Shimmer skeleton animation */
+@keyframes shimmer {
+  0% {
+    background-position: -200% 0;
+  }
+  100% {
+    background-position: 200% 0;
+  }
+}
+
+.animate-shimmer {
+  background: linear-gradient(
+    90deg,
+    rgba(255, 255, 255, 0.04) 25%,
+    rgba(255, 255, 255, 0.08) 50%,
+    rgba(255, 255, 255, 0.04) 75%
+  );
+  background-size: 200% 100%;
+  animation: shimmer 1.8s ease-in-out infinite;
 }

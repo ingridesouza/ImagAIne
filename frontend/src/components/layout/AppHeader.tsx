@@ -25,12 +25,12 @@ export const AppHeader = ({ onOpenSidebar, onToggleSidebarCollapse, isSidebarCol
   }, []);
 
   return (
-    <header className="sticky top-0 z-50 border-b border-white/5 bg-background-dark/80 backdrop-blur-xl">
-      <div className="flex items-center justify-between gap-4 px-4 py-3 md:px-8">
+    <header className="sticky top-0 z-50 border-b border-white/[0.06] bg-background-dark/90 backdrop-blur-md">
+      <div className="flex items-center justify-between gap-3 px-4 py-2 md:px-6">
         <div className="flex flex-1 items-center gap-2">
           <button
             type="button"
-            className="flex size-10 items-center justify-center text-slate-400 transition-colors hover:text-white md:hidden"
+            className="flex size-9 items-center justify-center rounded-lg text-white/40 transition-colors hover:bg-white/[0.06] hover:text-white md:hidden"
             onClick={() => onOpenSidebar?.()}
             aria-label="Abrir menu lateral"
           >
@@ -38,7 +38,7 @@ export const AppHeader = ({ onOpenSidebar, onToggleSidebarCollapse, isSidebarCol
           </button>
           <button
             type="button"
-            className="hidden size-10 items-center justify-center text-slate-400 transition-colors hover:text-white md:flex"
+            className="hidden size-9 items-center justify-center rounded-lg text-white/40 transition-colors hover:bg-white/[0.06] hover:text-white md:flex"
             onClick={() => onToggleSidebarCollapse?.()}
             aria-label={isSidebarCollapsed ? 'Expandir menu lateral' : 'Encolher menu lateral'}
           >
@@ -47,10 +47,10 @@ export const AppHeader = ({ onOpenSidebar, onToggleSidebarCollapse, isSidebarCol
             </span>
           </button>
 
-          <div className="flex-1 max-w-xl">
+          <div className="flex-1 max-w-lg">
             <div className="group relative">
               <div className="pointer-events-none absolute inset-y-0 left-0 flex items-center pl-3">
-                <span className="material-symbols-outlined !text-[20px] text-slate-500 transition-colors group-focus-within:text-accent-purple">
+                <span className="material-symbols-outlined !text-[18px] text-white/30 transition-colors group-focus-within:text-flow-300">
                   search
                 </span>
               </div>
@@ -60,17 +60,10 @@ export const AppHeader = ({ onOpenSidebar, onToggleSidebarCollapse, isSidebarCol
                 data-global-search
                 type="search"
                 placeholder="Pesquisar..."
-                className="block w-full rounded-xl bg-white/[0.03] py-2.5 pl-10 pr-16 text-sm text-white placeholder:text-slate-500 transition-all focus:bg-white/[0.06] focus:outline-none focus:ring-1 focus:ring-accent-purple/50"
+                className="block w-full rounded-lg border border-white/[0.06] bg-white/[0.03] py-2 pl-9 pr-14 text-sm text-white placeholder:text-white/30 transition-all focus:border-flow-300/40 focus:bg-white/[0.05] focus:outline-none"
               />
               <div className="absolute inset-y-0 right-1.5 flex items-center gap-1">
-                <button
-                  type="button"
-                  className="flex size-8 items-center justify-center text-slate-500 transition-colors hover:text-white"
-                  aria-label="Filtros"
-                >
-                  <span className="material-symbols-outlined !text-[18px]">tune</span>
-                </button>
-                <kbd className="hidden rounded-md bg-white/[0.06] px-1.5 py-0.5 text-[10px] font-medium text-slate-500 sm:inline">⌘K</kbd>
+                <kbd className="hidden rounded-md bg-white/[0.06] px-1.5 py-0.5 text-[10px] font-medium text-white/30 sm:inline">⌘K</kbd>
               </div>
             </div>
           </div>
@@ -79,22 +72,22 @@ export const AppHeader = ({ onOpenSidebar, onToggleSidebarCollapse, isSidebarCol
         <div className="flex items-center gap-1">
           <button
             type="button"
-            className="hidden size-10 items-center justify-center text-slate-400 transition-colors hover:text-white sm:flex"
+            className="hidden size-9 items-center justify-center rounded-lg text-white/40 transition-colors hover:bg-white/[0.06] hover:text-white sm:flex"
             aria-label="Notificações"
           >
-            <span className="material-symbols-outlined !text-[22px]">notifications</span>
+            <span className="material-symbols-outlined !text-[20px]">notifications</span>
           </button>
           <Link
             to="/generate"
-            className="flex size-10 items-center justify-center rounded-xl bg-gradient-to-br from-primary to-violet-600 text-white shadow-lg shadow-primary/25 transition-all hover:scale-105 hover:shadow-primary/40"
+            className="flex size-9 items-center justify-center rounded-lg bg-flow-300 text-[#131316] transition-all hover:bg-flow-200 active:scale-95"
             aria-label="Criar nova imagem"
           >
-            <span className="material-symbols-outlined !text-[22px]">add</span>
+            <span className="material-symbols-outlined !text-[20px]">add</span>
           </Link>
           {user ? (
             <Link
               to="/settings"
-              className="ml-2 hidden size-10 items-center justify-center overflow-hidden rounded-full bg-gradient-to-br from-slate-700 to-slate-800 text-sm font-semibold text-white transition-all hover:ring-2 hover:ring-accent-purple/50 sm:flex"
+              className="ml-1 hidden size-9 items-center justify-center overflow-hidden rounded-full bg-white/[0.08] text-sm font-medium text-white/70 transition-all hover:bg-white/[0.12] sm:flex"
               aria-label="Perfil"
             >
               {(user.first_name?.[0] || user.username?.[0] || 'U').toUpperCase()}

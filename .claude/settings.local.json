@@ -15,7 +15,8 @@
       "Bash(docker-compose up:*)",
       "Bash(git add:*)",
       "Bash(git commit:*)",
-      "Bash(docker compose:*)"
+      "Bash(docker compose:*)",
+      "Bash(docker-compose exec -T web python manage.py shell:*)"
     ]
   }
 }

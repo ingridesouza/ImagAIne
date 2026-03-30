@@ -13,6 +13,7 @@ from .views import (
     ShareImageView,
     StyleSuggestionsView,
     UserImageListView,
+    UserLikedImagesView,
 )
 
 urlpatterns = [
@@ -21,6 +22,7 @@ urlpatterns = [
     path('generate/', GenerateImageView.as_view(), name='generate-image'),
     path('images/public/', PublicImageListView.as_view(), name='public-images'),
     path('images/my-images/', UserImageListView.as_view(), name='user-images'),
+    path('images/liked/', UserLikedImagesView.as_view(), name='user-liked-images'),
     path('images/<int:pk>/share/', ShareImageView.as_view(), name='share-image'),
     path('images/<int:pk>/like/', ImageLikeView.as_view(), name='image-like'),
     path('images/<int:pk>/comments/', ImageCommentListCreateView.as_view(), name='image-comments'),

@@ -20,38 +20,39 @@ export const AppSidebar = ({ isOpen, isCollapsed, onClose, onToggleCollapse }: A
   return (
     <aside
       className={clsx(
-        'fixed inset-y-0 left-0 z-40 bg-background-dark/95 backdrop-blur-xl text-white transition-all duration-300 ease-out',
-        isCollapsed ? 'w-[72px] px-3 py-4' : 'w-64 px-4 py-5',
+        'fixed inset-y-0 left-0 z-40 bg-surface-dark text-white transition-all duration-200 ease-out',
+        isCollapsed ? 'w-[72px] px-2.5 py-5' : 'w-60 px-3.5 py-5',
         'md:static md:translate-x-0 md:flex md:flex-col',
-        isOpen ? 'translate-x-0 flex shadow-2xl' : '-translate-x-full',
+        'border-r border-white/[0.06]',
+        isOpen ? 'translate-x-0 flex' : '-translate-x-full',
       )}
       aria-label="Navegação principal"
     >
       <button
         type="button"
-        className="absolute right-3 top-3 flex size-8 items-center justify-center text-slate-500 transition-colors hover:text-white md:hidden"
+        className="absolute right-3 top-4 flex size-8 items-center justify-center rounded-lg text-white/40 transition-colors hover:bg-white/[0.06] hover:text-white md:hidden"
         onClick={onClose}
         aria-label="Fechar menu"
       >
         <span className="material-symbols-outlined !text-[20px]">close</span>
       </button>
 
-      <div className="flex h-full flex-col justify-between gap-8">
-        <div className="flex flex-col gap-8">
-          <div className={clsx('flex items-center', isCollapsed ? 'justify-center' : 'gap-3 px-1')}>
+      <div className="flex h-full flex-col justify-between gap-4">
+        <div className="flex flex-col gap-5">
+          <div className={clsx('flex items-center', isCollapsed ? 'justify-center' : 'gap-3 px-2')}>
             <button
               type="button"
               onClick={onToggleCollapse}
-              className="hidden size-9 items-center justify-center rounded-lg bg-gradient-to-br from-primary to-violet-600 transition-all duration-200 ease-out hover:scale-[1.03] hover:shadow-lg hover:shadow-primary/20 active:scale-[0.97] md:flex"
+              className="hidden size-9 items-center justify-center rounded-lg bg-flow-300 transition-all duration-150 hover:bg-flow-200 active:scale-95 md:flex"
               aria-label={isCollapsed ? 'Expandir menu' : 'Recolher menu'}
             >
-              <span className="material-symbols-outlined !text-[20px] text-white">auto_awesome</span>
+              <span className="material-symbols-outlined !text-[20px] text-[#131316]">auto_awesome</span>
             </button>
-            <div className="flex size-9 items-center justify-center rounded-lg bg-gradient-to-br from-primary to-violet-600 md:hidden">
-              <span className="material-symbols-outlined !text-[20px] text-white">auto_awesome</span>
+            <div className="flex size-9 items-center justify-center rounded-lg bg-flow-300 md:hidden">
+              <span className="material-symbols-outlined !text-[20px] text-[#131316]">auto_awesome</span>
             </div>
             {!isCollapsed ? (
-              <span className="text-base font-semibold tracking-tight">ImagAIne</span>
+              <span className="text-[15px] font-semibold tracking-tight text-white/90">ImagAIne</span>
             ) : null}
           </div>
 
@@ -59,24 +60,24 @@ export const AppSidebar = ({ isOpen, isCollapsed, onClose, onToggleCollapse }: A
         </div>
 
         {!isCollapsed ? (
-          <div className="space-y-3 px-1">
+          <div className="space-y-2.5 px-2.5">
             <div className="flex items-center justify-between text-xs">
-              <span className="text-slate-500">Créditos</span>
-              <span className="font-medium text-slate-300">
-                {generationCount}<span className="text-slate-600">/{quota}</span>
+              <span className="text-white/40">Créditos</span>
+              <span className="font-medium text-white/60">
+                {generationCount}<span className="text-white/25">/{quota}</span>
               </span>
             </div>
             <div className="h-1 w-full overflow-hidden rounded-full bg-white/[0.06]">
               <div
-                className="h-full rounded-full bg-gradient-to-r from-primary to-violet-500 transition-all"
+                className="h-full rounded-full bg-flow-300 transition-all"
                 style={{ width: `${percent}%` }}
               />
             </div>
             <button
               type="button"
-              className="flex w-full items-center justify-center gap-2 rounded-lg py-2 text-xs font-medium text-slate-400 transition-colors hover:bg-white/[0.04] hover:text-white"
+              className="flex w-full items-center justify-center gap-1.5 rounded-lg py-1.5 text-xs font-medium text-white/40 transition-colors hover:bg-white/[0.04] hover:text-white/70"
             >
-              <span className="material-symbols-outlined !text-[16px]">bolt</span>
+              <span className="material-symbols-outlined !text-[14px]">bolt</span>
               Upgrade
             </button>
           </div>
@@ -84,7 +85,7 @@ export const AppSidebar = ({ isOpen, isCollapsed, onClose, onToggleCollapse }: A
           <button
             type="button"
             onClick={onToggleCollapse}
-            className="hidden items-center justify-center text-slate-500 transition-colors hover:text-white md:flex"
+            className="hidden items-center justify-center text-white/40 transition-colors hover:text-white md:flex"
             aria-label="Expandir"
           >
             <span className="material-symbols-outlined !text-[20px]">chevron_right</span>

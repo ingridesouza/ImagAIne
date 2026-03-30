@@ -42,6 +42,7 @@ export const ProfilePage = () => {
   const [selectedImage, setSelectedImage] = useState<ImageRecord | null>(null);
   const [comments, setComments] = useState<ImageComment[]>([]);
   const [isLoadingComments, setIsLoadingComments] = useState(false);
+  const [activeTab, setActiveTab] = useState<'creations' | 'liked'>('creations');
 
   const { data: profile } = useQuery({
     queryKey: QUERY_KEYS.profile,
@@ -93,8 +94,15 @@ export const ProfilePage = () => {
     queryFn: () => imagesApi.fetchMyImages(),
   });
 
+  const { data: likedImagesResponse, isLoading: isLoadingLiked } = useQuery({
+    queryKey: QUERY_KEYS.likedImages(),
+    queryFn: () => imagesApi.fetchLikedImages(),
+    enabled: activeTab === 'liked',
+  });
+
   const images = myImagesResponse?.results ?? [];
   const readyImages = images.filter((image) => image.status === 'READY');
+  const likedImages = likedImagesResponse?.results ?? [];
 
   const totalCreations = myImagesResponse?.count ?? images.length;
   const totalLikes = readyImages.reduce((sum, image) => sum + (image.like_count ?? 0), 0);
@@ -123,6 +131,7 @@ export const ProfilePage = () => {
     },
     onSettled: () => {
       queryClient.invalidateQueries({ queryKey: QUERY_KEYS.myImages() });
+      queryClient.invalidateQueries({ queryKey: QUERY_KEYS.likedImages() });
     },
   });
 
@@ -411,23 +420,35 @@ export const ProfilePage = () => {
         <div className="no-scrollbar flex gap-6 overflow-x-auto pb-4">
           <button
             type="button"
-            className="relative flex-shrink-0 py-4 text-sm font-medium text-white transition-colors"
+            className={clsx(
+              'relative flex-shrink-0 py-4 text-sm font-medium transition-colors',
+              activeTab === 'creations' ? 'text-white' : 'text-gray-500 hover:text-gray-300',
+            )}
+            onClick={() => setActiveTab('creations')}
           >
             <div className="flex items-center gap-2">
-              <span className="material-symbols-outlined text-[20px] text-accent-purple">grid_view</span>
+              <span className={clsx('material-symbols-outlined text-[20px]', activeTab === 'creations' && 'text-accent-purple')}>grid_view</span>
               <span>Criações</span>
             </div>
-            <div className="absolute bottom-0 left-0 right-0 h-[3px] rounded-t-full bg-accent-purple shadow-[0_0_10px_rgba(139,92,246,0.5)]" />
+            {activeTab === 'creations' && (
+              <div className="absolute bottom-0 left-0 right-0 h-[3px] rounded-t-full bg-accent-purple shadow-[0_0_10px_rgba(139,92,246,0.5)]" />
+            )}
           </button>
           <button
             type="button"
-            className="relative flex-shrink-0 py-4 text-sm font-medium text-gray-500 transition-colors hover:text-gray-300"
-            disabled
+            className={clsx(
+              'relative flex-shrink-0 py-4 text-sm font-medium transition-colors',
+              activeTab === 'liked' ? 'text-white' : 'text-gray-500 hover:text-gray-300',
+            )}
+            onClick={() => setActiveTab('liked')}
           >
             <div className="flex items-center gap-2">
-              <span className="material-symbols-outlined text-[20px]">favorite</span>
+              <span className={clsx('material-symbols-outlined text-[20px]', activeTab === 'liked' && 'text-accent-purple')}>favorite</span>
               <span>Curtidas</span>
             </div>
+            {activeTab === 'liked' && (
+              <div className="absolute bottom-0 left-0 right-0 h-[3px] rounded-t-full bg-accent-purple shadow-[0_0_10px_rgba(139,92,246,0.5)]" />
+            )}
           </button>
         </div>
 
@@ -458,40 +479,83 @@ export const ProfilePage = () => {
           </div>
         </div>
 
-        <div className="profile-grid pt-4">
-          {isLoading
-            ? Array.from({ length: 8 }).map((_, index) => (
-                <div
-                  key={index}
-                  className="masonry-item h-64 rounded-[22px] bg-surface-dark/80"
-                >
-                  <div className="h-full w-full animate-pulse rounded-[22px] bg-gradient-to-br from-white/5 via-white/10 to-white/5" />
-                </div>
-              ))
-            : null}
+        {activeTab === 'creations' && (
+          <>
+            <div className="profile-grid pt-4">
+              {isLoading
+                ? Array.from({ length: 8 }).map((_, index) => (
+                    <div
+                      key={index}
+                      className="masonry-item h-64 rounded-[22px] bg-surface-dark/80"
+                    >
+                      <div className="h-full w-full animate-pulse rounded-[22px] bg-gradient-to-br from-white/5 via-white/10 to-white/5" />
+                    </div>
+                  ))
+                : null}
 
-          {!isLoading && readyImages.length
-            ? readyImages.map((image) => (
-                <GalleryCard
-                  key={image.id}
-                  image={image}
-                  aspectRatio={formatAspectRatio(image.aspect_ratio)}
-                  onSelect={() => handleSelectImage(image)}
-                  onToggleLike={() => likeMutation.mutate(image)}
-                  onDownload={() => handleDownload(image)}
-                  isTogglingLike={likeMutation.isPending}
-                />
-              ))
-            : null}
-        </div>
+              {!isLoading && readyImages.length
+                ? readyImages.map((image) => (
+                    <GalleryCard
+                      key={image.id}
+                      image={image}
+                      aspectRatio={formatAspectRatio(image.aspect_ratio)}
+                      onSelect={() => handleSelectImage(image)}
+                      onToggleLike={() => likeMutation.mutate(image)}
+                      onDownload={() => handleDownload(image)}
+                      isTogglingLike={likeMutation.isPending}
+                    />
+                  ))
+                : null}
+            </div>
 
-        {!isLoading && readyImages.length === 0 ? (
-          <div className="mt-8 flex flex-col items-center justify-center gap-3 rounded-2xl border border-dashed border-white/10 bg-surface-dark/60 px-6 py-10 text-center text-gray-400">
-            <span className="material-symbols-outlined text-[32px] text-primary">auto_awesome</span>
-            <p className="text-lg font-semibold text-white">Nenhuma criação ainda</p>
-            <p className="text-sm text-gray-500">Quando você gerar imagens, elas aparecerão aqui.</p>
-          </div>
-        ) : null}
+            {!isLoading && readyImages.length === 0 ? (
+              <div className="mt-8 flex flex-col items-center justify-center gap-3 rounded-2xl border border-dashed border-white/10 bg-surface-dark/60 px-6 py-10 text-center text-gray-400">
+                <span className="material-symbols-outlined text-[32px] text-primary">auto_awesome</span>
+                <p className="text-lg font-semibold text-white">Nenhuma criação ainda</p>
+                <p className="text-sm text-gray-500">Quando você gerar imagens, elas aparecerão aqui.</p>
+              </div>
+            ) : null}
+          </>
+        )}
+
+        {activeTab === 'liked' && (
+          <>
+            <div className="profile-grid pt-4">
+              {isLoadingLiked
+                ? Array.from({ length: 8 }).map((_, index) => (
+                    <div
+                      key={index}
+                      className="masonry-item h-64 rounded-[22px] bg-surface-dark/80"
+                    >
+                      <div className="h-full w-full animate-pulse rounded-[22px] bg-gradient-to-br from-white/5 via-white/10 to-white/5" />
+                    </div>
+                  ))
+                : null}
+
+              {!isLoadingLiked && likedImages.length
+                ? likedImages.map((image) => (
+                    <GalleryCard
+                      key={image.id}
+                      image={image}
+                      aspectRatio={formatAspectRatio(image.aspect_ratio)}
+                      onSelect={() => handleSelectImage(image)}
+                      onToggleLike={() => likeMutation.mutate(image)}
+                      onDownload={() => handleDownload(image)}
+                      isTogglingLike={likeMutation.isPending}
+                    />
+                  ))
+                : null}
+            </div>
+
+            {!isLoadingLiked && likedImages.length === 0 ? (
+              <div className="mt-8 flex flex-col items-center justify-center gap-3 rounded-2xl border border-dashed border-white/10 bg-surface-dark/60 px-6 py-10 text-center text-gray-400">
+                <span className="material-symbols-outlined text-[32px] text-primary">favorite</span>
+                <p className="text-lg font-semibold text-white">Nenhuma curtida ainda</p>
+                <p className="text-sm text-gray-500">Imagens que você curtir aparecerão aqui.</p>
+              </div>
+            ) : null}
+          </>
+        )}
       </div>
 
       <ImageDetailsDialog

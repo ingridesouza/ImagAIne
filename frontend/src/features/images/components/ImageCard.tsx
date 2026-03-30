@@ -106,14 +106,14 @@ export const ImageCard = ({
             ) : null}
           </>
         ) : (
-          <div className="flex flex-col items-center gap-2 text-slate-500">
+          <div className="flex flex-col items-center gap-2 text-white/40">
             <StatusIcon size={24} className={statusConfig.className} />
           </div>
         )}
       </div>
       <div className="flex items-center justify-between gap-2 px-1">
-        <p className="truncate text-sm text-slate-300">{image.prompt}</p>
-        <div className="flex shrink-0 items-center gap-2 text-xs text-slate-500">
+        <p className="truncate text-sm text-white/70">{image.prompt}</p>
+        <div className="flex shrink-0 items-center gap-2 text-xs text-white/40">
           <span className="flex items-center gap-1">
             <Heart size={12} />
             {image.like_count}

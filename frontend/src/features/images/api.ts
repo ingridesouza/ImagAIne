@@ -13,10 +13,37 @@ export const imagesApi = {
     });
     return data;
   },
+  async fetchMyImagesPage({ pageParam = 1 }: { pageParam?: number }) {
+    const { data } = await apiClient.get<PaginatedResponse<ImageRecord>>('/images/my-images/', {
+      params: { page: pageParam },
+    });
+    return data;
+  },
+  async fetchLikedImages(page = 1) {
+    const { data } = await apiClient.get<PaginatedResponse<ImageRecord>>('/images/liked/', {
+      params: { page },
+    });
+    return data;
+  },
   async fetchPublicImages(search?: string, page = 1) {
     const { data } = await apiClient.get<PaginatedResponse<ImageRecord>>('/images/public/', {
       params: {
         page,
+        ...(search ? { search } : {}),
+      },
+    });
+    return data;
+  },
+  async fetchPublicImagesPage({
+    pageParam = 1,
+    search,
+  }: {
+    pageParam?: number;
+    search?: string;
+  }) {
+    const { data } = await apiClient.get<PaginatedResponse<ImageRecord>>('/images/public/', {
+      params: {
+        page: pageParam,
         ...(search ? { search } : {}),
       },
     });
@@ -89,10 +116,16 @@ export const imagesApi = {
     const { data } = await apiClient.post<{
       refined_prompt: string;
       negative_prompt: string;
-    }>('/refine-prompt/', {
-      description,
-      ...(style ? { style } : {}),
-    });
+    }>(
+      '/refine-prompt/',
+      {
+        description,
+        ...(style ? { style } : {}),
+      },
+      {
+        timeout: 60000, // 60 segundos para chamadas LLM
+      }
+    );
     return data;
   },
 };
