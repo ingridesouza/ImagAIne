@@ -306,19 +306,19 @@ export const ExplorePage = () => {
   };
 
   return (
-    <div className="explore-page flex h-full min-h-0 flex-col overflow-hidden bg-background-dark text-white/80">
+    <div className="explore-page flex h-full min-h-0 flex-col overflow-hidden bg-body text-fg">
       <div className="flex items-start justify-between px-4 pt-6 pb-2 sm:px-6 md:px-8">
         <div className="space-y-1">
-          <p className="text-xs font-semibold uppercase tracking-[0.35em] text-flow-300">Galeria AI Gen</p>
-          <h1 className="text-2xl font-bold text-white">Explorar</h1>
-          <p className="text-sm text-white/50">Descubra estilos, artistas e prompts da comunidade.</p>
+          <p className="text-xs font-semibold uppercase tracking-[0.35em] text-accent">Galeria AI Gen</p>
+          <h1 className="text-2xl font-bold text-fg">Explorar</h1>
+          <p className="text-sm text-fg-sec">Descubra estilos, artistas e prompts da comunidade.</p>
         </div>
 
         {search ? (
           <button
             type="button"
             onClick={() => setSearch('')}
-            className="ml-4 hidden items-center gap-2 rounded-full border border-white/10 px-4 py-2 text-sm font-semibold text-white/80 transition hover:border-white/30 hover:text-white sm:flex"
+            className="ml-4 hidden items-center gap-2 rounded-full border border-border px-4 py-2 text-sm font-semibold text-fg transition hover:border-border hover:text-fg sm:flex"
           >
             <span className="material-symbols-outlined !text-[18px]">close</span>
             Limpar busca
@@ -357,10 +357,10 @@ export const ExplorePage = () => {
         )}
 
         {showEmptyState ? (
-          <div className="mt-10 flex flex-col items-center justify-center gap-2 rounded-2xl border border-dashed border-white/10 bg-surface-dark/60 px-6 py-10 text-center text-white/70">
-            <span className="material-symbols-outlined !text-[32px] text-primary">auto_awesome</span>
-            <p className="text-lg font-semibold text-white">Nenhuma imagem pública encontrada.</p>
-            <p className="text-sm text-white/50">Tente outro termo de busca ou altere o filtro acima.</p>
+          <div className="mt-10 flex flex-col items-center justify-center gap-2 rounded-2xl border border-dashed border-border bg-surface px-6 py-10 text-center text-fg-sec">
+            <span className="material-symbols-outlined !text-[32px] text-accent">auto_awesome</span>
+            <p className="text-lg font-semibold text-fg">Nenhuma imagem pública encontrada.</p>
+            <p className="text-sm text-fg-sec">Tente outro termo de busca ou altere o filtro acima.</p>
           </div>
         ) : null}
       </div>

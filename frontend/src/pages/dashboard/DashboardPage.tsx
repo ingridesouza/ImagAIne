@@ -27,8 +27,8 @@ export const DashboardPage = () => {
     <section className="mx-auto max-w-5xl px-4 py-8 sm:px-6 md:py-10">
       <div className="mb-6 flex flex-wrap items-center justify-between gap-4">
         <div>
-          <h1 className="m-0 text-2xl font-semibold tracking-tight text-white">Visão geral</h1>
-          <p className="m-0 mt-1 text-sm text-white/40">
+          <h1 className="m-0 text-2xl font-semibold tracking-tight text-fg">Visão geral</h1>
+          <p className="m-0 mt-1 text-sm text-fg-muted">
             Acompanhe o status das criações e compartilhe com a comunidade.
           </p>
         </div>
@@ -46,8 +46,8 @@ export const DashboardPage = () => {
 
       <div className="mt-8">
         <div className="mb-4 flex items-center justify-between">
-          <h2 className="m-0 text-lg font-medium text-white">Últimas criações</h2>
-          <Link to="/my-images" className="text-sm text-flow-300 hover:text-flow-200">
+          <h2 className="m-0 text-lg font-medium text-fg">Últimas criações</h2>
+          <Link to="/my-images" className="text-sm text-accent hover:text-accent-hover">
             Ver todas
           </Link>
         </div>

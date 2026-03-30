@@ -81,43 +81,43 @@ export const SettingsPage = () => {
   };
 
   return (
-    <div className="flex min-h-full flex-col bg-background-dark text-white">
+    <div className="flex min-h-full flex-col bg-body text-fg">
       <div className="flex-1 overflow-y-auto px-4 py-6 md:px-8 lg:px-12 xl:px-20">
         <div className="mx-auto max-w-5xl space-y-8 pb-16">
-          <header className="flex flex-col gap-2 border-b border-white/5 pb-6 pt-2">
+          <header className="flex flex-col gap-2 border-b border-border pb-6 pt-2">
             <h1 className="text-3xl font-black tracking-tight md:text-4xl">Configurações</h1>
-            <p className="text-base text-white/50">Gerencie sua conta, preferências de IA e notificações.</p>
+            <p className="text-base text-fg-sec">Gerencie sua conta, preferências de IA e notificações.</p>
           </header>
 
           <section className="space-y-4">
             <h2 className="flex items-center gap-2 text-xl font-bold">
-              <span className="material-symbols-outlined text-primary">manage_accounts</span>
+              <span className="material-symbols-outlined text-accent">manage_accounts</span>
               Conta
             </h2>
-            <div className="rounded-2xl border border-white/5 bg-surface-dark p-6 shadow-sm">
+            <div className="rounded-2xl border border-border bg-surface p-6 shadow-sm">
               <div className="mb-8 flex flex-col items-center justify-between gap-6 md:flex-row md:items-start">
                 <div className="flex items-center gap-5">
                   <div className="group relative cursor-pointer">
-                    <div className="h-24 w-24 rounded-full border-4 border-background-dark bg-cover bg-center shadow-md bg-surface-dark">
-                      <span className="flex h-full w-full items-center justify-center text-xl font-bold text-primary">
+                    <div className="h-24 w-24 rounded-full border-4 border-body bg-cover bg-center shadow-md bg-surface">
+                      <span className="flex h-full w-full items-center justify-center text-xl font-bold text-accent">
                         {fullName.slice(0, 2).toUpperCase()}
                       </span>
                     </div>
                     <div className="absolute inset-0 flex items-center justify-center rounded-full bg-black/40 opacity-0 transition-opacity group-hover:opacity-100">
-                      <span className="material-symbols-outlined text-white">edit</span>
+                      <span className="material-symbols-outlined text-fg">edit</span>
                     </div>
                   </div>
                   <div>
                     <h3 className="text-xl font-bold">{fullName}</h3>
-                    <p className="text-white/50">{user.email}</p>
-                    <span className="mt-2 inline-flex items-center rounded-full border border-primary/20 bg-primary/15 px-2.5 py-0.5 text-xs font-semibold text-primary">
+                    <p className="text-fg-sec">{user.email}</p>
+                    <span className="mt-2 inline-flex items-center rounded-full border border-accent/20 bg-accent-soft px-2.5 py-0.5 text-xs font-semibold text-accent">
                       {user.is_verified ? 'Plano Pro' : 'Plano Free'}
                     </span>
                   </div>
                 </div>
                 <button
                   type="button"
-                  className="h-11 w-full rounded-full border border-white/10 bg-background-dark px-6 text-sm font-semibold transition-colors hover:border-primary md:w-auto"
+                  className="h-11 w-full rounded-full border border-border bg-body px-6 text-sm font-semibold transition-colors hover:border-accent md:w-auto"
                 >
                   Alterar senha
                 </button>
@@ -125,18 +125,18 @@ export const SettingsPage = () => {
 
               <div className="grid grid-cols-1 gap-6 md:grid-cols-2">
                 <label className="block">
-                  <span className="mb-2 block text-sm font-medium text-white/50">Nome de usuário</span>
+                  <span className="mb-2 block text-sm font-medium text-fg-sec">Nome de usuário</span>
                   <input
-                    className="form-input h-12 w-full rounded-lg border border-white/10 bg-background-dark px-4 text-white placeholder:text-white/40 focus:border-primary focus:ring-0"
+                    className="form-input h-12 w-full rounded-lg border border-border bg-body px-4 text-fg placeholder:text-fg-muted focus:border-accent focus:ring-0"
                     type="text"
                     value={user.username}
                     readOnly
                   />
                 </label>
                 <label className="block">
-                  <span className="mb-2 block text-sm font-medium text-white/50">Email principal</span>
+                  <span className="mb-2 block text-sm font-medium text-fg-sec">Email principal</span>
                   <input
-                    className="form-input h-12 w-full rounded-lg border border-white/10 bg-background-dark px-4 text-white placeholder:text-white/40 focus:border-primary focus:ring-0"
+                    className="form-input h-12 w-full rounded-lg border border-border bg-body px-4 text-fg placeholder:text-fg-muted focus:border-accent focus:ring-0"
                     type="email"
                     value={user.email}
                     readOnly
@@ -148,19 +148,19 @@ export const SettingsPage = () => {
 
           <section className="space-y-4">
             <h2 className="flex items-center gap-2 text-xl font-bold">
-              <span className="material-symbols-outlined text-primary">tune</span>
+              <span className="material-symbols-outlined text-accent">tune</span>
               Preferências de geração
             </h2>
-            <div className="space-y-8 rounded-2xl border border-white/5 bg-surface-dark p-6 shadow-sm">
+            <div className="space-y-8 rounded-2xl border border-border bg-surface p-6 shadow-sm">
               <div className="space-y-4">
                 <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
                   <div>
                     <h3 className="font-semibold">Modelo padrão</h3>
-                    <p className="text-sm text-white/50">Usado quando nenhum modelo é especificado.</p>
+                    <p className="text-sm text-fg-sec">Usado quando nenhum modelo é especificado.</p>
                   </div>
                   <div className="relative min-w-[220px]">
                     <select
-                      className="form-select w-full rounded-lg border border-white/10 bg-background-dark py-2.5 pl-4 pr-10 text-white focus:border-primary focus:ring-0"
+                      className="form-select w-full rounded-lg border border-border bg-body py-2.5 pl-4 pr-10 text-fg focus:border-accent focus:ring-0"
                       value={selectedModel}
                       onChange={(event) => setSelectedModel(event.target.value)}
                     >
@@ -174,12 +174,12 @@ export const SettingsPage = () => {
                 </div>
               </div>
 
-              <hr className="border-white/10" />
+              <hr className="border-border" />
 
               <div className="space-y-4">
                 <div>
                   <h3 className="mb-1 font-semibold">Proporção padrão</h3>
-                  <p className="mb-3 text-sm text-white/50">Formato inicial das suas criações.</p>
+                  <p className="mb-3 text-sm text-fg-sec">Formato inicial das suas criações.</p>
                 </div>
                 <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
                   {ASPECT_OPTIONS.map((option) => (
@@ -192,7 +192,7 @@ export const SettingsPage = () => {
                         checked={aspect === option.value}
                         onChange={() => setAspect(option.value)}
                       />
-                      <div className="flex flex-col items-center justify-center gap-2 rounded-xl border border-white/10 bg-background-dark p-4 transition-all hover:border-white/40 peer-checked:border-primary peer-checked:bg-primary/10">
+                      <div className="flex flex-col items-center justify-center gap-2 rounded-xl border border-border bg-body p-4 transition-all hover:border-border peer-checked:border-accent peer-checked:bg-accent-soft">
                         <div
                           className={`border-2 border-current bg-current/20 ${
                             option.shape === 'square'
@@ -202,7 +202,7 @@ export const SettingsPage = () => {
                               : 'h-10 w-6 rounded-sm'
                           }`}
                         />
-                        <span className="text-xs font-semibold text-white/50 peer-checked:text-primary">
+                        <span className="text-xs font-semibold text-fg-sec peer-checked:text-accent">
                           {option.label}
                         </span>
                       </div>
@@ -211,12 +211,12 @@ export const SettingsPage = () => {
                 </div>
               </div>
 
-              <hr className="border-white/10" />
+              <hr className="border-border" />
 
               <div className="flex items-center justify-between gap-4">
                 <div className="pr-2">
                   <h3 className="font-semibold">Upscaling automático</h3>
-                  <p className="text-sm text-white/50">Aumentar a resolução das imagens ao gerar.</p>
+                  <p className="text-sm text-fg-sec">Aumentar a resolução das imagens ao gerar.</p>
                 </div>
                 <label className="relative inline-flex cursor-pointer items-center">
                   <input
@@ -225,7 +225,7 @@ export const SettingsPage = () => {
                     checked={autoUpscale}
                     onChange={(event) => setAutoUpscale(event.target.checked)}
                   />
-                  <div className="peer h-6 w-11 rounded-full bg-white/10 transition-colors peer-checked:bg-primary peer-focus:outline-none peer-focus:ring-2 peer-focus:ring-primary">
+                  <div className="peer h-6 w-11 rounded-full bg-inset transition-colors peer-checked:bg-accent peer-focus:outline-none peer-focus:ring-2 peer-focus:ring-accent">
                     <div className="absolute left-[2px] top-[2px] h-5 w-5 rounded-full bg-white transition-all peer-checked:translate-x-5" />
                   </div>
                 </label>
@@ -235,14 +235,14 @@ export const SettingsPage = () => {
 
           <section className="space-y-4">
             <h2 className="flex items-center gap-2 text-xl font-bold">
-              <span className="material-symbols-outlined text-primary">notifications</span>
+              <span className="material-symbols-outlined text-accent">notifications</span>
               Notificações
             </h2>
-            <div className="divide-y divide-white/5 overflow-hidden rounded-2xl border border-white/5 bg-surface-dark shadow-sm">
+            <div className="divide-y divide-border overflow-hidden rounded-2xl border border-border bg-surface shadow-sm">
               <div className="flex items-center justify-between gap-4 p-4 sm:p-6">
                 <div>
                   <h3 className="font-semibold">Email de geração concluída</h3>
-                  <p className="text-sm text-white/50">Receba um email quando seus lotes estiverem prontos.</p>
+                  <p className="text-sm text-fg-sec">Receba um email quando seus lotes estiverem prontos.</p>
                 </div>
                 <label className="relative inline-flex cursor-pointer items-center">
                   <input
@@ -251,7 +251,7 @@ export const SettingsPage = () => {
                     checked={emailDone}
                     onChange={(event) => setEmailDone(event.target.checked)}
                   />
-                  <div className="peer h-6 w-11 rounded-full bg-white/10 transition-colors peer-checked:bg-primary peer-focus:outline-none peer-focus:ring-2 peer-focus:ring-primary">
+                  <div className="peer h-6 w-11 rounded-full bg-inset transition-colors peer-checked:bg-accent peer-focus:outline-none peer-focus:ring-2 peer-focus:ring-accent">
                     <div className="absolute left-[2px] top-[2px] h-5 w-5 rounded-full bg-white transition-all peer-checked:translate-x-5" />
                   </div>
                 </label>
@@ -259,7 +259,7 @@ export const SettingsPage = () => {
               <div className="flex items-center justify-between gap-4 p-4 sm:p-6">
                 <div>
                   <h3 className="font-semibold">Novidades e recursos</h3>
-                  <p className="text-sm text-white/50">Fique por dentro das atualizações da plataforma.</p>
+                  <p className="text-sm text-fg-sec">Fique por dentro das atualizações da plataforma.</p>
                 </div>
                 <label className="relative inline-flex cursor-pointer items-center">
                   <input
@@ -268,7 +268,7 @@ export const SettingsPage = () => {
                     checked={news}
                     onChange={(event) => setNews(event.target.checked)}
                   />
-                  <div className="peer h-6 w-11 rounded-full bg-white/10 transition-colors peer-checked:bg-primary peer-focus:outline-none peer-focus:ring-2 peer-focus:ring-primary">
+                  <div className="peer h-6 w-11 rounded-full bg-inset transition-colors peer-checked:bg-accent peer-focus:outline-none peer-focus:ring-2 peer-focus:ring-accent">
                     <div className="absolute left-[2px] top-[2px] h-5 w-5 rounded-full bg-white transition-all peer-checked:translate-x-5" />
                   </div>
                 </label>
@@ -278,14 +278,14 @@ export const SettingsPage = () => {
 
           <section className="space-y-4">
             <h2 className="flex items-center gap-2 text-xl font-bold">
-              <span className="material-symbols-outlined text-primary">security</span>
+              <span className="material-symbols-outlined text-accent">security</span>
               Privacidade
             </h2>
-            <div className="space-y-6 rounded-2xl border border-white/5 bg-surface-dark p-6 shadow-sm">
+            <div className="space-y-6 rounded-2xl border border-border bg-surface p-6 shadow-sm">
               <div className="flex items-center justify-between gap-4">
                 <div>
                   <h3 className="font-semibold">Modo público</h3>
-                  <p className="text-sm text-white/50">Suas gerações aparecem na galeria por padrão.</p>
+                  <p className="text-sm text-fg-sec">Suas gerações aparecem na galeria por padrão.</p>
                 </div>
                 <label className="relative inline-flex cursor-pointer items-center">
                   <input
@@ -294,7 +294,7 @@ export const SettingsPage = () => {
                     checked={publicMode}
                     onChange={(event) => setPublicMode(event.target.checked)}
                   />
-                  <div className="peer h-6 w-11 rounded-full bg-white/10 transition-colors peer-checked:bg-primary peer-focus:outline-none peer-focus:ring-2 peer-focus:ring-primary">
+                  <div className="peer h-6 w-11 rounded-full bg-inset transition-colors peer-checked:bg-accent peer-focus:outline-none peer-focus:ring-2 peer-focus:ring-accent">
                     <div className="absolute left-[2px] top-[2px] h-5 w-5 rounded-full bg-white transition-all peer-checked:translate-x-5" />
                   </div>
                 </label>
@@ -304,8 +304,8 @@ export const SettingsPage = () => {
                 <h3 className="mb-3 text-xs font-bold uppercase tracking-wider text-red-400">Zona de perigo</h3>
                 <div className="flex flex-col items-center justify-between gap-4 rounded-xl border border-red-900/40 bg-red-950/30 p-4 sm:flex-row">
                   <div>
-                    <h4 className="font-semibold text-white">Deletar conta</h4>
-                    <p className="text-sm text-white/50">
+                    <h4 className="font-semibold text-fg">Deletar conta</h4>
+                    <p className="text-sm text-fg-sec">
                       Esta ação é irreversível. Todos os seus dados e imagens serão perdidos.
                     </p>
                   </div>
@@ -323,7 +323,7 @@ export const SettingsPage = () => {
           <div className="flex flex-col justify-end gap-3 pt-4 sm:flex-row">
             <button
               type="button"
-              className="rounded-full border border-white/10 bg-surface-dark px-8 py-3 text-sm font-bold text-white transition-colors hover:bg-white/5"
+              className="rounded-full border border-border bg-surface px-8 py-3 text-sm font-bold text-fg transition-colors hover:bg-inset"
               onClick={logout}
             >
               Sair
@@ -331,14 +331,14 @@ export const SettingsPage = () => {
             <div className="flex gap-2">
               <button
                 type="button"
-                className="rounded-full border border-white/10 bg-surface-dark px-6 py-3 text-sm font-bold text-white transition-colors hover:bg-white/5"
+                className="rounded-full border border-border bg-surface px-6 py-3 text-sm font-bold text-fg transition-colors hover:bg-inset"
               >
                 Cancelar
               </button>
               <button
                 type="button"
                 onClick={handleSave}
-                className="rounded-full bg-flow-300 px-8 py-3 text-sm font-bold text-[#131316] shadow-lg transition-all hover:-translate-y-0.5 hover:bg-flow-200"
+                className="rounded-full bg-accent px-8 py-3 text-sm font-bold text-fg-inv shadow-lg transition-all hover:-translate-y-0.5 hover:bg-accent-hover"
               >
                 Salvar alterações
               </button>
