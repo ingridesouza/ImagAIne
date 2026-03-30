@@ -7,9 +7,9 @@ const STATUS_CONFIG: Record<
   ImageRecord['status'],
   { icon: typeof Check; className: string }
 > = {
-  READY: { icon: Check, className: 'text-emerald-400' },
-  GENERATING: { icon: Loader2, className: 'text-amber-400 animate-spin' },
-  FAILED: { icon: AlertCircle, className: 'text-rose-400' },
+  READY: { icon: Check, className: 'text-success' },
+  GENERATING: { icon: Loader2, className: 'text-warning animate-spin' },
+  FAILED: { icon: AlertCircle, className: 'text-danger' },
 };
 
 type ImageCardProps = {
@@ -58,68 +58,68 @@ export const ImageCard = ({
           <>
             <img src={image.image_url} alt={image.prompt} loading="lazy" />
             {showActions ? (
-              <div className="absolute inset-0 flex items-end justify-center gap-2 bg-gradient-to-t from-black/60 via-transparent to-transparent p-3 opacity-0 transition-opacity group-hover:opacity-100">
+              <div className="absolute inset-0 flex items-end justify-center gap-1.5 bg-gradient-to-t from-black/70 via-transparent to-transparent p-3 opacity-0 transition-opacity duration-200 group-hover:opacity-100">
                 {onToggleLike ? (
                   <button
                     type="button"
                     onClick={(e) => { e.stopPropagation(); onToggleLike(image); }}
                     className={clsx(
-                      'flex size-9 items-center justify-center rounded-full backdrop-blur-sm transition-all hover:scale-110',
-                      image.is_liked ? 'bg-primary text-white' : 'bg-white/10 text-white hover:bg-white/20'
+                      'flex size-8 items-center justify-center rounded-lg backdrop-blur-md transition-all',
+                      image.is_liked ? 'bg-like-soft text-like' : 'bg-white/10 text-white/80 hover:bg-white/20'
                     )}
                     aria-label={image.is_liked ? 'Remover curtida' : 'Curtir'}
                   >
-                    <Heart size={16} fill={image.is_liked ? 'currentColor' : 'none'} />
+                    <Heart size={15} fill={image.is_liked ? 'currentColor' : 'none'} />
                   </button>
                 ) : null}
                 {onDownload ? (
                   <button
                     type="button"
                     onClick={(e) => { e.stopPropagation(); onDownload(image); }}
-                    className="flex size-9 items-center justify-center rounded-full bg-white/10 text-white backdrop-blur-sm transition-all hover:scale-110 hover:bg-white/20"
+                    className="flex size-8 items-center justify-center rounded-lg bg-white/10 text-white/80 backdrop-blur-md transition-all hover:bg-white/20"
                     aria-label="Download"
                   >
-                    <Download size={16} />
+                    <Download size={15} />
                   </button>
                 ) : null}
                 {canToggleVisibility && onToggleVisibility ? (
                   <button
                     type="button"
                     onClick={(e) => { e.stopPropagation(); onToggleVisibility(image); }}
-                    className="flex size-9 items-center justify-center rounded-full bg-white/10 text-white backdrop-blur-sm transition-all hover:scale-110 hover:bg-white/20"
+                    className="flex size-8 items-center justify-center rounded-lg bg-white/10 text-white/80 backdrop-blur-md transition-all hover:bg-white/20"
                     aria-label={image.is_public ? 'Tornar privada' : 'Tornar pública'}
                   >
-                    {image.is_public ? <Eye size={16} /> : <EyeOff size={16} />}
+                    {image.is_public ? <Eye size={15} /> : <EyeOff size={15} />}
                   </button>
                 ) : null}
                 {onShare ? (
                   <button
                     type="button"
                     onClick={(e) => { e.stopPropagation(); onShare(image); }}
-                    className="flex size-9 items-center justify-center rounded-full bg-white/10 text-white backdrop-blur-sm transition-all hover:scale-110 hover:bg-white/20"
+                    className="flex size-8 items-center justify-center rounded-lg bg-white/10 text-white/80 backdrop-blur-md transition-all hover:bg-white/20"
                     aria-label="Compartilhar"
                   >
-                    <Share2 size={16} />
+                    <Share2 size={15} />
                   </button>
                 ) : null}
               </div>
             ) : null}
           </>
         ) : (
-          <div className="flex flex-col items-center gap-2 text-white/40">
-            <StatusIcon size={24} className={statusConfig.className} />
+          <div className="flex flex-col items-center gap-2 text-fg-muted">
+            <StatusIcon size={22} className={statusConfig.className} />
           </div>
         )}
       </div>
-      <div className="flex items-center justify-between gap-2 px-1">
-        <p className="truncate text-sm text-white/70">{image.prompt}</p>
-        <div className="flex shrink-0 items-center gap-2 text-xs text-white/40">
-          <span className="flex items-center gap-1">
-            <Heart size={12} />
+      <div className="flex items-center justify-between gap-2 px-0.5 pt-0.5">
+        <p className="truncate text-[13px] text-fg-sec">{image.prompt}</p>
+        <div className="flex shrink-0 items-center gap-2 text-[11px] text-fg-muted">
+          <span className="flex items-center gap-0.5">
+            <Heart size={11} />
             {image.like_count}
           </span>
-          <span className="flex items-center gap-1">
-            <MessageCircle size={12} />
+          <span className="flex items-center gap-0.5">
+            <MessageCircle size={11} />
             {image.comment_count}
           </span>
         </div>

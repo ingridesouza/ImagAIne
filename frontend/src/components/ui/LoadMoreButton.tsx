@@ -16,8 +16,8 @@ export const LoadMoreButton = ({
   if (!hasMore && loadedCount > 0) {
     return (
       <div className="flex flex-col items-center gap-2 py-8 text-center">
-        <span className="material-symbols-outlined text-white/40">check_circle</span>
-        <p className="text-sm text-white/50">
+        <span className="material-symbols-outlined text-fg-muted">check_circle</span>
+        <p className="text-sm text-fg-sec">
           Todas as {totalCount} imagens carregadas
         </p>
       </div>
@@ -36,9 +36,9 @@ export const LoadMoreButton = ({
         disabled={isLoading}
         className={`
           flex items-center gap-2 rounded-full px-6 py-3
-          bg-white/5 text-white/80 transition-all
-          hover:bg-white/10 hover:text-white
-          focus:outline-none focus:ring-2 focus:ring-flow-300/40
+          bg-surface text-fg transition-all
+          hover:bg-inset hover:text-fg
+          focus:outline-none focus:ring-2 focus:ring-accent
           disabled:cursor-wait disabled:opacity-60
         `}
       >
@@ -56,7 +56,7 @@ export const LoadMoreButton = ({
           </>
         )}
       </button>
-      <p className="text-xs text-white/40">
+      <p className="text-xs text-fg-muted">
         {loadedCount} de {totalCount} imagens
       </p>
     </div>

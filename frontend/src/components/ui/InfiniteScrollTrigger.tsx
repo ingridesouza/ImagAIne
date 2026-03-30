@@ -41,7 +41,7 @@ export const InfiniteScrollTrigger = ({
       aria-hidden
     >
       {isLoading && (
-        <div className="flex items-center gap-2 text-sm text-white/50">
+        <div className="flex items-center gap-2 text-sm text-fg-sec">
           <span className="material-symbols-outlined animate-spin text-[18px]">
             progress_activity
           </span>

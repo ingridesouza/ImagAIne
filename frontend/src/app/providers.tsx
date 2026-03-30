@@ -4,29 +4,35 @@ import { Toaster } from 'sonner';
 import { queryClient } from '@/lib/query-client';
 import { AuthHydrationGate } from '@/features/auth/components/AuthHydrationGate';
 import { AuthBootstrapper } from '@/features/auth/components/AuthBootstrapper';
+import { useThemeStore } from '@/hooks/useTheme';
 
 type Props = {
   children: ReactNode;
 };
 
-export const AppProviders = ({ children }: Props) => (
-  <QueryClientProvider client={queryClient}>
-    <AuthHydrationGate>
-      {children}
-      <AuthBootstrapper />
-    </AuthHydrationGate>
-    <Toaster
-      position="bottom-right"
-      theme="dark"
-      richColors
-      closeButton
-      toastOptions={{
-        style: {
-          background: 'rgba(15, 15, 20, 0.95)',
-          border: '1px solid rgba(255, 255, 255, 0.1)',
-          backdropFilter: 'blur(12px)',
-        },
-      }}
-    />
-  </QueryClientProvider>
-);
+export const AppProviders = ({ children }: Props) => {
+  const theme = useThemeStore((s) => s.theme);
+
+  return (
+    <QueryClientProvider client={queryClient}>
+      <AuthHydrationGate>
+        {children}
+        <AuthBootstrapper />
+      </AuthHydrationGate>
+      <Toaster
+        position="bottom-right"
+        theme={theme}
+        richColors
+        closeButton
+        toastOptions={{
+          style: {
+            background: 'var(--color-elevated)',
+            border: '1px solid var(--color-border)',
+            color: 'var(--color-text)',
+            backdropFilter: 'blur(12px)',
+          },
+        }}
+      />
+    </QueryClientProvider>
+  );
+};

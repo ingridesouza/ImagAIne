@@ -328,7 +328,7 @@ export const GenerateImagePage = () => {
     microcopy: string,
   ) => (
     <div className="space-y-2">
-      <span className="text-[11px] text-white/25">{microcopy}</span>
+      <span className="text-[11px] text-fg-muted">{microcopy}</span>
       <div className="flex flex-wrap gap-2">
         {chips.map((chip) => {
           const isSelected = selectedId === chip.id;
@@ -341,16 +341,16 @@ export const GenerateImagePage = () => {
               onClick={() => handleChipClick(category, chip.id)}
               className={clsx(
                 'relative rounded-md border px-3 py-1.5 text-[13px] transition-all duration-150',
-                'focus:outline-none focus-visible:ring-2 focus-visible:ring-flow-300/40',
+                'focus:outline-none focus-visible:ring-2 focus-visible:ring-accent',
                 isSelected
-                  ? 'border-flow-300/30 bg-flow-300/10 text-flow-300'
-                  : 'border-white/[0.06] bg-white/[0.02] text-white/45 hover:border-white/10 hover:bg-white/[0.05] hover:text-white/70',
+                  ? 'border-accent/30 bg-accent-soft text-accent'
+                  : 'border-border bg-surface text-fg-sec hover:border-border hover:bg-inset hover:text-fg',
                 isPending && 'cursor-not-allowed opacity-50',
               )}
             >
               {chip.label}
               {isSelected && (
-                <span className="absolute -right-1 -top-1 flex h-3.5 w-3.5 items-center justify-center rounded-full bg-flow-300 text-[9px] text-white">
+                <span className="absolute -right-1 -top-1 flex h-3.5 w-3.5 items-center justify-center rounded-full bg-accent text-[9px] text-fg-inv">
                   ✓
                 </span>
               )}
@@ -364,15 +364,15 @@ export const GenerateImagePage = () => {
   const hasRefinements = selectedStyle || selectedLight || selectedFraming;
 
   return (
-    <div className="relative min-h-full overflow-y-auto text-[#e3e3e8]">
+    <div className="relative min-h-full overflow-y-auto text-fg">
       <div className="relative mx-auto max-w-[720px] px-4 py-8 sm:px-6 md:py-12">
         {/* ===== A) HEADER ===== */}
         <header className="mb-8 text-center">
-          <div className="mb-3 inline-flex items-center gap-1.5 rounded-full bg-flow-300/8 px-3 py-1 text-[11px] font-medium uppercase tracking-wider text-flow-300">
+          <div className="mb-3 inline-flex items-center gap-1.5 rounded-full bg-accent-soft px-3 py-1 text-[11px] font-medium uppercase tracking-wider text-accent">
             <span className="material-symbols-outlined text-[12px]">auto_awesome</span>
             Studio
           </div>
-          <h1 className="text-2xl font-semibold tracking-tight text-white sm:text-3xl">
+          <h1 className="text-2xl font-semibold tracking-tight text-fg sm:text-3xl">
             O que você quer criar?
           </h1>
         </header>
@@ -388,15 +388,15 @@ export const GenerateImagePage = () => {
               className={clsx(
                 'group flex items-center gap-1.5 rounded-full px-3 py-1.5 text-sm font-medium transition-all duration-150 focus:outline-none',
                 selectedMode === mode.id
-                  ? 'bg-flow-300/12 text-flow-300 ring-1 ring-flow-300/30'
-                  : 'bg-white/[0.04] text-white/40 hover:bg-white/[0.06] hover:text-white/70',
+                  ? 'bg-accent-soft text-accent ring-1 ring-accent/30'
+                  : 'bg-surface text-fg-sec hover:bg-inset hover:text-fg',
                 isPending && 'cursor-not-allowed opacity-50',
               )}
             >
               <span
                 className={clsx(
                   'material-symbols-outlined text-[16px] transition-colors',
-                  selectedMode === mode.id ? 'text-flow-300' : 'text-white/30 group-hover:text-white/50',
+                  selectedMode === mode.id ? 'text-accent' : 'text-fg-muted group-hover:text-fg-sec',
                 )}
               >
                 {mode.icon}
@@ -408,10 +408,10 @@ export const GenerateImagePage = () => {
 
         <form onSubmit={handleSubmit(onSubmit)} className="flex flex-col gap-5">
           {/* ===== C) CARD PRINCIPAL DO PROMPT ===== */}
-          <div className="group relative rounded-2xl border border-white/[0.06] bg-white/[0.03] transition-all focus-within:border-flow-300/30 focus-within:bg-white/[0.04]">
+          <div className="group relative rounded-2xl border border-border bg-surface transition-all focus-within:border-accent/30 focus-within:bg-surface">
             {/* Label interno */}
             <div className="px-5 pt-4">
-              <label htmlFor="prompt" className="text-sm font-medium text-white/60">
+              <label htmlFor="prompt" className="text-sm font-medium text-fg-sec">
                 Descreva sua imagem
               </label>
             </div>
@@ -421,7 +421,7 @@ export const GenerateImagePage = () => {
               <textarea
                 id="prompt"
                 rows={3}
-                className="w-full resize-none border-0 bg-transparent text-[15px] leading-relaxed text-white placeholder:text-white/25 focus:outline-none focus:ring-0"
+                className="w-full resize-none border-0 bg-transparent text-[15px] leading-relaxed text-fg placeholder:text-fg-muted focus:outline-none focus:ring-0"
                 placeholder={placeholder}
                 {...register('prompt')}
               />
@@ -431,7 +431,7 @@ export const GenerateImagePage = () => {
             </div>
 
             {/* Footer do card */}
-            <div className="flex items-center justify-between border-t border-white/5 px-5 py-3">
+            <div className="flex items-center justify-between border-t border-border px-5 py-3">
               <div>
                 {!promptValue ? (
                   <button
@@ -439,19 +439,19 @@ export const GenerateImagePage = () => {
                     onClick={handleRandomPrompt}
                     className={clsx(
                       'flex items-center gap-1.5 text-sm transition-colors focus:outline-none',
-                      currentMode ? 'text-flow-300 hover:text-flow-300' : 'text-white/35 hover:text-flow-300',
+                      currentMode ? 'text-accent hover:text-accent' : 'text-fg-muted hover:text-accent',
                     )}
                   >
                     <span className="material-symbols-outlined text-[14px]">lightbulb</span>
                     Me inspire
                   </button>
                 ) : promptValue.length >= 80 ? (
-                  <span className="text-xs text-white/25">{promptValue.length} caracteres</span>
+                  <span className="text-xs text-fg-muted">{promptValue.length} caracteres</span>
                 ) : null}
               </div>
 
               {(currentMode || hasRefinements) && (
-                <span className="flex items-center gap-1 text-[11px] text-flow-300/80">
+                <span className="flex items-center gap-1 text-[11px] text-accent">
                   <span className="material-symbols-outlined text-[12px]">auto_fix_high</span>
                   {currentMode && hasRefinements
                     ? 'Modo + refinamentos'
@@ -465,11 +465,11 @@ export const GenerateImagePage = () => {
 
           {/* ===== D) PROPORÇÃO ===== */}
           <div className="flex items-center gap-3">
-            <span className="text-xs text-white/35">Proporção</span>
-            <div className="relative flex rounded-lg bg-white/[0.04] p-0.5">
+            <span className="text-xs text-fg-muted">Proporção</span>
+            <div className="relative flex rounded-lg bg-surface p-0.5">
               {/* Sliding indicator */}
               <div
-                className="absolute inset-y-0.5 rounded-md bg-white/10 transition-all duration-200 ease-out"
+                className="absolute inset-y-0.5 rounded-md bg-inset transition-all duration-200 ease-out"
                 style={{
                   width: `${100 / aspectRatioOptions.length}%`,
                   left: `${(aspectRatioOptions.findIndex((o) => o.value === aspectRatio) / aspectRatioOptions.length) * 100}%`,
@@ -481,10 +481,10 @@ export const GenerateImagePage = () => {
                   type="button"
                   onClick={() => setValue('aspect_ratio', option.value, { shouldValidate: true })}
                   className={clsx(
-                    'relative z-10 flex items-center gap-1 rounded-md px-2 py-1 text-xs transition-colors duration-150 focus:outline-none focus-visible:ring-2 focus-visible:ring-flow-300/40',
+                    'relative z-10 flex items-center gap-1 rounded-md px-2 py-1 text-xs transition-colors duration-150 focus:outline-none focus-visible:ring-2 focus-visible:ring-accent',
                     aspectRatio === option.value
-                      ? 'text-white'
-                      : 'text-white/35 hover:text-white/60',
+                      ? 'text-fg'
+                      : 'text-fg-muted hover:text-fg-sec',
                   )}
                 >
                   <div
@@ -503,7 +503,7 @@ export const GenerateImagePage = () => {
 
           {/* ===== E) REFINE SUA IDEIA ===== */}
           <div className="space-y-3">
-            <span className="text-xs text-white/35">Refinamentos (opcional)</span>
+            <span className="text-xs text-fg-muted">Refinamentos (opcional)</span>
             <div className="grid gap-x-6 gap-y-4 sm:grid-cols-2 lg:grid-cols-3">
               {renderChipGroup('style', styleChips, selectedStyle, 'Aparência')}
               {renderChipGroup('light', lightChips, selectedLight, 'Iluminação')}
@@ -516,7 +516,7 @@ export const GenerateImagePage = () => {
             <button
               type="button"
               onClick={() => setShowAdvanced(!showAdvanced)}
-              className="flex items-center gap-1.5 text-xs text-flow-300 transition-all hover:text-flow-300 focus:outline-none"
+              className="flex items-center gap-1.5 text-xs text-accent transition-all hover:text-accent focus:outline-none"
             >
               <span
                 className={clsx(
@@ -530,29 +530,29 @@ export const GenerateImagePage = () => {
             </button>
 
             {showAdvanced && (
-              <div className="grid gap-4 rounded-md bg-white/[0.02] p-4 ring-1 ring-white/5 sm:grid-cols-2">
+              <div className="grid gap-4 rounded-md bg-surface p-4 ring-1 ring-border sm:grid-cols-2">
               <div>
-                <label className="mb-1.5 block text-xs font-medium text-white/45" htmlFor="negative_prompt">
+                <label className="mb-1.5 block text-xs font-medium text-fg-sec" htmlFor="negative_prompt">
                   Evitar na imagem
                 </label>
                 <input
                   id="negative_prompt"
                   type="text"
-                  className="w-full rounded-lg bg-white/5 px-3 py-2 text-sm text-white placeholder:text-white/25 focus:outline-none focus:ring-1 focus:ring-flow-300/40"
+                  className="w-full rounded-lg bg-surface px-3 py-2 text-sm text-fg placeholder:text-fg-muted focus:outline-none focus:ring-1 focus:ring-accent"
                   placeholder="blur, text, lowres..."
                   {...register('negative_prompt')}
                 />
               </div>
 
               <div>
-                <label className="mb-1.5 block text-xs font-medium text-white/45" htmlFor="seed">
+                <label className="mb-1.5 block text-xs font-medium text-fg-sec" htmlFor="seed">
                   Seed
                 </label>
                 <input
                   id="seed"
                   type="number"
                   min={0}
-                  className="w-full rounded-lg bg-white/5 px-3 py-2 text-sm text-white placeholder:text-white/25 focus:outline-none focus:ring-1 focus:ring-flow-300/40"
+                  className="w-full rounded-lg bg-surface px-3 py-2 text-sm text-fg placeholder:text-fg-muted focus:outline-none focus:ring-1 focus:ring-accent"
                   placeholder="Aleatório"
                   {...register('seed')}
                 />
@@ -568,7 +568,7 @@ export const GenerateImagePage = () => {
           <button
             type="submit"
             disabled={isPending}
-            className="group relative mt-2 flex items-center justify-center gap-2.5 overflow-hidden rounded-xl bg-flow-300 px-6 py-3 text-sm font-semibold text-[#131316] transition-all duration-150 hover:bg-flow-200 focus:outline-none active:scale-[0.98] disabled:opacity-38 disabled:pointer-events-none"
+            className="group relative mt-2 flex items-center justify-center gap-2.5 overflow-hidden rounded-xl bg-accent px-6 py-3 text-sm font-semibold text-fg-inv transition-all duration-150 hover:bg-accent-hover focus:outline-none active:scale-[0.98] disabled:opacity-38 disabled:pointer-events-none"
           >
             {isPending ? (
               <>
@@ -586,14 +586,14 @@ export const GenerateImagePage = () => {
           {/* Skeleton placeholder enquanto gera */}
           {isPending && (
             <div className="flex flex-col items-center gap-3 py-4">
-              <div className="h-40 w-40 animate-pulse rounded-xl bg-white/5" />
-              <div className="h-2 w-24 animate-pulse rounded bg-white/5" />
+              <div className="h-40 w-40 animate-pulse rounded-xl bg-surface" />
+              <div className="h-2 w-24 animate-pulse rounded bg-surface" />
             </div>
           )}
 
           {/* Erro */}
           {error && (
-            <div className="rounded-lg bg-red-500/10 px-4 py-3 text-center text-sm text-red-400 ring-1 ring-red-500/20">
+            <div className="rounded-lg bg-danger/10 px-4 py-3 text-center text-sm text-red-400 ring-1 ring-danger/20">
               Erro ao gerar. Verifique sua conta e tente novamente.
             </div>
           )}

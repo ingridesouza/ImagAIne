@@ -39,7 +39,7 @@ export const SidebarNav = ({ onNavigate, collapsed = false }: SidebarNavProps) =
     {(Object.keys(sections) as (keyof typeof sections)[]).map((sectionKey) => (
       <div key={sectionKey} className="flex flex-col gap-1">
         {!collapsed ? (
-          <p className="mb-1.5 px-3 text-[10px] font-medium uppercase tracking-widest text-white/25">
+          <p className="mb-1.5 px-3 text-[10px] font-medium uppercase tracking-widest text-fg-muted">
             {SECTION_LABELS[sectionKey]}
           </p>
         ) : null}
@@ -53,8 +53,8 @@ export const SidebarNav = ({ onNavigate, collapsed = false }: SidebarNavProps) =
                   'group flex items-center rounded-lg transition-all duration-150',
                   collapsed ? 'justify-center p-2.5' : 'gap-3 px-3 py-2.5',
                   isActive
-                    ? 'bg-flow-300/10 text-flow-300'
-                    : 'text-white/45 hover:bg-white/[0.05] hover:text-white/75',
+                    ? 'bg-accent-soft text-accent'
+                    : 'text-fg-muted hover:bg-inset hover:text-fg-sec',
                 )
               }
               onClick={onNavigate}
@@ -64,7 +64,7 @@ export const SidebarNav = ({ onNavigate, collapsed = false }: SidebarNavProps) =
                   <span
                     className={clsx(
                       'material-symbols-outlined !text-[20px] transition-colors',
-                      isActive && 'text-flow-300'
+                      isActive && 'text-accent'
                     )}
                     style={{ fontVariationSettings: `'FILL' ${isActive ? 1 : 0}` }}
                     aria-hidden
