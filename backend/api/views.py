@@ -178,6 +178,29 @@ class UserImageListView(generics.ListAPIView):
         )
 
 
+class UserLikedImagesView(generics.ListAPIView):
+    serializer_class = ImageSerializer
+    permission_classes = [IsAuthenticated]
+
+    def get_queryset(self):
+        liked_image_ids = ImageLike.objects.filter(
+            user=self.request.user
+        ).values_list("image_id", flat=True)
+
+        return (
+            Image.objects.filter(id__in=liked_image_ids, status="READY")
+            .select_related("user")
+            .prefetch_related("tags")
+            .annotate(
+                like_count=Count("likes", distinct=True),
+                comment_count=Count("comments", distinct=True),
+                effective_score=Coalesce(F("relevance_score"), Value(0.0)),
+                is_liked=Value(True, output_field=BooleanField()),
+            )
+            .order_by("-likes__created_at")
+        )
+
+
 class ShareImageView(APIView):
     permission_classes = [IsAuthenticated]
 

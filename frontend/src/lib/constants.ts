@@ -23,4 +23,5 @@ export const QUERY_KEYS = {
   myImagesInfinite: () => ['images', 'my', 'infinite'] as const,
   publicImages: (search: string) => ['images', 'public', search] as const,
   publicImagesInfinite: (search: string) => ['images', 'public', 'infinite', search] as const,
+  likedImages: () => ['images', 'liked'] as const,
 };

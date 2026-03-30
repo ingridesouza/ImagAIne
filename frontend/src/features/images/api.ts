@@ -19,6 +19,12 @@ export const imagesApi = {
     });
     return data;
   },
+  async fetchLikedImages(page = 1) {
+    const { data } = await apiClient.get<PaginatedResponse<ImageRecord>>('/images/liked/', {
+      params: { page },
+    });
+    return data;
+  },
   async fetchPublicImages(search?: string, page = 1) {
     const { data } = await apiClient.get<PaginatedResponse<ImageRecord>>('/images/public/', {
       params: {
