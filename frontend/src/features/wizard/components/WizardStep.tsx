@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import type { UseFormReturn } from 'react-hook-form';
 import type { WizardStepConfig, WizardFormData } from '../types';
 import { WizardOptionCard } from './WizardOptionCard';
@@ -23,6 +23,7 @@ export const WizardStep = ({
   canProceed,
 }: WizardStepProps) => {
   const [showCustomInput, setShowCustomInput] = useState(false);
+  const autoAdvanceTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   const selectedValue = form.watch(stepConfig.fieldName);
   const customValue = stepConfig.customFieldName
@@ -30,19 +31,24 @@ export const WizardStep = ({
     : '';
 
   useEffect(() => {
-    // Se tem valor customizado, mostra o input
-    if (customValue) {
-      setShowCustomInput(true);
-    }
+    if (customValue) setShowCustomInput(true);
   }, [customValue]);
+
+  useEffect(() => {
+    return () => {
+      if (autoAdvanceTimer.current) clearTimeout(autoAdvanceTimer.current);
+    };
+  }, []);
 
   const handleOptionSelect = (value: string) => {
     form.setValue(stepConfig.fieldName, value);
-    // Limpa valor customizado quando seleciona opcao
     if (stepConfig.customFieldName) {
       form.setValue(stepConfig.customFieldName, '');
     }
     setShowCustomInput(false);
+
+    if (autoAdvanceTimer.current) clearTimeout(autoAdvanceTimer.current);
+    autoAdvanceTimer.current = setTimeout(() => onNext(), 400);
   };
 
   const handleCustomClick = () => {
@@ -62,10 +68,10 @@ export const WizardStep = ({
     <div className="wizard__step">
       <h2 className="wizard__step-question">{stepConfig.question}</h2>
       {!stepConfig.required && (
-        <p className="wizard__step-subtitle">
-          Esta etapa e opcional.{' '}
+        <p className="wizard__step-hint">
+          Opcional —{' '}
           <button type="button" className="wizard__skip-link" onClick={handleSkip}>
-            Pular
+            pular
           </button>
         </p>
       )}
@@ -89,15 +95,11 @@ export const WizardStep = ({
               className="wizard__custom-trigger"
               onClick={handleCustomClick}
             >
-              <span className="material-symbols-outlined">edit</span>
-              <span>Outro (descreva)</span>
+              <span className="material-symbols-outlined">edit_note</span>
+              Descrever manualmente
             </button>
           ) : (
             <div className="wizard__custom-field-wrapper">
-              <label className="wizard__custom-label">
-                <span className="material-symbols-outlined">edit</span>
-                Descreva com suas palavras:
-              </label>
               <input
                 type="text"
                 className="wizard__custom-field"
@@ -105,18 +107,30 @@ export const WizardStep = ({
                 {...form.register(stepConfig.customFieldName as keyof WizardFormData)}
                 autoFocus
               />
-              <button
-                type="button"
-                className="wizard__custom-cancel"
-                onClick={() => {
-                  setShowCustomInput(false);
-                  if (stepConfig.customFieldName) {
-                    form.setValue(stepConfig.customFieldName, '');
-                  }
-                }}
-              >
-                Cancelar
-              </button>
+              <div className="wizard__custom-actions">
+                <button
+                  type="button"
+                  className="wizard__custom-cancel"
+                  onClick={() => {
+                    setShowCustomInput(false);
+                    if (stepConfig.customFieldName) {
+                      form.setValue(stepConfig.customFieldName, '');
+                    }
+                  }}
+                >
+                  Cancelar
+                </button>
+                {customValue && (
+                  <button
+                    type="button"
+                    className="wizard__custom-confirm"
+                    onClick={onNext}
+                  >
+                    Continuar
+                    <span className="material-symbols-outlined">arrow_forward</span>
+                  </button>
+                )}
+              </div>
             </div>
           )}
         </div>
@@ -135,7 +149,7 @@ export const WizardStep = ({
           onClick={onNext}
           disabled={stepConfig.required && !canProceed}
         >
-          {isLast ? 'Revisar' : 'Proximo'}
+          {isLast ? 'Revisar' : 'Continuar'}
           <span className="material-symbols-outlined">
             {isLast ? 'check' : 'arrow_forward'}
           </span>

@@ -64,7 +64,6 @@ export const WizardReview = ({
 
   const composedDescription = composeDescription(form.getValues());
 
-  // Filtra apenas steps que tem valor (exclui review)
   const stepsWithValues = WIZARD_STEPS.slice(0, -1).map((step, index) => ({
     ...step,
     index,
@@ -73,33 +72,32 @@ export const WizardReview = ({
 
   return (
     <div className="wizard__step wizard__review">
-      <h2 className="wizard__step-question">Revise sua criacao</h2>
-      <p className="wizard__step-subtitle">
-        Confira suas escolhas e gere o prompt otimizado
-      </p>
+      <div className="wizard__step-header">
+        <h2 className="wizard__step-question">Revise sua criacao</h2>
+        <p className="wizard__step-subtitle">
+          Confira suas escolhas e gere o prompt otimizado
+        </p>
+      </div>
 
-      {/* Resumo das escolhas */}
-      <div className="wizard__review-cards">
+      {/* Choices as chips */}
+      <div className="wizard__review-chips">
         {stepsWithValues.map((step) => (
-          <div key={step.id} className="wizard__review-card">
-            <div className="wizard__review-card-content">
-              <span className="wizard__review-card-label">{step.title}</span>
-              <span className="wizard__review-card-value">
-                {step.value || <em className="wizard__review-card-empty">Nao definido</em>}
-              </span>
-            </div>
-            <button
-              type="button"
-              className="wizard__review-edit"
-              onClick={() => goToStep(step.index)}
-            >
-              <span className="material-symbols-outlined">edit</span>
-            </button>
-          </div>
+          <button
+            key={step.id}
+            type="button"
+            className={`wizard__review-chip ${step.value ? 'wizard__review-chip--filled' : 'wizard__review-chip--empty'}`}
+            onClick={() => goToStep(step.index)}
+          >
+            <span className="wizard__review-chip-label">{step.title}</span>
+            <span className="wizard__review-chip-value">
+              {step.value || 'Nao definido'}
+            </span>
+            <span className="material-symbols-outlined wizard__review-chip-edit">edit</span>
+          </button>
         ))}
       </div>
 
-      {/* Campo de detalhes adicionais */}
+      {/* Additional details */}
       <div className="wizard__additional">
         <label className="wizard__additional-label">
           <span className="material-symbols-outlined">add_notes</span>
@@ -113,16 +111,16 @@ export const WizardReview = ({
         />
       </div>
 
-      {/* Preview da descricao composta */}
+      {/* Preview */}
       <div className="wizard__preview">
         <label className="wizard__preview-label">
           <span className="material-symbols-outlined">preview</span>
-          Descricao que sera enviada para a IA:
+          Descricao composta
         </label>
         <p className="wizard__preview-text">{composedDescription}</p>
       </div>
 
-      {/* Erro */}
+      {/* Error */}
       {refineError && (
         <div className="wizard__error">
           <span className="material-symbols-outlined">error</span>
@@ -130,7 +128,7 @@ export const WizardReview = ({
         </div>
       )}
 
-      {/* Botao de gerar prompt */}
+      {/* Refine button */}
       {!refinedPrompt && (
         <button
           type="button"
@@ -140,7 +138,7 @@ export const WizardReview = ({
         >
           {isRefining ? (
             <>
-              <span className="material-symbols-outlined animate-spin">progress_activity</span>
+              <span className="wizard__refine-spinner" />
               Criando prompt otimizado...
             </>
           ) : (
@@ -152,7 +150,7 @@ export const WizardReview = ({
         </button>
       )}
 
-      {/* Resultado do prompt refinado */}
+      {/* Refined result */}
       {refinedPrompt && (
         <div className="wizard__result">
           <div className="wizard__result-header">
@@ -198,7 +196,7 @@ export const WizardReview = ({
 
           {negativePrompt && (
             <div className="wizard__result-negative">
-              <span className="wizard__result-negative-label">Prompt Negativo:</span>
+              <span className="wizard__result-negative-label">Prompt Negativo</span>
               <span className="wizard__result-negative-text">{negativePrompt}</span>
             </div>
           )}
@@ -224,7 +222,7 @@ export const WizardReview = ({
         </div>
       )}
 
-      {/* Navegacao */}
+      {/* Back navigation */}
       {!refinedPrompt && (
         <div className="wizard__nav">
           <button type="button" className="wizard__nav-btn wizard__nav-btn--back" onClick={onBack}>

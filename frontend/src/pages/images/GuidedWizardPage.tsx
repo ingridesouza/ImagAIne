@@ -5,6 +5,7 @@ import {
   WizardStep,
   WizardReview,
 } from '@/features/wizard';
+import { WIZARD_STEPS } from '@/features/wizard/constants';
 
 export const GuidedWizardPage = () => {
   const navigate = useNavigate();
@@ -30,7 +31,7 @@ export const GuidedWizardPage = () => {
 
   const isReviewStep = currentStepConfig?.id === 'review';
   const isFirstStep = currentStep === 0;
-  const isLastRegularStep = currentStep === totalSteps - 2; // Penultimo step (antes do review)
+  const isLastRegularStep = currentStep === totalSteps - 2;
 
   return (
     <div className="wizard">
@@ -39,12 +40,14 @@ export const GuidedWizardPage = () => {
           type="button"
           className="wizard__back"
           onClick={() => navigate(-1)}
+          aria-label="Voltar"
         >
           <span className="material-symbols-outlined">arrow_back</span>
         </button>
-        <div>
-          <p className="wizard__eyebrow">Assistente IA</p>
-          <h1 className="wizard__title">Criador de Prompts</h1>
+        <div className="wizard__header-text">
+          <h1 className="wizard__title">
+            {isReviewStep ? 'Revisao' : WIZARD_STEPS[currentStep]?.title}
+          </h1>
         </div>
       </header>
 
@@ -72,6 +75,7 @@ export const GuidedWizardPage = () => {
         ) : (
           currentStepConfig && (
             <WizardStep
+              key={currentStepConfig.id}
               stepConfig={currentStepConfig}
               form={form}
               onNext={nextStep}

@@ -13,38 +13,29 @@ export const WizardProgress = ({
 }: WizardProgressProps) => {
   return (
     <div className="wizard__progress">
-      {WIZARD_STEPS.map((step, index) => (
-        <div key={step.id} className="wizard__progress-step">
+      {WIZARD_STEPS.map((step, index) => {
+        const isActive = index === currentStep;
+        const isCompleted = isStepCompleted(index);
+        const isAccessible = index <= currentStep || isCompleted || isStepCompleted(index - 1);
+
+        return (
           <button
+            key={step.id}
             type="button"
-            className={`wizard__progress-dot ${
-              index === currentStep
-                ? 'wizard__progress-dot--active'
-                : isStepCompleted(index)
-                ? 'wizard__progress-dot--completed'
+            className={`wizard__progress-seg ${
+              isActive
+                ? 'wizard__progress-seg--active'
+                : isCompleted
+                ? 'wizard__progress-seg--done'
                 : ''
             }`}
             onClick={() => onStepClick(index)}
-            disabled={index > currentStep && !isStepCompleted(index - 1)}
+            disabled={!isAccessible}
             title={step.title}
-          >
-            {isStepCompleted(index) && index !== currentStep ? (
-              <span className="material-symbols-outlined wizard__progress-check">
-                check
-              </span>
-            ) : (
-              <span className="wizard__progress-number">{index + 1}</span>
-            )}
-          </button>
-          {index < WIZARD_STEPS.length - 1 && (
-            <div
-              className={`wizard__progress-line ${
-                isStepCompleted(index) ? 'wizard__progress-line--completed' : ''
-              }`}
-            />
-          )}
-        </div>
-      ))}
+            aria-label={`${step.title} - passo ${index + 1}`}
+          />
+        );
+      })}
     </div>
   );
 };
