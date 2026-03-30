@@ -15,6 +15,9 @@ services:
     ports:
       - "8000:8000"
     working_dir: /app/backend
+    dns:
+      - 8.8.8.8
+      - 8.8.4.4
 
 
   worker:
@@ -31,6 +34,9 @@ services:
     depends_on:
       - db
       - redis
+    dns:
+      - 8.8.8.8
+      - 8.8.4.4
 
   db:
     image: postgres:16
