@@ -23,6 +23,7 @@ const MATERIAL_ICON_NAMES: Record<string, string> = {
   '/generate': 'add_circle',
   '/my-images': 'collections',
   '/public': 'travel_explore',
+  '/chat': 'chat',
   '/projects': 'folder_open',
   '/profile': 'person',
   '/settings': 'settings',

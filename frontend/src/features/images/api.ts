@@ -113,6 +113,29 @@ export const imagesApi = {
     );
     return data;
   },
+  // Creative Agent
+  async fetchSessions() {
+    const { data } = await apiClient.get<{ id: string; title: string; status: string; message_count: number; created_at: string; updated_at: string }[]>('/sessions/');
+    return data;
+  },
+  async createSession(title = 'Nova sessão') {
+    const { data } = await apiClient.post('/sessions/', { title });
+    return data;
+  },
+  async fetchSession(sessionId: string) {
+    const { data } = await apiClient.get(`/sessions/${sessionId}/`);
+    return data;
+  },
+  async archiveSession(sessionId: string) {
+    await apiClient.delete(`/sessions/${sessionId}/`);
+  },
+  async sendMessage(sessionId: string, text: string) {
+    const { data } = await apiClient.post<{
+      message: { id: number; role: string; text: string; image: number | null; image_url: string | null; prompt_used: string; created_at: string };
+      agent_response: { id: number; role: string; text: string; image: number | null; image_url: string | null; prompt_used: string; created_at: string };
+    }>(`/sessions/${sessionId}/messages/`, { text });
+    return data;
+  },
   // Projects
   async fetchProjects() {
     const { data } = await apiClient.get<ProjectRecord[]>('/projects/');
