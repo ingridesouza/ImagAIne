@@ -1,5 +1,5 @@
-import { useEffect, useRef } from 'react';
-import { Link } from 'react-router-dom';
+import { useEffect, useRef, useState } from 'react';
+import { Link, useNavigate } from 'react-router-dom';
 import { useAuthStore } from '@/features/auth/store';
 import { useThemeStore } from '@/hooks/useTheme';
 
@@ -13,6 +13,8 @@ export const AppHeader = ({ onOpenSidebar, onToggleSidebarCollapse, isSidebarCol
   const user = useAuthStore((state) => state.user);
   const searchInputRef = useRef<HTMLInputElement>(null);
   const { theme, toggle: toggleTheme } = useThemeStore();
+  const navigate = useNavigate();
+  const [searchValue, setSearchValue] = useState('');
 
   useEffect(() => {
     const handleShortcut = (event: KeyboardEvent) => {
@@ -62,6 +64,14 @@ export const AppHeader = ({ onOpenSidebar, onToggleSidebarCollapse, isSidebarCol
                 data-global-search
                 type="search"
                 placeholder="Pesquisar..."
+                value={searchValue}
+                onChange={(e) => setSearchValue(e.target.value)}
+                onKeyDown={(e) => {
+                  if (e.key === 'Enter' && searchValue.trim()) {
+                    navigate(`/explore?search=${encodeURIComponent(searchValue.trim())}`);
+                    searchInputRef.current?.blur();
+                  }
+                }}
                 className="block w-full rounded-lg border border-border bg-surface py-2 pl-9 pr-14 text-sm text-fg placeholder:text-fg-muted transition-all focus:border-accent/40 focus:bg-elevated focus:outline-none"
               />
               <div className="absolute inset-y-0 right-1.5 flex items-center gap-1">
