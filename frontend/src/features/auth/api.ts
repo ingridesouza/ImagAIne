@@ -68,4 +68,12 @@ export const authApi = {
     });
     return data;
   },
+  async changePassword(payload: { current_password: string; new_password: string; new_password_confirm: string }) {
+    const { data } = await apiClient.post<{ detail: string }>('/auth/password/change/', payload);
+    return data;
+  },
+  async deleteAccount(payload: { password: string }) {
+    const { data } = await apiClient.delete<{ detail: string }>('/auth/account/', { data: payload });
+    return data;
+  },
 };

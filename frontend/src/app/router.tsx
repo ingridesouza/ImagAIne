@@ -12,6 +12,9 @@ import { GuidedWizardPage } from '@/pages/images/GuidedWizardPage';
 import { SettingsPage } from '@/pages/settings/SettingsPage';
 import { NotFoundPage } from '@/pages/misc/NotFoundPage';
 import { ProfilePage } from '@/pages/profile/ProfilePage';
+import { VerifyEmailPage } from '@/pages/auth/VerifyEmailPage';
+import { ForgotPasswordPage } from '@/pages/auth/ForgotPasswordPage';
+import { ResetPasswordPage } from '@/pages/auth/ResetPasswordPage';
 
 export const router = createBrowserRouter([
   {
@@ -38,6 +41,9 @@ export const router = createBrowserRouter([
     children: [
       { path: '/login', element: <LoginPage /> },
       { path: '/register', element: <RegisterPage /> },
+      { path: '/forgot-password', element: <ForgotPasswordPage /> },
+      { path: '/reset-password/:token', element: <ResetPasswordPage /> },
+      { path: '/verify-email/:token', element: <VerifyEmailPage /> },
     ],
   },
   {

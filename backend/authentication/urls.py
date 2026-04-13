@@ -23,4 +23,8 @@ urlpatterns = [
     path('profile/avatar/', views.AvatarUploadView.as_view(), name='user_avatar'),
     path('profile/cover/', views.CoverUploadView.as_view(), name='user_cover'),
     path('preferences/', views.PreferencesView.as_view(), name='user_preferences'),
+
+    # Account management
+    path('password/change/', views.ChangePasswordView.as_view(), name='change_password'),
+    path('account/', views.DeleteAccountView.as_view(), name='delete_account'),
 ]
