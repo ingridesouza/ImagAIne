@@ -3,6 +3,7 @@ import type {
   GenerateImagePayload,
   ImageRecord,
   PaginatedResponse,
+  ProjectRecord,
 } from '@/features/images/types';
 import type { ImageComment } from '@/features/images/components/ImageDetailsDialog';
 
@@ -112,6 +113,42 @@ export const imagesApi = {
     );
     return data;
   },
+  // Projects
+  async fetchProjects() {
+    const { data } = await apiClient.get<ProjectRecord[]>('/projects/');
+    return data;
+  },
+  async fetchProject(projectId: string) {
+    const { data } = await apiClient.get<ProjectRecord>(`/projects/${projectId}/`);
+    return data;
+  },
+  async createProject(payload: { title: string; description?: string }) {
+    const { data } = await apiClient.post<ProjectRecord>('/projects/', payload);
+    return data;
+  },
+  async updateProject(projectId: string, payload: Partial<{ title: string; description: string; is_public: boolean; cover_image: number | null }>) {
+    const { data } = await apiClient.put<ProjectRecord>(`/projects/${projectId}/`, payload);
+    return data;
+  },
+  async deleteProject(projectId: string) {
+    await apiClient.delete(`/projects/${projectId}/`);
+  },
+  async addImageToProject(projectId: string, imageId: number, order = 0, caption = '') {
+    const { data } = await apiClient.post(`/projects/${projectId}/images/`, { image_id: imageId, order, caption });
+    return data;
+  },
+  async removeImageFromProject(projectId: string, imageId: number) {
+    await apiClient.delete(`/projects/${projectId}/images/${imageId}/remove/`);
+  },
+  async reorderProjectImages(projectId: string, imageIds: number[]) {
+    const { data } = await apiClient.patch(`/projects/${projectId}/images/reorder/`, { image_ids: imageIds });
+    return data;
+  },
+  async fetchPublicProjects(page = 1) {
+    const { data } = await apiClient.get<PaginatedResponse<ProjectRecord>>('/projects/public/', { params: { page } });
+    return data;
+  },
+  // Related & Suggestions
   async fetchRelatedImages(imageId: number, limit = 6) {
     const { data } = await apiClient.get<{
       count: number;
