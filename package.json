@@ -1,0 +1,18 @@
+{
+  "name": "imagaine",
+  "private": true,
+  "description": "ImagAIne — SDD project commands",
+  "scripts": {
+    "up": "docker compose up -d",
+    "down": "docker compose down",
+    "build": "docker compose build",
+    "logs": "docker compose logs -f web",
+    "spec": "docker compose exec web python manage.py spectacular --file openapi-schema.yaml && docker compose exec web cat openapi-schema.yaml > frontend/openapi-schema.yaml",
+    "types": "cd frontend && npx openapi-typescript ./openapi-schema.yaml -o src/api/schema.d.ts",
+    "sync": "npm run spec && npm run types",
+    "validate": "docker compose exec web python manage.py spectacular --validate --fail-on-warn",
+    "migrate": "docker compose exec web python manage.py migrate",
+    "test": "docker compose exec web python manage.py test",
+    "fresh": "npm run build && npm run up && npm run migrate && npm run sync"
+  }
+}
