@@ -7,7 +7,7 @@ import {
   Plus, GripVertical, LayoutGrid, List, Share2,
 } from 'lucide-react';
 import { imagesApi } from '@/features/images/api';
-import type { ProjectRecord, ImageRecord } from '@/features/images/types';
+import type { ImageRecord } from '@/features/images/types';
 
 export const ProjectDetailPage = () => {
   const { id } = useParams<{ id: string }>();
