@@ -1,5 +1,5 @@
 import type { LucideIcon } from 'lucide-react';
-import { Compass, Home, Settings, Sparkles, User, Wand2 } from 'lucide-react';
+import { Compass, FolderOpen, Home, Settings, Sparkles, User, Wand2 } from 'lucide-react';
 
 export type NavLink = {
   label: string;
@@ -13,6 +13,7 @@ export const NAV_LINKS: NavLink[] = [
   { label: 'Visão geral', path: '/dashboard', icon: Home, section: 'discover' },
   { label: 'Criar Prompt', path: '/wizard', icon: Wand2, section: 'discover' },
   { label: 'Gerar imagem', path: '/generate', icon: Sparkles, section: 'discover' },
+  { label: 'Projetos', path: '/projects', icon: FolderOpen, section: 'library' },
   { label: 'Perfil', path: '/profile', icon: User, section: 'library' },
   { label: 'Configurações', path: '/settings', icon: Settings, section: 'library' },
 ];

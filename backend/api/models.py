@@ -154,6 +154,57 @@ class ImageTag(models.Model):
         return self.name
 
 
+class Project(models.Model):
+    """A curated collection of images with narrative."""
+    id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
+    user = models.ForeignKey(User, on_delete=models.CASCADE, related_name='projects')
+    title = models.CharField(max_length=200)
+    description = models.TextField(blank=True, default='')
+    cover_image = models.ForeignKey(
+        Image, on_delete=models.SET_NULL, null=True, blank=True, related_name='+',
+    )
+    is_public = models.BooleanField(default=False)
+    tags = models.ManyToManyField('ProjectTag', blank=True, related_name='projects')
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        ordering = ['-updated_at']
+
+    def __str__(self):
+        return f'{self.title} by {self.user.username}'
+
+
+class ProjectImage(models.Model):
+    """An image within a project, with order and caption."""
+    project = models.ForeignKey(Project, on_delete=models.CASCADE, related_name='images')
+    image = models.ForeignKey(Image, on_delete=models.CASCADE, related_name='project_entries')
+    order = models.PositiveIntegerField(default=0)
+    caption = models.TextField(blank=True, default='')
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        ordering = ['order', 'created_at']
+        constraints = [
+            models.UniqueConstraint(fields=['project', 'image'], name='unique_image_per_project')
+        ]
+
+    def __str__(self):
+        return f'Image {self.image_id} in {self.project.title} (#{self.order})'
+
+
+class ProjectTag(models.Model):
+    """Tag for projects."""
+    name = models.CharField(max_length=64, unique=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        ordering = ['name']
+
+    def __str__(self):
+        return self.name
+
+
 class ImageEmbedding(models.Model):
     """
     Stores embeddings for the Creative Memory feature.
