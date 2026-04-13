@@ -150,6 +150,7 @@ class GenerateImageView(APIView):
         ),
         parameters=[
             OpenApiParameter('search', str, description='Busca no texto do prompt'),
+            OpenApiParameter('tag', str, description='Filtra por nome de tag (case insensitive)'),
         ],
     ),
 )
@@ -163,6 +164,10 @@ class PublicImageListView(generics.ListAPIView):
         base_queryset = Image.objects.filter(is_public=True).select_related(
             "user"
         ).prefetch_related("tags")
+
+        tag = self.request.query_params.get("tag")
+        if tag:
+            base_queryset = base_queryset.filter(tags__name__iexact=tag)
         annotated_queryset = base_queryset.annotate(
             like_count=Count("likes", distinct=True),
             comment_count=Count("comments", distinct=True),
@@ -194,6 +199,9 @@ class PublicImageListView(generics.ListAPIView):
         tags=['Gallery'],
         summary='Minhas imagens',
         description='Lista paginada de todas as imagens do usuário autenticado.',
+        parameters=[
+            OpenApiParameter('tag', str, description='Filtra por nome de tag (case insensitive)'),
+        ],
     ),
 )
 class UserImageListView(generics.ListAPIView):
@@ -201,11 +209,16 @@ class UserImageListView(generics.ListAPIView):
     permission_classes = [IsAuthenticated]
 
     def get_queryset(self):
+        queryset = Image.objects.filter(user=self.request.user).select_related(
+            "user"
+        ).prefetch_related("tags")
+
+        tag = self.request.query_params.get("tag")
+        if tag:
+            queryset = queryset.filter(tags__name__iexact=tag)
+
         queryset = (
-            Image.objects.filter(user=self.request.user)
-            .select_related("user")
-            .prefetch_related("tags")
-            .annotate(
+            queryset.annotate(
                 like_count=Count("likes", distinct=True),
                 comment_count=Count("comments", distinct=True),
                 effective_score=Coalesce(F("relevance_score"), Value(0.0)),

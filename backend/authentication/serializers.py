@@ -93,6 +93,23 @@ class PasswordResetConfirmSerializer(serializers.Serializer):
         return attrs
 
 
+class ChangePasswordSerializer(serializers.Serializer):
+    """Serializer for changing password while logged in."""
+    current_password = serializers.CharField(required=True, write_only=True)
+    new_password = serializers.CharField(required=True, write_only=True, min_length=8)
+    new_password_confirm = serializers.CharField(required=True, write_only=True)
+
+    def validate(self, attrs):
+        if attrs['new_password'] != attrs['new_password_confirm']:
+            raise serializers.ValidationError({"new_password": "Password fields didn't match."})
+        return attrs
+
+
+class DeleteAccountSerializer(serializers.Serializer):
+    """Serializer for account deletion confirmation."""
+    password = serializers.CharField(required=True, write_only=True)
+
+
 class UserSerializer(serializers.ModelSerializer):
     """Serializer for user details."""
     avatar_url = serializers.SerializerMethodField()
