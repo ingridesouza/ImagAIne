@@ -1,7 +1,8 @@
 import { useEffect, useState, useCallback } from 'react';
 import { createPortal } from 'react-dom';
 import type { MouseEvent, FormEvent } from 'react';
-import { Download, Heart, X, Share2, MessageCircle, Send, CornerDownRight, ChevronDown } from 'lucide-react';
+import { Download, Heart, X, Share2, MessageCircle, Send, CornerDownRight, ChevronDown, Sparkles } from 'lucide-react';
+import { imagesApi } from '@/features/images/api';
 import type { ImageRecord } from '@/features/images/types';
 
 export type ImageCommentReply = {
@@ -324,9 +325,58 @@ export const ImageDetailsDialog = ({
               </form>
             </div>
           )}
+
+          {/* Related Images */}
+          <RelatedImagesSection imageId={image.id} />
         </div>
       </div>
     </div>,
     document.body,
   );
 };
+
+function RelatedImagesSection({ imageId }: { imageId: number }) {
+  const [related, setRelated] = useState<{ image: ImageRecord; similarity_score: number }[]>([]);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    setLoading(true);
+    imagesApi.fetchRelatedImages(imageId, 6)
+      .then((data) => setRelated(data.results))
+      .catch(() => setRelated([]))
+      .finally(() => setLoading(false));
+  }, [imageId]);
+
+  if (loading) return null;
+  if (related.length === 0) return null;
+
+  return (
+    <div className="img-dialog__related" style={{ padding: '1rem 1.25rem', borderTop: '1px solid var(--color-border)' }}>
+      <h4 style={{ fontSize: '0.8rem', fontWeight: 600, color: 'var(--color-text-sec)', marginBottom: '0.75rem', display: 'flex', alignItems: 'center', gap: '0.4rem' }}>
+        <Sparkles size={14} />
+        Imagens relacionadas
+      </h4>
+      <div style={{ display: 'flex', gap: '0.5rem', overflowX: 'auto' }} className="no-scrollbar">
+        {related.map(({ image: relImg }) => (
+          <img
+            key={relImg.id}
+            src={relImg.image_url || ''}
+            alt={relImg.prompt || ''}
+            style={{
+              width: '72px',
+              height: '72px',
+              borderRadius: 'var(--radius-md)',
+              objectFit: 'cover',
+              cursor: 'pointer',
+              flexShrink: 0,
+              border: '1px solid var(--color-border)',
+              transition: 'opacity 0.15s',
+            }}
+            onMouseEnter={(e) => { (e.target as HTMLImageElement).style.opacity = '0.8'; }}
+            onMouseLeave={(e) => { (e.target as HTMLImageElement).style.opacity = '1'; }}
+          />
+        ))}
+      </div>
+    </div>
+  );
+}

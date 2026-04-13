@@ -112,6 +112,26 @@ export const imagesApi = {
     );
     return data;
   },
+  async fetchRelatedImages(imageId: number, limit = 6) {
+    const { data } = await apiClient.get<{
+      count: number;
+      results: { image: ImageRecord; similarity_score: number }[];
+    }>(`/images/${imageId}/related/`, { params: { limit } });
+    return data;
+  },
+  async fetchStyleSuggestions(limit = 5) {
+    const { data } = await apiClient.get<{
+      count: number;
+      results: {
+        label: string;
+        example_prompt: string;
+        example_image_id: number;
+        frequency: number;
+        confidence: number;
+      }[];
+    }>('/users/me/style-suggestions/', { params: { limit } });
+    return data;
+  },
   async refinePrompt(description: string, style?: string) {
     const { data } = await apiClient.post<{
       refined_prompt: string;
