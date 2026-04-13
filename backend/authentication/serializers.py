@@ -1,6 +1,10 @@
+from typing import Optional
+
 from rest_framework import serializers
 from django.contrib.auth import authenticate
 from django.utils.translation import gettext_lazy as _
+from drf_spectacular.utils import extend_schema_field
+
 from .models import User, PasswordResetToken
 
 class UserRegistrationSerializer(serializers.ModelSerializer):
@@ -122,7 +126,8 @@ class UserSerializer(serializers.ModelSerializer):
             'cover_url',
         )
 
-    def get_avatar_url(self, obj):
+    @extend_schema_field(serializers.URLField(allow_null=True))
+    def get_avatar_url(self, obj) -> Optional[str]:
         if not obj.profile_picture:
             return None
         request = self.context.get('request')
@@ -130,7 +135,8 @@ class UserSerializer(serializers.ModelSerializer):
             return request.build_absolute_uri(obj.profile_picture)
         return obj.profile_picture
 
-    def get_cover_url(self, obj):
+    @extend_schema_field(serializers.URLField(allow_null=True))
+    def get_cover_url(self, obj) -> Optional[str]:
         if not obj.cover_picture:
             return None
         request = self.context.get('request')

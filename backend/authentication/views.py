@@ -14,6 +14,9 @@ from rest_framework.throttling import ScopedRateThrottle
 from django.core.files.storage import default_storage
 from django.core.files.base import ContentFile
 
+from drf_spectacular.utils import extend_schema, extend_schema_view, inline_serializer
+from rest_framework import serializers as drf_serializers
+
 from .models import PasswordResetToken, User
 from .serializers import (
     PasswordResetConfirmSerializer,
@@ -24,13 +27,29 @@ from .serializers import (
 )
 from .tasks import send_verification_email_task, send_welcome_email_task
 
+# Inline serializers reutilizáveis para responses
+_detail_response = inline_serializer('DetailResponse', fields={
+    'detail': drf_serializers.CharField(),
+})
+
+@extend_schema_view(
+    create=extend_schema(
+        tags=['Auth'],
+        summary='Registrar usuário',
+        description=(
+            'Cria uma nova conta. Um email de verificação é enviado automaticamente. '
+            'O login só é liberado após verificação do email.'
+        ),
+        responses={201: _detail_response},
+    ),
+)
 class UserRegistrationView(generics.CreateAPIView):
     """View for user registration."""
     serializer_class = UserRegistrationSerializer
     permission_classes = [permissions.AllowAny]
     throttle_classes = [ScopedRateThrottle]
     throttle_scope = "auth_register"
-    
+
     def create(self, request, *args, **kwargs):
         serializer = self.get_serializer(data=request.data)
         serializer.is_valid(raise_exception=True)
@@ -60,7 +79,18 @@ class UserLoginView(APIView):
     permission_classes = [permissions.AllowAny]
     throttle_classes = [ScopedRateThrottle]
     throttle_scope = "auth_login"
-    
+
+    @extend_schema(
+        tags=['Auth'],
+        summary='Login',
+        description='Autentica o usuário e retorna par de tokens JWT (access + refresh).',
+        request=UserLoginSerializer,
+        responses={200: inline_serializer('LoginResponse', fields={
+            'refresh': drf_serializers.CharField(),
+            'access': drf_serializers.CharField(),
+            'user': UserSerializer(),
+        })},
+    )
     def post(self, request):
         serializer = UserLoginSerializer(data=request.data, context={'request': request})
         serializer.is_valid(raise_exception=True)
@@ -79,7 +109,14 @@ class PasswordResetRequestView(APIView):
     permission_classes = [permissions.AllowAny]
     throttle_classes = [ScopedRateThrottle]
     throttle_scope = "auth_password_reset"
-    
+
+    @extend_schema(
+        tags=['Auth'],
+        summary='Solicitar reset de senha',
+        description='Envia email com link de reset. Não revela se o email existe.',
+        request=PasswordResetRequestSerializer,
+        responses={200: _detail_response},
+    )
     def post(self, request):
         serializer = PasswordResetRequestSerializer(data=request.data)
         serializer.is_valid(raise_exception=True)
@@ -135,7 +172,14 @@ class PasswordResetConfirmView(APIView):
     permission_classes = [permissions.AllowAny]
     throttle_classes = [ScopedRateThrottle]
     throttle_scope = "auth_password_reset"
-    
+
+    @extend_schema(
+        tags=['Auth'],
+        summary='Confirmar reset de senha',
+        description='Valida o token e define nova senha.',
+        request=PasswordResetConfirmSerializer,
+        responses={200: _detail_response, 400: _detail_response},
+    )
     def post(self, request):
         serializer = PasswordResetConfirmSerializer(data=request.data)
         serializer.is_valid(raise_exception=True)
@@ -173,7 +217,13 @@ class PasswordResetConfirmView(APIView):
 class VerifyEmailView(APIView):
     """View to verify user's email address."""
     permission_classes = [permissions.AllowAny]
-    
+
+    @extend_schema(
+        tags=['Auth'],
+        summary='Verificar email',
+        description='Valida o token de verificação enviado por email. Token expira em 24h.',
+        responses={200: _detail_response, 400: _detail_response},
+    )
     def get(self, request, token):
         try:
             user = User.objects.get(
@@ -204,6 +254,23 @@ class VerifyEmailView(APIView):
         send_welcome_email_task.delay(user.id)
 
 
+@extend_schema_view(
+    retrieve=extend_schema(
+        tags=['Profile'],
+        summary='Obter perfil',
+        description='Retorna os dados do perfil do usuário autenticado.',
+    ),
+    update=extend_schema(
+        tags=['Profile'],
+        summary='Atualizar perfil',
+        description='Atualiza os dados do perfil (username, first_name, last_name, bio).',
+    ),
+    partial_update=extend_schema(
+        tags=['Profile'],
+        summary='Atualizar perfil (parcial)',
+        description='Atualiza campos específicos do perfil.',
+    ),
+)
 class UserProfileView(generics.RetrieveUpdateAPIView):
     """View to retrieve and update user profile."""
     serializer_class = UserSerializer
@@ -217,6 +284,15 @@ class AvatarUploadView(APIView):
     """Upload or replace user avatar (profile_picture)."""
     permission_classes = [permissions.IsAuthenticated]
 
+    @extend_schema(
+        tags=['Profile'],
+        summary='Upload de avatar',
+        description='Envia ou substitui a foto de perfil do usuário.',
+        request={'multipart/form-data': {'type': 'object', 'properties': {
+            'file': {'type': 'string', 'format': 'binary'},
+        }, 'required': ['file']}},
+        responses={200: UserSerializer, 400: _detail_response},
+    )
     def post(self, request):
         file = request.FILES.get('file')
         if not file:
@@ -234,6 +310,15 @@ class CoverUploadView(APIView):
     """Upload or replace user cover image (cover_picture)."""
     permission_classes = [permissions.IsAuthenticated]
 
+    @extend_schema(
+        tags=['Profile'],
+        summary='Upload de capa',
+        description='Envia ou substitui a imagem de capa do usuário.',
+        request={'multipart/form-data': {'type': 'object', 'properties': {
+            'file': {'type': 'string', 'format': 'binary'},
+        }, 'required': ['file']}},
+        responses={200: UserSerializer, 400: _detail_response},
+    )
     def post(self, request):
         file = request.FILES.get('file')
         if not file:
@@ -251,9 +336,22 @@ class PreferencesView(APIView):
     """Retrieve or update user preferences (models, ratios, toggles)."""
     permission_classes = [permissions.IsAuthenticated]
 
+    @extend_schema(
+        tags=['Profile'],
+        summary='Obter preferências',
+        description='Retorna as preferências salvas do usuário (JSON livre).',
+        responses={200: inline_serializer('PreferencesResponse', fields={})},
+    )
     def get(self, request):
         return Response(request.user.preferences or {})
 
+    @extend_schema(
+        tags=['Profile'],
+        summary='Atualizar preferências',
+        description='Substitui as preferências do usuário por um objeto JSON.',
+        request=inline_serializer('PreferencesRequest', fields={}),
+        responses={200: inline_serializer('PreferencesUpdated', fields={})},
+    )
     def put(self, request):
         prefs = request.data if isinstance(request.data, dict) else {}
         request.user.preferences = prefs

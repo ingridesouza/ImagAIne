@@ -25,6 +25,7 @@ INSTALLED_APPS = [
     'corsheaders',
     'rest_framework',
     'rest_framework_simplejwt',
+    'drf_spectacular',
     'api',
     'authentication',
 ]
@@ -125,6 +126,7 @@ DEFAULT_FROM_EMAIL = config('DEFAULT_FROM_EMAIL', default='noreply@example.com')
 FRONTEND_URL = config('FRONTEND_URL', default='http://localhost:5173')
 
 REST_FRAMEWORK = {
+    'DEFAULT_SCHEMA_CLASS': 'drf_spectacular.openapi.AutoSchema',
     'DEFAULT_AUTHENTICATION_CLASSES': (
         'rest_framework_simplejwt.authentication.JWTAuthentication',
     ),
@@ -181,3 +183,37 @@ EMBEDDINGS_CACHE_DIR = config('EMBEDDINGS_CACHE_DIR', default=None)
 DEEPSEEK_API_KEY = config('DEEPSEEK_API_KEY', default='')
 DEEPSEEK_BASE_URL = config('DEEPSEEK_BASE_URL', default='https://api.deepseek.com')
 DEEPSEEK_MODEL = config('DEEPSEEK_MODEL', default='deepseek-chat')
+
+# =============================================================================
+# Spec-Driven Development - drf-spectacular (OpenAPI 3.0)
+# =============================================================================
+SPECTACULAR_SETTINGS = {
+    'TITLE': 'ImagAIne API',
+    'DESCRIPTION': (
+        'API da plataforma ImagAIne para geração, gerenciamento e '
+        'compartilhamento de imagens criadas por inteligência artificial.'
+    ),
+    'VERSION': '1.0.0',
+    'CONTACT': {
+        'name': 'ImagAIne Team',
+    },
+    'LICENSE': {
+        'name': 'Proprietary',
+    },
+    'SERVE_INCLUDE_SCHEMA': False,
+    'SCHEMA_PATH_PREFIX': '/api/',
+    'COMPONENT_SPLIT_REQUEST': True,
+    'ENUM_NAME_OVERRIDES': {
+        'ImageStatusEnum': 'api.models.Image.Status',
+        'AspectRatioEnum': 'api.models.Image.AspectRatio',
+    },
+    'TAGS': [
+        {'name': 'Auth', 'description': 'Autenticação, registro e gerenciamento de conta'},
+        {'name': 'Profile', 'description': 'Perfil do usuário, avatar e preferências'},
+        {'name': 'Generation', 'description': 'Geração de imagens via IA'},
+        {'name': 'Gallery', 'description': 'Galeria pública e coleção pessoal'},
+        {'name': 'Social', 'description': 'Likes, comentários e downloads'},
+        {'name': 'Creative Memory', 'description': 'Imagens relacionadas e sugestões de estilo'},
+        {'name': 'Prompt Assistant', 'description': 'Refinamento de prompts via LLM'},
+    ],
+}
