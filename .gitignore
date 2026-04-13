@@ -31,3 +31,7 @@ Thumbs.db
 # Claude
 .claude/
 \claude\settings.local.json
+.mcp.json
+
+# SDD — schema temporário no backend (o versionado fica em frontend/)
+backend/openapi-schema.yaml

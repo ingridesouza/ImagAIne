@@ -1,0 +1,1703 @@
+openapi: 3.0.3
+info:
+  title: ImagAIne API
+  version: 1.0.0
+  description: API da plataforma ImagAIne para geração, gerenciamento e compartilhamento
+    de imagens criadas por inteligência artificial.
+  contact:
+    name: ImagAIne Team
+  license:
+    name: Proprietary
+paths:
+  /api/auth/login/:
+    post:
+      operationId: auth_login_create
+      description: Autentica o usuário e retorna par de tokens JWT (access + refresh).
+      summary: Login
+      tags:
+      - Auth
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UserLoginRequest'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/UserLoginRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/UserLoginRequest'
+        required: true
+      security:
+      - jwtAuth: []
+      - {}
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/LoginResponse'
+          description: ''
+  /api/auth/password/reset/confirm/:
+    post:
+      operationId: auth_password_reset_confirm_create
+      description: Valida o token e define nova senha.
+      summary: Confirmar reset de senha
+      tags:
+      - Auth
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PasswordResetConfirmRequest'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/PasswordResetConfirmRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/PasswordResetConfirmRequest'
+        required: true
+      security:
+      - jwtAuth: []
+      - {}
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/DetailResponse'
+          description: ''
+        '400':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/DetailResponse'
+          description: ''
+  /api/auth/password/reset/request/:
+    post:
+      operationId: auth_password_reset_request_create
+      description: Envia email com link de reset. Não revela se o email existe.
+      summary: Solicitar reset de senha
+      tags:
+      - Auth
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PasswordResetRequestRequest'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/PasswordResetRequestRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/PasswordResetRequestRequest'
+        required: true
+      security:
+      - jwtAuth: []
+      - {}
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/DetailResponse'
+          description: ''
+  /api/auth/preferences/:
+    get:
+      operationId: auth_preferences_retrieve
+      description: Retorna as preferências salvas do usuário (JSON livre).
+      summary: Obter preferências
+      tags:
+      - Profile
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          description: No response body
+    put:
+      operationId: auth_preferences_update
+      description: Substitui as preferências do usuário por um objeto JSON.
+      summary: Atualizar preferências
+      tags:
+      - Profile
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          description: No response body
+  /api/auth/profile/:
+    get:
+      operationId: auth_profile_retrieve
+      description: View to retrieve and update user profile.
+      tags:
+      - auth
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/User'
+          description: ''
+    put:
+      operationId: auth_profile_update
+      description: View to retrieve and update user profile.
+      tags:
+      - auth
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UserRequest'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/UserRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/UserRequest'
+        required: true
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/User'
+          description: ''
+    patch:
+      operationId: auth_profile_partial_update
+      description: View to retrieve and update user profile.
+      tags:
+      - auth
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PatchedUserRequest'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/PatchedUserRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/PatchedUserRequest'
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/User'
+          description: ''
+  /api/auth/profile/avatar/:
+    post:
+      operationId: auth_profile_avatar_create
+      description: Envia ou substitui a foto de perfil do usuário.
+      summary: Upload de avatar
+      tags:
+      - Profile
+      requestBody:
+        content:
+          multipart/form-data:
+            schema:
+              type: object
+              properties:
+                file:
+                  type: string
+                  format: binary
+              required:
+              - file
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/User'
+          description: ''
+        '400':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/DetailResponse'
+          description: ''
+  /api/auth/profile/cover/:
+    post:
+      operationId: auth_profile_cover_create
+      description: Envia ou substitui a imagem de capa do usuário.
+      summary: Upload de capa
+      tags:
+      - Profile
+      requestBody:
+        content:
+          multipart/form-data:
+            schema:
+              type: object
+              properties:
+                file:
+                  type: string
+                  format: binary
+              required:
+              - file
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/User'
+          description: ''
+        '400':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/DetailResponse'
+          description: ''
+  /api/auth/register/:
+    post:
+      operationId: auth_register_create
+      description: View for user registration.
+      tags:
+      - auth
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UserRegistrationRequest'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/UserRegistrationRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/UserRegistrationRequest'
+        required: true
+      security:
+      - jwtAuth: []
+      - {}
+      responses:
+        '201':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/UserRegistration'
+          description: ''
+  /api/auth/token/refresh/:
+    post:
+      operationId: auth_token_refresh_create
+      description: |-
+        Takes a refresh type JSON web token and returns an access type JSON web
+        token if the refresh token is valid.
+      tags:
+      - auth
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/TokenRefreshRequest'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/TokenRefreshRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/TokenRefreshRequest'
+        required: true
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/TokenRefresh'
+          description: ''
+  /api/auth/verify-email/{token}/:
+    get:
+      operationId: auth_verify_email_retrieve
+      description: Valida o token de verificação enviado por email. Token expira em
+        24h.
+      summary: Verificar email
+      parameters:
+      - in: path
+        name: token
+        schema:
+          type: string
+        required: true
+      tags:
+      - Auth
+      security:
+      - jwtAuth: []
+      - {}
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/DetailResponse'
+          description: ''
+        '400':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/DetailResponse'
+          description: ''
+  /api/generate/:
+    post:
+      operationId: generate_create
+      description: Envia um prompt para geração assíncrona de imagem via FLUX.1-dev.
+        A imagem é criada com status GENERATING e transiciona para READY ou FAILED.
+        Respeita a quota mensal do plano do usuário.
+      summary: Gerar imagem
+      tags:
+      - Generation
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/GenerateImageRequest'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/GenerateImageRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/GenerateImageRequest'
+        required: true
+      security:
+      - jwtAuth: []
+      responses:
+        '202':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Image'
+          description: ''
+        '400':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/GenerateError'
+          description: ''
+        '429':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/QuotaExceeded'
+          description: ''
+  /api/images/{id}/comments/:
+    get:
+      operationId: images_comments_list
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        required: true
+      - name: page
+        required: false
+        in: query
+        description: A page number within the paginated result set.
+        schema:
+          type: integer
+      tags:
+      - images
+      security:
+      - jwtAuth: []
+      - {}
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PaginatedImageCommentList'
+          description: ''
+    post:
+      operationId: images_comments_create
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        required: true
+      tags:
+      - images
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ImageCommentCreateRequest'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/ImageCommentCreateRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/ImageCommentCreateRequest'
+        required: true
+      security:
+      - jwtAuth: []
+      responses:
+        '201':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ImageCommentCreate'
+          description: ''
+  /api/images/{id}/comments/{comment_id}/:
+    delete:
+      operationId: images_comments_destroy
+      parameters:
+      - in: path
+        name: comment_id
+        schema:
+          type: integer
+        required: true
+      - in: path
+        name: id
+        schema:
+          type: integer
+        required: true
+      tags:
+      - images
+      security:
+      - jwtAuth: []
+      responses:
+        '204':
+          description: No response body
+  /api/images/{id}/comments/{comment_id}/like/:
+    post:
+      operationId: images_comments_like_create
+      description: Adiciona um like ao comentário.
+      summary: Curtir comentário
+      parameters:
+      - in: path
+        name: comment_id
+        schema:
+          type: integer
+        required: true
+      - in: path
+        name: id
+        schema:
+          type: integer
+        required: true
+      tags:
+      - Social
+      security:
+      - jwtAuth: []
+      responses:
+        '201':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CommentLikeResponse'
+          description: ''
+    delete:
+      operationId: images_comments_like_destroy
+      description: Remove o like do comentário.
+      summary: Descurtir comentário
+      parameters:
+      - in: path
+        name: comment_id
+        schema:
+          type: integer
+        required: true
+      - in: path
+        name: id
+        schema:
+          type: integer
+        required: true
+      tags:
+      - Social
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CommentUnlikeResponse'
+          description: ''
+        '404':
+          description: No response body
+  /api/images/{id}/download/:
+    post:
+      operationId: images_download_create
+      description: Incrementa o contador de downloads e retorna a URL para download.
+      summary: Download de imagem
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        required: true
+      tags:
+      - Social
+      security:
+      - jwtAuth: []
+      - {}
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/DownloadResponse'
+          description: ''
+        '400':
+          description: No response body
+  /api/images/{id}/like/:
+    post:
+      operationId: images_like_create
+      description: 'Adiciona um like à imagem. Idempotente: se já curtiu, retorna
+        200.'
+      summary: Curtir imagem
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        required: true
+      tags:
+      - Social
+      security:
+      - jwtAuth: []
+      responses:
+        '201':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Image'
+          description: ''
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Image'
+          description: ''
+    delete:
+      operationId: images_like_destroy
+      description: Remove o like da imagem.
+      summary: Descurtir imagem
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        required: true
+      tags:
+      - Social
+      security:
+      - jwtAuth: []
+      responses:
+        '204':
+          description: No response body
+        '404':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/LikeNotFound'
+          description: ''
+  /api/images/{id}/related/:
+    get:
+      operationId: images_related_retrieve
+      description: Retorna até 12 imagens similares baseadas em embeddings vetoriais.
+        Usa image embedding (visual) com fallback para prompt embedding (texto). A
+        imagem-fonte deve ser pública ou pertencer ao usuário.
+      summary: Imagens relacionadas
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        required: true
+      - in: query
+        name: limit
+        schema:
+          type: integer
+        description: Máximo de resultados (default 12, max 20)
+      tags:
+      - Creative Memory
+      security:
+      - jwtAuth: []
+      - {}
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/RelatedImagesResponse'
+          description: ''
+  /api/images/{id}/share/:
+    post:
+      operationId: images_share_create
+      description: Torna a imagem pública na galeria.
+      summary: Publicar imagem
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        required: true
+      tags:
+      - Social
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Image'
+          description: ''
+        '404':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/NotFound'
+          description: ''
+    patch:
+      operationId: images_share_partial_update
+      description: Altera o status público/privado da imagem.
+      summary: Alterar visibilidade
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        required: true
+      tags:
+      - Social
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PatchedImageShareUpdateRequest'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/PatchedImageShareUpdateRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/PatchedImageShareUpdateRequest'
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Image'
+          description: ''
+        '400':
+          description: No response body
+        '404':
+          description: No response body
+  /api/images/liked/:
+    get:
+      operationId: images_liked_list
+      parameters:
+      - name: page
+        required: false
+        in: query
+        description: A page number within the paginated result set.
+        schema:
+          type: integer
+      tags:
+      - images
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PaginatedImageList'
+          description: ''
+  /api/images/my-images/:
+    get:
+      operationId: images_my_images_list
+      parameters:
+      - name: page
+        required: false
+        in: query
+        description: A page number within the paginated result set.
+        schema:
+          type: integer
+      tags:
+      - images
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PaginatedImageList'
+          description: ''
+  /api/images/public/:
+    get:
+      operationId: images_public_list
+      parameters:
+      - name: page
+        required: false
+        in: query
+        description: A page number within the paginated result set.
+        schema:
+          type: integer
+      - name: search
+        required: false
+        in: query
+        description: A search term.
+        schema:
+          type: string
+      tags:
+      - images
+      security:
+      - jwtAuth: []
+      - {}
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PaginatedImageList'
+          description: ''
+  /api/refine-prompt/:
+    post:
+      operationId: refine_prompt_create
+      description: Transforma uma descrição casual em um prompt otimizado para geração
+        de imagem. Usa o DeepSeek LLM para gerar prompt em inglês com modificadores
+        técnicos.
+      summary: Refinar prompt
+      tags:
+      - Prompt Assistant
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/RefinePromptRequestRequest'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/RefinePromptRequestRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/RefinePromptRequestRequest'
+        required: true
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/RefinePromptResponse'
+          description: ''
+        '400':
+          description: No response body
+        '503':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ServiceUnavailable'
+          description: ''
+  /api/token/:
+    post:
+      operationId: token_create
+      description: |-
+        Takes a set of user credentials and returns an access and refresh JSON web
+        token pair to prove the authentication of those credentials.
+      tags:
+      - token
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/TokenObtainPairRequest'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/TokenObtainPairRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/TokenObtainPairRequest'
+        required: true
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/TokenObtainPair'
+          description: ''
+  /api/token/refresh/:
+    post:
+      operationId: token_refresh_create
+      description: |-
+        Takes a refresh type JSON web token and returns an access type JSON web
+        token if the refresh token is valid.
+      tags:
+      - token
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/TokenRefreshRequest'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/TokenRefreshRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/TokenRefreshRequest'
+        required: true
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/TokenRefresh'
+          description: ''
+  /api/token/verify/:
+    post:
+      operationId: token_verify_create
+      description: |-
+        Takes a token and indicates if it is valid.  This view provides no
+        information about a token's fitness for a particular use.
+      tags:
+      - token
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/TokenVerifyRequest'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/TokenVerifyRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/TokenVerifyRequest'
+        required: true
+      responses:
+        '200':
+          description: No response body
+  /api/users/me/style-suggestions/:
+    get:
+      operationId: users_me_style_suggestions_retrieve
+      description: Analisa o histórico de prompts do usuário para identificar padrões
+        recorrentes de estilo, modificadores e temas. Retorna até 5 sugestões.
+      summary: Sugestões de estilo
+      parameters:
+      - in: query
+        name: limit
+        schema:
+          type: integer
+        description: Máximo de sugestões (default 5, max 10)
+      tags:
+      - Creative Memory
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/StyleSuggestionsResponse'
+          description: ''
+components:
+  schemas:
+    AspectRatioEnum:
+      enum:
+      - '1:1'
+      - '16:9'
+      - '4:3'
+      - '9:16'
+      - '3:2'
+      type: string
+      description: |-
+        * `1:1` - 1:1
+        * `16:9` - 16:9
+        * `4:3` - 4:3
+        * `9:16` - 9:16
+        * `3:2` - 3:2
+    CommentLikeResponse:
+      type: object
+      properties:
+        comment_id:
+          type: integer
+        is_liked:
+          type: boolean
+        like_count:
+          type: integer
+      required:
+      - comment_id
+      - is_liked
+      - like_count
+    CommentUnlikeResponse:
+      type: object
+      properties:
+        comment_id:
+          type: integer
+        is_liked:
+          type: boolean
+        like_count:
+          type: integer
+      required:
+      - comment_id
+      - is_liked
+      - like_count
+    DetailResponse:
+      type: object
+      properties:
+        detail:
+          type: string
+      required:
+      - detail
+    DownloadResponse:
+      type: object
+      properties:
+        download_url:
+          type: string
+          format: uri
+        download_count:
+          type: integer
+      required:
+      - download_count
+      - download_url
+    GenerateError:
+      type: object
+      properties:
+        prompt:
+          type: array
+          items:
+            type: string
+    GenerateImageRequest:
+      type: object
+      properties:
+        prompt:
+          type: string
+          minLength: 1
+        negative_prompt:
+          type: string
+          nullable: true
+        aspect_ratio:
+          allOf:
+          - $ref: '#/components/schemas/AspectRatioEnum'
+          default: '1:1'
+        seed:
+          type: integer
+          minimum: 0
+          nullable: true
+      required:
+      - prompt
+    Image:
+      type: object
+      properties:
+        id:
+          type: integer
+          readOnly: true
+        user:
+          allOf:
+          - $ref: '#/components/schemas/ImageUser'
+          readOnly: true
+        prompt:
+          type: string
+          nullable: true
+        negative_prompt:
+          type: string
+          nullable: true
+        aspect_ratio:
+          $ref: '#/components/schemas/AspectRatioEnum'
+        seed:
+          type: integer
+          maximum: 9223372036854775807
+          minimum: -9223372036854775808
+          format: int64
+          nullable: true
+        image_url:
+          type: string
+          format: uri
+          nullable: true
+          readOnly: true
+        status:
+          allOf:
+          - $ref: '#/components/schemas/ImageStatusEnum'
+          readOnly: true
+        is_public:
+          type: boolean
+        like_count:
+          type: integer
+          readOnly: true
+        comment_count:
+          type: integer
+          readOnly: true
+        download_count:
+          type: integer
+          readOnly: true
+        is_liked:
+          type: boolean
+          readOnly: true
+        relevance_score:
+          type: number
+          format: double
+          readOnly: true
+        featured:
+          type: boolean
+          readOnly: true
+        tags:
+          type: array
+          items:
+            type: string
+          readOnly: true
+        created_at:
+          type: string
+          format: date-time
+          readOnly: true
+      required:
+      - comment_count
+      - created_at
+      - download_count
+      - featured
+      - id
+      - image_url
+      - is_liked
+      - like_count
+      - relevance_score
+      - status
+      - tags
+      - user
+    ImageComment:
+      type: object
+      properties:
+        id:
+          type: integer
+          readOnly: true
+        user:
+          allOf:
+          - $ref: '#/components/schemas/ImageUser'
+          readOnly: true
+        text:
+          type: string
+        created_at:
+          type: string
+          format: date-time
+          readOnly: true
+        updated_at:
+          type: string
+          format: date-time
+          readOnly: true
+        like_count:
+          type: integer
+          readOnly: true
+        is_liked:
+          type: boolean
+          readOnly: true
+        parent_id:
+          type: integer
+          readOnly: true
+          nullable: true
+        reply_count:
+          type: integer
+          readOnly: true
+        replies:
+          type: array
+          items:
+            $ref: '#/components/schemas/ImageCommentReply'
+          readOnly: true
+      required:
+      - created_at
+      - id
+      - is_liked
+      - like_count
+      - parent_id
+      - replies
+      - reply_count
+      - text
+      - updated_at
+      - user
+    ImageCommentCreate:
+      type: object
+      properties:
+        text:
+          type: string
+        parent_id:
+          type: integer
+          nullable: true
+      required:
+      - text
+    ImageCommentCreateRequest:
+      type: object
+      properties:
+        text:
+          type: string
+          minLength: 1
+        parent_id:
+          type: integer
+          nullable: true
+      required:
+      - text
+    ImageCommentReply:
+      type: object
+      description: Simplified serializer for replies (no nested replies).
+      properties:
+        id:
+          type: integer
+          readOnly: true
+        user:
+          allOf:
+          - $ref: '#/components/schemas/ImageUser'
+          readOnly: true
+        text:
+          type: string
+          readOnly: true
+        created_at:
+          type: string
+          format: date-time
+          readOnly: true
+        updated_at:
+          type: string
+          format: date-time
+          readOnly: true
+        like_count:
+          type: integer
+          readOnly: true
+        is_liked:
+          type: boolean
+          readOnly: true
+      required:
+      - created_at
+      - id
+      - is_liked
+      - like_count
+      - text
+      - updated_at
+      - user
+    ImageStatusEnum:
+      enum:
+      - GENERATING
+      - READY
+      - FAILED
+      type: string
+      description: |-
+        * `GENERATING` - Generating
+        * `READY` - Ready
+        * `FAILED` - Failed
+    ImageUser:
+      type: object
+      description: Serializer resumido do usuário para contexto de imagens.
+      properties:
+        id:
+          type: string
+          format: uuid
+          readOnly: true
+        username:
+          type: string
+          description: Required. 150 characters or fewer. Letters, digits and @/./+/-/_
+            only.
+          pattern: ^[\w.@+-]+$
+          maxLength: 150
+      required:
+      - id
+      - username
+    LikeNotFound:
+      type: object
+      properties:
+        detail:
+          type: string
+      required:
+      - detail
+    LoginResponse:
+      type: object
+      properties:
+        refresh:
+          type: string
+        access:
+          type: string
+        user:
+          $ref: '#/components/schemas/User'
+      required:
+      - access
+      - refresh
+      - user
+    NotFound:
+      type: object
+      properties:
+        error:
+          type: string
+      required:
+      - error
+    PaginatedImageCommentList:
+      type: object
+      required:
+      - count
+      - results
+      properties:
+        count:
+          type: integer
+          example: 123
+        next:
+          type: string
+          nullable: true
+          format: uri
+          example: http://api.example.org/accounts/?page=4
+        previous:
+          type: string
+          nullable: true
+          format: uri
+          example: http://api.example.org/accounts/?page=2
+        results:
+          type: array
+          items:
+            $ref: '#/components/schemas/ImageComment'
+    PaginatedImageList:
+      type: object
+      required:
+      - count
+      - results
+      properties:
+        count:
+          type: integer
+          example: 123
+        next:
+          type: string
+          nullable: true
+          format: uri
+          example: http://api.example.org/accounts/?page=4
+        previous:
+          type: string
+          nullable: true
+          format: uri
+          example: http://api.example.org/accounts/?page=2
+        results:
+          type: array
+          items:
+            $ref: '#/components/schemas/Image'
+    PasswordResetConfirmRequest:
+      type: object
+      description: Serializer for password reset confirmation.
+      properties:
+        token:
+          type: string
+          format: uuid
+        new_password:
+          type: string
+          minLength: 1
+        new_password_confirm:
+          type: string
+          minLength: 1
+      required:
+      - new_password
+      - new_password_confirm
+      - token
+    PasswordResetRequestRequest:
+      type: object
+      description: Serializer for password reset request.
+      properties:
+        email:
+          type: string
+          format: email
+          minLength: 1
+      required:
+      - email
+    PatchedImageShareUpdateRequest:
+      type: object
+      properties:
+        is_public:
+          type: boolean
+    PatchedUserRequest:
+      type: object
+      description: Serializer for user details.
+      properties:
+        username:
+          type: string
+          minLength: 1
+          description: Required. 150 characters or fewer. Letters, digits and @/./+/-/_
+            only.
+          pattern: ^[\w.@+-]+$
+          maxLength: 150
+        first_name:
+          type: string
+          maxLength: 150
+        last_name:
+          type: string
+          maxLength: 150
+        bio:
+          type: string
+        profile_picture:
+          type: string
+          nullable: true
+          maxLength: 100
+        cover_picture:
+          type: string
+          nullable: true
+          maxLength: 100
+        preferences: {}
+    QuotaExceeded:
+      type: object
+      properties:
+        detail:
+          type: string
+      required:
+      - detail
+    RefinePromptRequestRequest:
+      type: object
+      description: Serializer for prompt refinement request.
+      properties:
+        description:
+          type: string
+          minLength: 1
+          description: User's casual description of what they want to generate
+        style:
+          allOf:
+          - $ref: '#/components/schemas/StyleEnum'
+          default: photorealistic
+      required:
+      - description
+    RefinePromptResponse:
+      type: object
+      description: Serializer for prompt refinement response.
+      properties:
+        refined_prompt:
+          type: string
+          readOnly: true
+        negative_prompt:
+          type: string
+          readOnly: true
+      required:
+      - negative_prompt
+      - refined_prompt
+    RelatedImage:
+      type: object
+      description: Serializer for a related image with similarity score.
+      properties:
+        image:
+          allOf:
+          - $ref: '#/components/schemas/Image'
+          readOnly: true
+        similarity_score:
+          type: number
+          format: double
+          readOnly: true
+      required:
+      - image
+      - similarity_score
+    RelatedImagesResponse:
+      type: object
+      properties:
+        count:
+          type: integer
+        results:
+          type: array
+          items:
+            $ref: '#/components/schemas/RelatedImage'
+      required:
+      - count
+      - results
+    ServiceUnavailable:
+      type: object
+      properties:
+        detail:
+          type: string
+      required:
+      - detail
+    StyleEnum:
+      enum:
+      - photorealistic
+      - anime
+      - digital_art
+      - oil_painting
+      - watercolor
+      - 3d_render
+      - pixel_art
+      - sketch
+      type: string
+      description: |-
+        * `photorealistic` - Fotorrealista
+        * `anime` - Anime/Mangá
+        * `digital_art` - Arte Digital
+        * `oil_painting` - Pintura a Óleo
+        * `watercolor` - Aquarela
+        * `3d_render` - Render 3D
+        * `pixel_art` - Pixel Art
+        * `sketch` - Esboço/Desenho
+    StyleSuggestion:
+      type: object
+      description: Serializer for a style suggestion.
+      properties:
+        label:
+          type: string
+          readOnly: true
+        example_prompt:
+          type: string
+          readOnly: true
+        example_image_id:
+          type: integer
+          readOnly: true
+        frequency:
+          type: integer
+          readOnly: true
+        confidence:
+          type: number
+          format: double
+          readOnly: true
+      required:
+      - confidence
+      - example_image_id
+      - example_prompt
+      - frequency
+      - label
+    StyleSuggestionsResponse:
+      type: object
+      properties:
+        count:
+          type: integer
+        results:
+          type: array
+          items:
+            $ref: '#/components/schemas/StyleSuggestion'
+      required:
+      - count
+      - results
+    TokenObtainPair:
+      type: object
+      properties:
+        access:
+          type: string
+          readOnly: true
+        refresh:
+          type: string
+          readOnly: true
+      required:
+      - access
+      - refresh
+    TokenObtainPairRequest:
+      type: object
+      properties:
+        email:
+          type: string
+          writeOnly: true
+          minLength: 1
+        password:
+          type: string
+          writeOnly: true
+          minLength: 1
+      required:
+      - email
+      - password
+    TokenRefresh:
+      type: object
+      properties:
+        access:
+          type: string
+          readOnly: true
+        refresh:
+          type: string
+      required:
+      - access
+      - refresh
+    TokenRefreshRequest:
+      type: object
+      properties:
+        refresh:
+          type: string
+          minLength: 1
+      required:
+      - refresh
+    TokenVerifyRequest:
+      type: object
+      properties:
+        token:
+          type: string
+          writeOnly: true
+          minLength: 1
+      required:
+      - token
+    User:
+      type: object
+      description: Serializer for user details.
+      properties:
+        id:
+          type: string
+          format: uuid
+          readOnly: true
+        email:
+          type: string
+          format: email
+          readOnly: true
+        username:
+          type: string
+          description: Required. 150 characters or fewer. Letters, digits and @/./+/-/_
+            only.
+          pattern: ^[\w.@+-]+$
+          maxLength: 150
+        first_name:
+          type: string
+          maxLength: 150
+        last_name:
+          type: string
+          maxLength: 150
+        bio:
+          type: string
+        is_verified:
+          type: boolean
+          readOnly: true
+        plan:
+          type: string
+          readOnly: true
+        image_generation_count:
+          type: integer
+          readOnly: true
+        profile_picture:
+          type: string
+          nullable: true
+          maxLength: 100
+        cover_picture:
+          type: string
+          nullable: true
+          maxLength: 100
+        preferences: {}
+        avatar_url:
+          type: string
+          format: uri
+          nullable: true
+          readOnly: true
+        cover_url:
+          type: string
+          format: uri
+          nullable: true
+          readOnly: true
+      required:
+      - avatar_url
+      - cover_url
+      - email
+      - id
+      - image_generation_count
+      - is_verified
+      - plan
+      - username
+    UserLoginRequest:
+      type: object
+      description: Serializer for user login.
+      properties:
+        email:
+          type: string
+          format: email
+          minLength: 1
+        password:
+          type: string
+          writeOnly: true
+          minLength: 1
+      required:
+      - email
+      - password
+    UserRegistration:
+      type: object
+      description: Serializer for user registration.
+      properties:
+        email:
+          type: string
+          format: email
+          maxLength: 254
+        username:
+          type: string
+          description: Required. 150 characters or fewer. Letters, digits and @/./+/-/_
+            only.
+          pattern: ^[\w.@+-]+$
+          maxLength: 150
+        first_name:
+          type: string
+          maxLength: 150
+        last_name:
+          type: string
+          maxLength: 150
+        bio:
+          type: string
+          default: ''
+      required:
+      - email
+      - first_name
+      - last_name
+      - username
+    UserRegistrationRequest:
+      type: object
+      description: Serializer for user registration.
+      properties:
+        email:
+          type: string
+          format: email
+          minLength: 1
+          maxLength: 254
+        username:
+          type: string
+          minLength: 1
+          description: Required. 150 characters or fewer. Letters, digits and @/./+/-/_
+            only.
+          pattern: ^[\w.@+-]+$
+          maxLength: 150
+        password:
+          type: string
+          writeOnly: true
+          minLength: 1
+        password2:
+          type: string
+          writeOnly: true
+          minLength: 1
+        first_name:
+          type: string
+          maxLength: 150
+        last_name:
+          type: string
+          maxLength: 150
+        bio:
+          type: string
+          default: ''
+      required:
+      - email
+      - first_name
+      - last_name
+      - password
+      - password2
+      - username
+    UserRequest:
+      type: object
+      description: Serializer for user details.
+      properties:
+        username:
+          type: string
+          minLength: 1
+          description: Required. 150 characters or fewer. Letters, digits and @/./+/-/_
+            only.
+          pattern: ^[\w.@+-]+$
+          maxLength: 150
+        first_name:
+          type: string
+          maxLength: 150
+        last_name:
+          type: string
+          maxLength: 150
+        bio:
+          type: string
+        profile_picture:
+          type: string
+          nullable: true
+          maxLength: 100
+        cover_picture:
+          type: string
+          nullable: true
+          maxLength: 100
+        preferences: {}
+      required:
+      - username
+  securitySchemes:
+    jwtAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+tags:
+- name: Auth
+  description: Autenticação, registro e gerenciamento de conta
+- name: Profile
+  description: Perfil do usuário, avatar e preferências
+- name: Generation
+  description: Geração de imagens via IA
+- name: Gallery
+  description: Galeria pública e coleção pessoal
+- name: Social
+  description: Likes, comentários e downloads
+- name: Creative Memory
+  description: Imagens relacionadas e sugestões de estilo
+- name: Prompt Assistant
+  description: Refinamento de prompts via LLM

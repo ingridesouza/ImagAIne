@@ -1,16 +1,23 @@
+from typing import List, Optional
+
 from rest_framework import serializers
 from django.contrib.auth import get_user_model
+from drf_spectacular.utils import extend_schema_field
+
 from .models import Image, ImageComment
 
 User = get_user_model()
 
-class UserSerializer(serializers.ModelSerializer):
+
+class ImageUserSerializer(serializers.ModelSerializer):
+    """Serializer resumido do usuário para contexto de imagens."""
     class Meta:
         model = User
         fields = ('id', 'username')
 
+
 class ImageSerializer(serializers.ModelSerializer):
-    user = UserSerializer(read_only=True)
+    user = ImageUserSerializer(read_only=True)
     image_url = serializers.SerializerMethodField()
     like_count = serializers.SerializerMethodField()
     comment_count = serializers.SerializerMethodField()
@@ -56,7 +63,8 @@ class ImageSerializer(serializers.ModelSerializer):
             'created_at',
         )
 
-    def get_image_url(self, obj):
+    @extend_schema_field(serializers.URLField(allow_null=True))
+    def get_image_url(self, obj) -> Optional[str]:
         if not obj.image:
             return None
 
@@ -66,17 +74,20 @@ class ImageSerializer(serializers.ModelSerializer):
             return request.build_absolute_uri(url)
         return url
 
-    def get_like_count(self, obj):
+    @extend_schema_field(serializers.IntegerField())
+    def get_like_count(self, obj) -> int:
         if hasattr(obj, 'like_count'):
             return obj.like_count or 0
         return obj.likes.count()
 
-    def get_comment_count(self, obj):
+    @extend_schema_field(serializers.IntegerField())
+    def get_comment_count(self, obj) -> int:
         if hasattr(obj, 'comment_count'):
             return obj.comment_count or 0
         return obj.comments.count()
 
-    def get_is_liked(self, obj):
+    @extend_schema_field(serializers.BooleanField())
+    def get_is_liked(self, obj) -> bool:
         request = self.context.get('request') if hasattr(self, 'context') else None
         user = getattr(request, 'user', None)
         if not user or not user.is_authenticated:
@@ -85,7 +96,8 @@ class ImageSerializer(serializers.ModelSerializer):
             return bool(obj.is_liked)
         return obj.likes.filter(user=user).exists()
 
-    def get_tags(self, obj):
+    @extend_schema_field(serializers.ListField(child=serializers.CharField()))
+    def get_tags(self, obj) -> List[str]:
         if hasattr(obj, "_prefetched_objects_cache") and "tags" in obj._prefetched_objects_cache:
             tags = obj._prefetched_objects_cache["tags"]
         else:
@@ -111,7 +123,7 @@ class ImageShareUpdateSerializer(serializers.Serializer):
 
 class ImageCommentReplySerializer(serializers.ModelSerializer):
     """Simplified serializer for replies (no nested replies)."""
-    user = UserSerializer(read_only=True)
+    user = ImageUserSerializer(read_only=True)
     like_count = serializers.SerializerMethodField()
     is_liked = serializers.SerializerMethodField()
 
@@ -120,12 +132,14 @@ class ImageCommentReplySerializer(serializers.ModelSerializer):
         fields = ('id', 'user', 'text', 'created_at', 'updated_at', 'like_count', 'is_liked')
         read_only_fields = fields
 
-    def get_like_count(self, obj):
+    @extend_schema_field(serializers.IntegerField())
+    def get_like_count(self, obj) -> int:
         if hasattr(obj, 'like_count'):
             return obj.like_count or 0
         return obj.likes.count()
 
-    def get_is_liked(self, obj):
+    @extend_schema_field(serializers.BooleanField())
+    def get_is_liked(self, obj) -> bool:
         request = self.context.get('request') if hasattr(self, 'context') else None
         user = getattr(request, 'user', None)
         if not user or not user.is_authenticated:
@@ -136,7 +150,7 @@ class ImageCommentReplySerializer(serializers.ModelSerializer):
 
 
 class ImageCommentSerializer(serializers.ModelSerializer):
-    user = UserSerializer(read_only=True)
+    user = ImageUserSerializer(read_only=True)
     like_count = serializers.SerializerMethodField()
     is_liked = serializers.SerializerMethodField()
     reply_count = serializers.SerializerMethodField()
@@ -154,12 +168,14 @@ class ImageCommentSerializer(serializers.ModelSerializer):
             'like_count', 'is_liked', 'parent_id', 'reply_count', 'replies'
         )
 
-    def get_like_count(self, obj):
+    @extend_schema_field(serializers.IntegerField())
+    def get_like_count(self, obj) -> int:
         if hasattr(obj, 'like_count'):
             return obj.like_count or 0
         return obj.likes.count()
 
-    def get_is_liked(self, obj):
+    @extend_schema_field(serializers.BooleanField())
+    def get_is_liked(self, obj) -> bool:
         request = self.context.get('request') if hasattr(self, 'context') else None
         user = getattr(request, 'user', None)
         if not user or not user.is_authenticated:
@@ -168,11 +184,13 @@ class ImageCommentSerializer(serializers.ModelSerializer):
             return bool(obj.is_liked)
         return obj.likes.filter(user=user).exists()
 
-    def get_reply_count(self, obj):
+    @extend_schema_field(serializers.IntegerField())
+    def get_reply_count(self, obj) -> int:
         if hasattr(obj, 'reply_count'):
             return obj.reply_count or 0
         return obj.replies.count()
 
+    @extend_schema_field(ImageCommentReplySerializer(many=True))
     def get_replies(self, obj):
         # Only return replies for top-level comments (parent=None)
         if obj.parent is not None:

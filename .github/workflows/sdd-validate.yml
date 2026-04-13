@@ -1,0 +1,110 @@
+name: SDD — Validate API Spec
+
+on:
+  pull_request:
+    paths:
+      - 'backend/**'
+      - 'frontend/openapi-schema.yaml'
+      - 'frontend/src/api/schema.d.ts'
+      - 'requirements.txt'
+
+jobs:
+  validate-spec:
+    name: Validate OpenAPI Spec
+    runs-on: ubuntu-latest
+
+    services:
+      postgres:
+        image: postgres:16
+        env:
+          POSTGRES_USER: imagine
+          POSTGRES_PASSWORD: imagine
+          POSTGRES_DB: imagine
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+
+      redis:
+        image: redis:7
+        ports:
+          - 6379:6379
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+          cache: 'pip'
+
+      - name: Install backend dependencies
+        run: |
+          pip install --upgrade pip
+          pip install torch --index-url https://download.pytorch.org/whl/cpu
+          pip install -r requirements.txt
+
+      - name: Validate OpenAPI spec (zero warnings)
+        working-directory: backend
+        env:
+          DB_HOST: localhost
+          DB_NAME: imagine
+          DB_USER: imagine
+          DB_PASSWORD: imagine
+          SECRET_KEY: ci-secret-key
+          DEBUG: 'True'
+        run: python manage.py spectacular --validate --fail-on-warn
+
+      - name: Export current spec
+        working-directory: backend
+        env:
+          DB_HOST: localhost
+          DB_NAME: imagine
+          DB_USER: imagine
+          DB_PASSWORD: imagine
+          SECRET_KEY: ci-secret-key
+          DEBUG: 'True'
+        run: python manage.py spectacular --file /tmp/ci-schema.yaml
+
+      - name: Check spec is up-to-date
+        run: |
+          if ! diff -q frontend/openapi-schema.yaml /tmp/ci-schema.yaml > /dev/null 2>&1; then
+            echo "::error::Spec OpenAPI desatualizada! O arquivo frontend/openapi-schema.yaml nao corresponde ao backend."
+            echo ""
+            echo "Rode localmente:"
+            echo "  make sync"
+            echo "  git add frontend/openapi-schema.yaml frontend/src/api/schema.d.ts"
+            echo "  git commit"
+            exit 1
+          fi
+          echo "Spec esta sincronizada."
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: 'npm'
+          cache-dependency-path: frontend/package-lock.json
+
+      - name: Install frontend dependencies
+        working-directory: frontend
+        run: npm ci
+
+      - name: Regenerate types and check for drift
+        working-directory: frontend
+        run: |
+          npx openapi-typescript ./openapi-schema.yaml -o /tmp/ci-schema.d.ts
+          if ! diff -q src/api/schema.d.ts /tmp/ci-schema.d.ts > /dev/null 2>&1; then
+            echo "::error::Tipos TypeScript desatualizados! O arquivo schema.d.ts nao corresponde a spec."
+            echo ""
+            echo "Rode localmente:"
+            echo "  make sync"
+            echo "  git add frontend/src/api/schema.d.ts"
+            echo "  git commit"
+            exit 1
+          fi
+          echo "Tipos TypeScript estao sincronizados."

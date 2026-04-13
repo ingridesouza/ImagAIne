@@ -14,12 +14,13 @@ from django.shortcuts import get_object_or_404
 from django.utils import timezone
 
 from authentication.models import User
-from rest_framework import filters, generics, status
+from rest_framework import filters, generics, serializers as drf_serializers, status
 from rest_framework.exceptions import PermissionDenied, Throttled
 from rest_framework.permissions import AllowAny, IsAuthenticated
 from rest_framework.response import Response
 from rest_framework.views import APIView
 from rest_framework.throttling import ScopedRateThrottle
+from drf_spectacular.utils import extend_schema, extend_schema_view, OpenApiParameter, inline_serializer
 
 from .models import Image, ImageComment, ImageLike, CommentLike
 from .relevance import update_image_relevance
@@ -30,6 +31,8 @@ from .serializers import (
     ImageSerializer,
     ImageShareUpdateSerializer,
     RelatedImageSerializer,
+    RefinePromptRequestSerializer,
+    RefinePromptResponseSerializer,
     StyleSuggestionSerializer,
 )
 from .throttles import PlanQuotaThrottle
@@ -38,6 +41,7 @@ from .similarity import find_related_images, get_user_style_suggestions
 
 
 class GenerateImageView(APIView):
+    """Inicia a geração assíncrona de uma imagem via IA."""
     permission_classes = [IsAuthenticated]
     throttle_classes = [PlanQuotaThrottle]
 
@@ -45,6 +49,25 @@ class GenerateImageView(APIView):
         message = "Monthly quota reached. Faça upgrade para o plano Pro."
         raise Throttled(detail=message, wait=wait)
 
+    @extend_schema(
+        tags=['Generation'],
+        summary='Gerar imagem',
+        description=(
+            'Envia um prompt para geração assíncrona de imagem via FLUX.1-dev. '
+            'A imagem é criada com status GENERATING e transiciona para READY ou FAILED. '
+            'Respeita a quota mensal do plano do usuário.'
+        ),
+        request=GenerateImageSerializer,
+        responses={
+            202: ImageSerializer,
+            400: inline_serializer('GenerateError', fields={
+                'prompt': drf_serializers.ListField(child=drf_serializers.CharField(), required=False),
+            }),
+            429: inline_serializer('QuotaExceeded', fields={
+                'detail': drf_serializers.CharField(),
+            }),
+        },
+    )
     def post(self, request, *args, **kwargs):
         serializer = GenerateImageSerializer(data=request.data)
         if serializer.is_valid():
@@ -117,6 +140,19 @@ class GenerateImageView(APIView):
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
 
+@extend_schema_view(
+    list=extend_schema(
+        tags=['Gallery'],
+        summary='Galeria pública',
+        description=(
+            'Lista paginada de imagens públicas, ordenadas por destaque, '
+            'relevância e data de criação. Suporta busca por prompt via ?search=.'
+        ),
+        parameters=[
+            OpenApiParameter('search', str, description='Busca no texto do prompt'),
+        ],
+    ),
+)
 class PublicImageListView(generics.ListAPIView):
     serializer_class = ImageSerializer
     permission_classes = [AllowAny]
@@ -153,6 +189,13 @@ class PublicImageListView(generics.ListAPIView):
         )
 
 
+@extend_schema_view(
+    list=extend_schema(
+        tags=['Gallery'],
+        summary='Minhas imagens',
+        description='Lista paginada de todas as imagens do usuário autenticado.',
+    ),
+)
 class UserImageListView(generics.ListAPIView):
     serializer_class = ImageSerializer
     permission_classes = [IsAuthenticated]
@@ -178,6 +221,13 @@ class UserImageListView(generics.ListAPIView):
         )
 
 
+@extend_schema_view(
+    list=extend_schema(
+        tags=['Gallery'],
+        summary='Imagens curtidas',
+        description='Lista paginada de imagens curtidas pelo usuário autenticado.',
+    ),
+)
 class UserLikedImagesView(generics.ListAPIView):
     serializer_class = ImageSerializer
     permission_classes = [IsAuthenticated]
@@ -202,11 +252,19 @@ class UserLikedImagesView(generics.ListAPIView):
 
 
 class ShareImageView(APIView):
+    """Publica ou despublica uma imagem do usuário."""
     permission_classes = [IsAuthenticated]
 
     def _get_user_image(self, pk, user):
         return Image.objects.filter(pk=pk, user=user).first()
 
+    @extend_schema(
+        tags=['Social'],
+        summary='Publicar imagem',
+        description='Torna a imagem pública na galeria.',
+        request=None,
+        responses={200: ImageSerializer, 404: inline_serializer('NotFound', fields={'error': drf_serializers.CharField()})},
+    )
     def post(self, request, pk, *args, **kwargs):
         image = self._get_user_image(pk, request.user)
         if image is None:
@@ -222,6 +280,13 @@ class ShareImageView(APIView):
             status=status.HTTP_200_OK,
         )
 
+    @extend_schema(
+        tags=['Social'],
+        summary='Alterar visibilidade',
+        description='Altera o status público/privado da imagem.',
+        request=ImageShareUpdateSerializer,
+        responses={200: ImageSerializer, 400: None, 404: None},
+    )
     def patch(self, request, pk, *args, **kwargs):
         serializer = ImageShareUpdateSerializer(data=request.data)
         if not serializer.is_valid():
@@ -243,6 +308,7 @@ class ShareImageView(APIView):
 
 
 class ImageLikeView(APIView):
+    """Curtir ou descurtir uma imagem."""
     permission_classes = [IsAuthenticated]
     throttle_classes = [ScopedRateThrottle]
     throttle_scope = "social_like"
@@ -253,6 +319,13 @@ class ImageLikeView(APIView):
             return image
         raise PermissionDenied("This image is not available for interaction.")
 
+    @extend_schema(
+        tags=['Social'],
+        summary='Curtir imagem',
+        description='Adiciona um like à imagem. Idempotente: se já curtiu, retorna 200.',
+        request=None,
+        responses={201: ImageSerializer, 200: ImageSerializer},
+    )
     def post(self, request, pk, *args, **kwargs):
         image = self._get_image(pk)
         like, created = ImageLike.objects.get_or_create(
@@ -279,6 +352,13 @@ class ImageLikeView(APIView):
         )
         return Response(serializer.data, status=status_code)
 
+    @extend_schema(
+        tags=['Social'],
+        summary='Descurtir imagem',
+        description='Remove o like da imagem.',
+        request=None,
+        responses={204: None, 404: inline_serializer('LikeNotFound', fields={'detail': drf_serializers.CharField()})},
+    )
     def delete(self, request, pk, *args, **kwargs):
         image = self._get_image(pk)
         deleted, _ = ImageLike.objects.filter(
@@ -292,6 +372,20 @@ class ImageLikeView(APIView):
         )
 
 
+@extend_schema_view(
+    list=extend_schema(
+        tags=['Social'],
+        summary='Listar comentários',
+        description='Lista comentários paginados de uma imagem (top-level com replies aninhadas).',
+    ),
+    create=extend_schema(
+        tags=['Social'],
+        summary='Criar comentário',
+        description='Adiciona um comentário à imagem. Suporta replies via parent_id.',
+        request=ImageCommentCreateSerializer,
+        responses={201: ImageCommentSerializer},
+    ),
+)
 class ImageCommentListCreateView(generics.ListCreateAPIView):
     permission_classes = [AllowAny]
     serializer_class = ImageCommentSerializer
@@ -386,6 +480,13 @@ class ImageCommentListCreateView(generics.ListCreateAPIView):
         )
 
 
+@extend_schema_view(
+    destroy=extend_schema(
+        tags=['Social'],
+        summary='Deletar comentário',
+        description='Remove um comentário. Permitido para o autor, dono da imagem ou staff.',
+    ),
+)
 class ImageCommentDetailView(generics.DestroyAPIView):
     permission_classes = [IsAuthenticated]
     serializer_class = ImageCommentSerializer
@@ -430,12 +531,22 @@ class CommentLikeView(APIView):
             pk=comment_id,
             image__pk=image_pk,
         )
-        # Check if image is accessible
         image = comment.image
         if image.is_public or image.user == self.request.user:
             return comment
         raise PermissionDenied("This comment is not available for interaction.")
 
+    @extend_schema(
+        tags=['Social'],
+        summary='Curtir comentário',
+        description='Adiciona um like ao comentário.',
+        request=None,
+        responses={201: inline_serializer('CommentLikeResponse', fields={
+            'comment_id': drf_serializers.IntegerField(),
+            'is_liked': drf_serializers.BooleanField(),
+            'like_count': drf_serializers.IntegerField(),
+        })},
+    )
     def post(self, request, pk, comment_id, *args, **kwargs):
         comment = self._get_comment(comment_id, pk)
         like, created = CommentLike.objects.get_or_create(
@@ -451,6 +562,17 @@ class CommentLikeView(APIView):
             status=status_code,
         )
 
+    @extend_schema(
+        tags=['Social'],
+        summary='Descurtir comentário',
+        description='Remove o like do comentário.',
+        request=None,
+        responses={200: inline_serializer('CommentUnlikeResponse', fields={
+            'comment_id': drf_serializers.IntegerField(),
+            'is_liked': drf_serializers.BooleanField(),
+            'like_count': drf_serializers.IntegerField(),
+        }), 404: None},
+    )
     def delete(self, request, pk, comment_id, *args, **kwargs):
         comment = self._get_comment(comment_id, pk)
         deleted, _ = CommentLike.objects.filter(
@@ -471,10 +593,21 @@ class CommentLikeView(APIView):
 
 
 class ImageDownloadView(APIView):
+    """Registra um download e retorna a URL da imagem."""
     permission_classes = [AllowAny]
     throttle_classes = [ScopedRateThrottle]
     throttle_scope = "social_download"
 
+    @extend_schema(
+        tags=['Social'],
+        summary='Download de imagem',
+        description='Incrementa o contador de downloads e retorna a URL para download.',
+        request=None,
+        responses={200: inline_serializer('DownloadResponse', fields={
+            'download_url': drf_serializers.URLField(),
+            'download_count': drf_serializers.IntegerField(),
+        }), 400: None},
+    )
     def post(self, request, pk, *args, **kwargs):
         image = get_object_or_404(Image.objects.select_related("user"), pk=pk)
         user = request.user
@@ -512,21 +645,25 @@ class ImageDownloadView(APIView):
 # =============================================================================
 
 class RelatedImagesView(APIView):
-    """
-    GET /api/images/<id>/related/
-
-    Returns up to 12 images similar to the specified image based on embeddings.
-
-    Permission rules:
-    - The source image must be public OR owned by the requesting user
-    - Results include only public images OR the user's own images
-
-    Similarity is computed using:
-    1. Image embedding (visual similarity) - preferred
-    2. Prompt embedding (text similarity) - fallback if image embedding unavailable
-    """
+    """Retorna imagens similares baseadas em embeddings."""
     permission_classes = [AllowAny]
 
+    @extend_schema(
+        tags=['Creative Memory'],
+        summary='Imagens relacionadas',
+        description=(
+            'Retorna até 12 imagens similares baseadas em embeddings vetoriais. '
+            'Usa image embedding (visual) com fallback para prompt embedding (texto). '
+            'A imagem-fonte deve ser pública ou pertencer ao usuário.'
+        ),
+        parameters=[
+            OpenApiParameter('limit', int, description='Máximo de resultados (default 12, max 20)'),
+        ],
+        responses={200: inline_serializer('RelatedImagesResponse', fields={
+            'count': drf_serializers.IntegerField(),
+            'results': RelatedImageSerializer(many=True),
+        })},
+    )
     def get(self, request, pk, *args, **kwargs):
         # Get the source image
         image = get_object_or_404(Image, pk=pk)
@@ -601,25 +738,24 @@ class RelatedImagesView(APIView):
 
 
 class StyleSuggestionsView(APIView):
-    """
-    GET /api/users/me/style-suggestions/
-
-    Returns style suggestions based on the user's prompt history.
-
-    Analyzes the user's past prompts to identify:
-    - Recurring style keywords (e.g., "realistic", "anime", "cinematic")
-    - Frequent modifiers and techniques
-    - Common themes in their generations
-
-    Returns up to 5 suggestions with:
-    - label: The identified style/keyword
-    - example_prompt: An example prompt using this style
-    - example_image_id: ID of an image with this style
-    - frequency: How often this style appears
-    - confidence: Score from 0-1 based on frequency
-    """
+    """Sugestões de estilo baseadas no histórico de prompts do usuário."""
     permission_classes = [IsAuthenticated]
 
+    @extend_schema(
+        tags=['Creative Memory'],
+        summary='Sugestões de estilo',
+        description=(
+            'Analisa o histórico de prompts do usuário para identificar padrões '
+            'recorrentes de estilo, modificadores e temas. Retorna até 5 sugestões.'
+        ),
+        parameters=[
+            OpenApiParameter('limit', int, description='Máximo de sugestões (default 5, max 10)'),
+        ],
+        responses={200: inline_serializer('StyleSuggestionsResponse', fields={
+            'count': drf_serializers.IntegerField(),
+            'results': StyleSuggestionSerializer(many=True),
+        })},
+    )
     def get(self, request, *args, **kwargs):
         user_id = str(request.user.id)
 
@@ -645,26 +781,26 @@ class StyleSuggestionsView(APIView):
 # =============================================================================
 
 class RefinePromptView(APIView):
-    """
-    POST /api/refine-prompt/
-
-    Uses DeepSeek LLM to transform a casual user description into an optimized
-    image generation prompt.
-
-    Request body:
-    - description: User's casual description (e.g., "um gato fofo na praia")
-    - style: Optional style preference (photorealistic, anime, etc.)
-
-    Response:
-    - refined_prompt: Optimized prompt for image generation
-    - negative_prompt: Suggested negative prompt
-    """
+    """Refina um prompt casual em prompt otimizado para geração de imagem via LLM."""
     permission_classes = [IsAuthenticated]
     throttle_classes = [ScopedRateThrottle]
     throttle_scope = "llm_refine"
 
+    @extend_schema(
+        tags=['Prompt Assistant'],
+        summary='Refinar prompt',
+        description=(
+            'Transforma uma descrição casual em um prompt otimizado para geração de imagem. '
+            'Usa o DeepSeek LLM para gerar prompt em inglês com modificadores técnicos.'
+        ),
+        request=RefinePromptRequestSerializer,
+        responses={
+            200: RefinePromptResponseSerializer,
+            400: None,
+            503: inline_serializer('ServiceUnavailable', fields={'detail': drf_serializers.CharField()}),
+        },
+    )
     def post(self, request, *args, **kwargs):
-        from .serializers import RefinePromptRequestSerializer
         import requests
         import logging
 
