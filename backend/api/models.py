@@ -193,6 +193,46 @@ class ProjectImage(models.Model):
         return f'Image {self.image_id} in {self.project.title} (#{self.order})'
 
 
+class CreativeSession(models.Model):
+    """A conversational creative session between user and AI agent."""
+    class Status(models.TextChoices):
+        ACTIVE = 'active', 'Active'
+        ARCHIVED = 'archived', 'Archived'
+
+    id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
+    user = models.ForeignKey(User, on_delete=models.CASCADE, related_name='creative_sessions')
+    title = models.CharField(max_length=200, default='Nova sessão')
+    status = models.CharField(max_length=10, choices=Status.choices, default=Status.ACTIVE)
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        ordering = ['-updated_at']
+
+    def __str__(self):
+        return f'{self.title} by {self.user.username}'
+
+
+class SessionMessage(models.Model):
+    """A single message in a creative session."""
+    class Role(models.TextChoices):
+        USER = 'user', 'User'
+        ASSISTANT = 'assistant', 'Assistant'
+
+    session = models.ForeignKey(CreativeSession, on_delete=models.CASCADE, related_name='messages')
+    role = models.CharField(max_length=10, choices=Role.choices)
+    text = models.TextField()
+    image = models.ForeignKey(Image, on_delete=models.SET_NULL, null=True, blank=True, related_name='session_messages')
+    prompt_used = models.TextField(blank=True, default='')
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        ordering = ['created_at']
+
+    def __str__(self):
+        return f'[{self.role}] {self.text[:50]}'
+
+
 class ProjectTag(models.Model):
     """Tag for projects."""
     name = models.CharField(max_length=64, unique=True)

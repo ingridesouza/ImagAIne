@@ -15,6 +15,9 @@ from .views import (
     PublicProjectListView,
     RefinePromptView,
     RelatedImagesView,
+    SessionDetailView,
+    SessionListCreateView,
+    SessionMessageView,
     ShareImageView,
     StyleSuggestionsView,
     UserImageListView,
@@ -39,6 +42,10 @@ urlpatterns = [
     path('users/me/style-suggestions/', StyleSuggestionsView.as_view(), name='style-suggestions'),
     # Prompt Assistant - DeepSeek LLM
     path('refine-prompt/', RefinePromptView.as_view(), name='refine-prompt'),
+    # Creative Agent
+    path('sessions/', SessionListCreateView.as_view(), name='session-list-create'),
+    path('sessions/<uuid:pk>/', SessionDetailView.as_view(), name='session-detail'),
+    path('sessions/<uuid:pk>/messages/', SessionMessageView.as_view(), name='session-messages'),
     # Projects
     path('projects/', ProjectListCreateView.as_view(), name='project-list-create'),
     path('projects/public/', PublicProjectListView.as_view(), name='public-projects'),

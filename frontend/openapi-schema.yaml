@@ -1147,6 +1147,128 @@ paths:
               schema:
                 $ref: '#/components/schemas/ServiceUnavailable'
           description: ''
+  /api/sessions/:
+    get:
+      operationId: sessions_list
+      description: Lista sessões criativas do usuário, ordenadas por última atualização.
+      summary: Listar sessões
+      tags:
+      - Creative Agent
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/CreativeSessionList'
+          description: ''
+    post:
+      operationId: sessions_create
+      description: Cria uma nova sessão criativa.
+      summary: Criar sessão
+      tags:
+      - Creative Agent
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/SessionCreateRequest'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/SessionCreateRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/SessionCreateRequest'
+      security:
+      - jwtAuth: []
+      responses:
+        '201':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CreativeSession'
+          description: ''
+  /api/sessions/{id}/:
+    get:
+      operationId: sessions_retrieve
+      description: Retorna a sessão com todas as mensagens.
+      summary: Detalhe da sessão
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: string
+          format: uuid
+        required: true
+      tags:
+      - Creative Agent
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CreativeSession'
+          description: ''
+    delete:
+      operationId: sessions_destroy
+      description: Arquiva a sessão criativa.
+      summary: Arquivar sessão
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: string
+          format: uuid
+        required: true
+      tags:
+      - Creative Agent
+      security:
+      - jwtAuth: []
+      responses:
+        '204':
+          description: No response body
+  /api/sessions/{id}/messages/:
+    post:
+      operationId: sessions_messages_create
+      description: Envia uma mensagem ao agente criativo. O agente responde com texto
+        e, opcionalmente, gera uma imagem se tiver informação suficiente. Usa o DeepSeek
+        LLM para a conversa e FLUX.1-dev para geração.
+      summary: Enviar mensagem
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: string
+          format: uuid
+        required: true
+      tags:
+      - Creative Agent
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/SessionMessageCreateRequest'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/SessionMessageCreateRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/SessionMessageCreateRequest'
+        required: true
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AgentResponse'
+          description: ''
   /api/token/:
     post:
       operationId: token_create
@@ -1249,6 +1371,16 @@ paths:
           description: ''
 components:
   schemas:
+    AgentResponse:
+      type: object
+      properties:
+        message:
+          $ref: '#/components/schemas/SessionMessage'
+        agent_response:
+          $ref: '#/components/schemas/SessionMessage'
+      required:
+      - agent_response
+      - message
     AspectRatioEnum:
       enum:
       - '1:1'
@@ -1309,6 +1441,78 @@ components:
       - comment_id
       - is_liked
       - like_count
+    CreativeSession:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+          readOnly: true
+        user:
+          allOf:
+          - $ref: '#/components/schemas/ImageUser'
+          readOnly: true
+        title:
+          type: string
+          maxLength: 200
+        status:
+          $ref: '#/components/schemas/SessionStatusEnum'
+        messages:
+          type: array
+          items:
+            $ref: '#/components/schemas/SessionMessage'
+          readOnly: true
+        message_count:
+          type: integer
+          readOnly: true
+        created_at:
+          type: string
+          format: date-time
+          readOnly: true
+        updated_at:
+          type: string
+          format: date-time
+          readOnly: true
+      required:
+      - created_at
+      - id
+      - message_count
+      - messages
+      - updated_at
+      - user
+    CreativeSessionList:
+      type: object
+      description: Lighter serializer for session lists (no messages).
+      properties:
+        id:
+          type: string
+          format: uuid
+          readOnly: true
+        title:
+          type: string
+          readOnly: true
+        status:
+          allOf:
+          - $ref: '#/components/schemas/SessionStatusEnum'
+          readOnly: true
+        message_count:
+          type: integer
+          readOnly: true
+        created_at:
+          type: string
+          format: date-time
+          readOnly: true
+        updated_at:
+          type: string
+          format: date-time
+          readOnly: true
+      required:
+      - created_at
+      - id
+      - message_count
+      - status
+      - title
+      - updated_at
     DetailResponse:
       type: object
       properties:
@@ -1916,6 +2120,14 @@ components:
           type: string
       required:
       - detail
+    RoleEnum:
+      enum:
+      - user
+      - assistant
+      type: string
+      description: |-
+        * `user` - User
+        * `assistant` - Assistant
     ServiceUnavailable:
       type: object
       properties:
@@ -1923,6 +2135,66 @@ components:
           type: string
       required:
       - detail
+    SessionCreateRequest:
+      type: object
+      properties:
+        title:
+          type: string
+          minLength: 1
+          default: Nova sessão
+          maxLength: 200
+    SessionMessage:
+      type: object
+      properties:
+        id:
+          type: integer
+          readOnly: true
+        role:
+          allOf:
+          - $ref: '#/components/schemas/RoleEnum'
+          readOnly: true
+        text:
+          type: string
+        image:
+          type: integer
+          readOnly: true
+          nullable: true
+        image_url:
+          type: string
+          format: uri
+          nullable: true
+          readOnly: true
+        prompt_used:
+          type: string
+          readOnly: true
+        created_at:
+          type: string
+          format: date-time
+          readOnly: true
+      required:
+      - created_at
+      - id
+      - image
+      - image_url
+      - prompt_used
+      - role
+      - text
+    SessionMessageCreateRequest:
+      type: object
+      properties:
+        text:
+          type: string
+          minLength: 1
+      required:
+      - text
+    SessionStatusEnum:
+      enum:
+      - active
+      - archived
+      type: string
+      description: |-
+        * `active` - Active
+        * `archived` - Archived
     StyleEnum:
       enum:
       - photorealistic

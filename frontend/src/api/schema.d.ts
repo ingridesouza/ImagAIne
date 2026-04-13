@@ -613,6 +613,74 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/sessions/": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Listar sessões
+         * @description Lista sessões criativas do usuário, ordenadas por última atualização.
+         */
+        get: operations["sessions_list"];
+        put?: never;
+        /**
+         * Criar sessão
+         * @description Cria uma nova sessão criativa.
+         */
+        post: operations["sessions_create"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/sessions/{id}/": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Detalhe da sessão
+         * @description Retorna a sessão com todas as mensagens.
+         */
+        get: operations["sessions_retrieve"];
+        put?: never;
+        post?: never;
+        /**
+         * Arquivar sessão
+         * @description Arquiva a sessão criativa.
+         */
+        delete: operations["sessions_destroy"];
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/sessions/{id}/messages/": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Enviar mensagem
+         * @description Envia uma mensagem ao agente criativo. O agente responde com texto e, opcionalmente, gera uma imagem se tiver informação suficiente. Usa o DeepSeek LLM para a conversa e FLUX.1-dev para geração.
+         */
+        post: operations["sessions_messages_create"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/token/": {
         parameters: {
             query?: never;
@@ -697,6 +765,10 @@ export interface paths {
 export type webhooks = Record<string, never>;
 export interface components {
     schemas: {
+        AgentResponse: {
+            message: components["schemas"]["SessionMessage"];
+            agent_response: components["schemas"]["SessionMessage"];
+        };
         /**
          * @description * `1:1` - 1:1
          *     * `16:9` - 16:9
@@ -721,6 +793,31 @@ export interface components {
             comment_id: number;
             is_liked: boolean;
             like_count: number;
+        };
+        CreativeSession: {
+            /** Format: uuid */
+            readonly id: string;
+            readonly user: components["schemas"]["ImageUser"];
+            title?: string;
+            status?: components["schemas"]["SessionStatusEnum"];
+            readonly messages: components["schemas"]["SessionMessage"][];
+            readonly message_count: number;
+            /** Format: date-time */
+            readonly created_at: string;
+            /** Format: date-time */
+            readonly updated_at: string;
+        };
+        /** @description Lighter serializer for session lists (no messages). */
+        CreativeSessionList: {
+            /** Format: uuid */
+            readonly id: string;
+            readonly title: string;
+            readonly status: components["schemas"]["SessionStatusEnum"];
+            readonly message_count: number;
+            /** Format: date-time */
+            readonly created_at: string;
+            /** Format: date-time */
+            readonly updated_at: string;
         };
         DetailResponse: {
             detail: string;
@@ -969,9 +1066,39 @@ export interface components {
         ReorderResponse: {
             detail: string;
         };
+        /**
+         * @description * `user` - User
+         *     * `assistant` - Assistant
+         * @enum {string}
+         */
+        RoleEnum: "user" | "assistant";
         ServiceUnavailable: {
             detail: string;
         };
+        SessionCreateRequest: {
+            /** @default Nova sessão */
+            title: string;
+        };
+        SessionMessage: {
+            readonly id: number;
+            readonly role: components["schemas"]["RoleEnum"];
+            text: string;
+            readonly image: number | null;
+            /** Format: uri */
+            readonly image_url: string | null;
+            readonly prompt_used: string;
+            /** Format: date-time */
+            readonly created_at: string;
+        };
+        SessionMessageCreateRequest: {
+            text: string;
+        };
+        /**
+         * @description * `active` - Active
+         *     * `archived` - Archived
+         * @enum {string}
+         */
+        SessionStatusEnum: "active" | "archived";
         /**
          * @description * `photorealistic` - Fotorrealista
          *     * `anime` - Anime/Mangá
@@ -2186,6 +2313,118 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["ServiceUnavailable"];
+                };
+            };
+        };
+    };
+    sessions_list: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["CreativeSessionList"][];
+                };
+            };
+        };
+    };
+    sessions_create: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: {
+            content: {
+                "application/json": components["schemas"]["SessionCreateRequest"];
+                "application/x-www-form-urlencoded": components["schemas"]["SessionCreateRequest"];
+                "multipart/form-data": components["schemas"]["SessionCreateRequest"];
+            };
+        };
+        responses: {
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["CreativeSession"];
+                };
+            };
+        };
+    };
+    sessions_retrieve: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["CreativeSession"];
+                };
+            };
+        };
+    };
+    sessions_destroy: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description No response body */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    sessions_messages_create: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["SessionMessageCreateRequest"];
+                "application/x-www-form-urlencoded": components["schemas"]["SessionMessageCreateRequest"];
+                "multipart/form-data": components["schemas"]["SessionMessageCreateRequest"];
+            };
+        };
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["AgentResponse"];
                 };
             };
         };

@@ -22,9 +22,11 @@ from rest_framework.views import APIView
 from rest_framework.throttling import ScopedRateThrottle
 from drf_spectacular.utils import extend_schema, extend_schema_view, OpenApiParameter, inline_serializer
 
-from .models import Image, ImageComment, ImageLike, CommentLike, Project, ProjectImage
+from .models import Image, ImageComment, ImageLike, CommentLike, Project, ProjectImage, CreativeSession, SessionMessage
 from .relevance import update_image_relevance
 from .serializers import (
+    CreativeSessionListSerializer,
+    CreativeSessionSerializer,
     GenerateImageSerializer,
     ImageCommentCreateSerializer,
     ImageCommentSerializer,
@@ -37,6 +39,9 @@ from .serializers import (
     RelatedImageSerializer,
     RefinePromptRequestSerializer,
     RefinePromptResponseSerializer,
+    SessionCreateSerializer,
+    SessionMessageCreateSerializer,
+    SessionMessageSerializer,
     StyleSuggestionSerializer,
 )
 from .throttles import PlanQuotaThrottle
@@ -938,6 +943,227 @@ Formato de resposta (JSON):
         }
 
         return Response(response_data, status=status.HTTP_200_OK)
+
+
+# =============================================================================
+# Creative Agent
+# =============================================================================
+
+class SessionListCreateView(APIView):
+    """List or create creative sessions."""
+    permission_classes = [IsAuthenticated]
+
+    @extend_schema(
+        tags=['Creative Agent'],
+        summary='Listar sessões',
+        description='Lista sessões criativas do usuário, ordenadas por última atualização.',
+        responses={200: CreativeSessionListSerializer(many=True)},
+    )
+    def get(self, request):
+        sessions = (
+            CreativeSession.objects.filter(user=request.user)
+            .annotate(message_count=Count('messages'))
+        )
+        return Response(CreativeSessionListSerializer(sessions, many=True).data)
+
+    @extend_schema(
+        tags=['Creative Agent'],
+        summary='Criar sessão',
+        description='Cria uma nova sessão criativa.',
+        request=SessionCreateSerializer,
+        responses={201: CreativeSessionSerializer},
+    )
+    def post(self, request):
+        serializer = SessionCreateSerializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+        session = CreativeSession.objects.create(
+            user=request.user,
+            title=serializer.validated_data.get('title', 'Nova sessão'),
+        )
+        return Response(
+            CreativeSessionSerializer(session, context={'request': request}).data,
+            status=status.HTTP_201_CREATED,
+        )
+
+
+class SessionDetailView(APIView):
+    """Retrieve or archive a creative session."""
+    permission_classes = [IsAuthenticated]
+
+    @extend_schema(
+        tags=['Creative Agent'],
+        summary='Detalhe da sessão',
+        description='Retorna a sessão com todas as mensagens.',
+        responses={200: CreativeSessionSerializer},
+    )
+    def get(self, request, pk):
+        session = get_object_or_404(
+            CreativeSession.objects.prefetch_related('messages__image'),
+            pk=pk, user=request.user,
+        )
+        return Response(CreativeSessionSerializer(session, context={'request': request}).data)
+
+    @extend_schema(
+        tags=['Creative Agent'],
+        summary='Arquivar sessão',
+        description='Arquiva a sessão criativa.',
+        responses={204: None},
+    )
+    def delete(self, request, pk):
+        session = get_object_or_404(CreativeSession, pk=pk, user=request.user)
+        session.status = CreativeSession.Status.ARCHIVED
+        session.save(update_fields=['status'])
+        return Response(status=status.HTTP_204_NO_CONTENT)
+
+
+class SessionMessageView(APIView):
+    """Send a message to the creative agent."""
+    permission_classes = [IsAuthenticated]
+    throttle_classes = [ScopedRateThrottle]
+    throttle_scope = "llm_refine"
+
+    @extend_schema(
+        tags=['Creative Agent'],
+        summary='Enviar mensagem',
+        description=(
+            'Envia uma mensagem ao agente criativo. O agente responde com texto e, '
+            'opcionalmente, gera uma imagem se tiver informação suficiente. '
+            'Usa o DeepSeek LLM para a conversa e FLUX.1-dev para geração.'
+        ),
+        request=SessionMessageCreateSerializer,
+        responses={200: inline_serializer('AgentResponse', fields={
+            'message': SessionMessageSerializer(),
+            'agent_response': SessionMessageSerializer(),
+        })},
+    )
+    def post(self, request, pk):
+        import requests as http_requests
+        import json
+        import logging
+
+        logger = logging.getLogger(__name__)
+
+        session = get_object_or_404(CreativeSession, pk=pk, user=request.user)
+        serializer = SessionMessageCreateSerializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+
+        user_text = serializer.validated_data['text']
+
+        # Save user message
+        user_msg = SessionMessage.objects.create(
+            session=session, role=SessionMessage.Role.USER, text=user_text,
+        )
+
+        # Build conversation history for LLM
+        from .agent_prompt import CREATIVE_AGENT_SYSTEM_PROMPT
+        history = list(
+            SessionMessage.objects.filter(session=session)
+            .order_by('created_at')
+            .values_list('role', 'text')[:20]  # Last 20 messages for context
+        )
+
+        llm_messages = [{"role": "system", "content": CREATIVE_AGENT_SYSTEM_PROMPT}]
+        for role, text in history:
+            llm_messages.append({"role": role, "content": text})
+
+        # Call DeepSeek LLM
+        api_key = getattr(settings, 'DEEPSEEK_API_KEY', '')
+        base_url = getattr(settings, 'DEEPSEEK_BASE_URL', 'https://api.deepseek.com')
+        model = getattr(settings, 'DEEPSEEK_MODEL', 'deepseek-chat')
+
+        if not api_key:
+            agent_msg = SessionMessage.objects.create(
+                session=session,
+                role=SessionMessage.Role.ASSISTANT,
+                text='Desculpe, o assistente criativo não está configurado no momento.',
+            )
+            return self._response(request, user_msg, agent_msg)
+
+        try:
+            llm_response = http_requests.post(
+                f"{base_url}/v1/chat/completions",
+                headers={"Authorization": f"Bearer {api_key}", "Content-Type": "application/json"},
+                json={"model": model, "messages": llm_messages, "temperature": 0.7, "max_tokens": 800},
+                timeout=30,
+            )
+            llm_response.raise_for_status()
+            content = llm_response.json()['choices'][0]['message']['content']
+        except Exception as e:
+            logger.error(f"DeepSeek error in agent: {e}")
+            agent_msg = SessionMessage.objects.create(
+                session=session,
+                role=SessionMessage.Role.ASSISTANT,
+                text='Desculpe, tive um problema ao processar sua mensagem. Tente novamente.',
+            )
+            return self._response(request, user_msg, agent_msg)
+
+        # Parse agent response
+        agent_text = content
+        should_generate = False
+        prompt_for_generation = ''
+        negative_prompt = ''
+
+        try:
+            if '{' in content and '}' in content:
+                json_start = content.index('{')
+                json_end = content.rindex('}') + 1
+                parsed = json.loads(content[json_start:json_end])
+                agent_text = parsed.get('message', content)
+                if parsed.get('action') == 'generate':
+                    should_generate = True
+                    prompt_for_generation = parsed.get('prompt', '')
+                    negative_prompt = parsed.get('negative_prompt', '')
+        except (json.JSONDecodeError, KeyError):
+            pass
+
+        # Generate image if agent decided to
+        generated_image = None
+        if should_generate and prompt_for_generation:
+            # Check quota
+            quotas = getattr(settings, 'PLAN_QUOTAS', {})
+            quota = quotas.get(getattr(request.user, 'plan', 'free'))
+            can_generate = quota is None or request.user.image_generation_count < quota
+
+            if can_generate:
+                image = Image.objects.create(
+                    user=request.user,
+                    prompt=prompt_for_generation,
+                    negative_prompt=negative_prompt,
+                    aspect_ratio=Image.AspectRatio.SQUARE,
+                )
+                # Increment quota
+                request.user.image_generation_count += 1
+                request.user.save(update_fields=['image_generation_count'])
+
+                generate_image_task.delay(image.id)
+                generated_image = image
+
+                # Auto-title session from first generation
+                if session.title == 'Nova sessão':
+                    session.title = user_text[:80]
+                    session.save(update_fields=['title'])
+            else:
+                agent_text += '\n\n⚠️ Sua cota mensal de geração foi atingida.'
+
+        # Save agent message
+        agent_msg = SessionMessage.objects.create(
+            session=session,
+            role=SessionMessage.Role.ASSISTANT,
+            text=agent_text,
+            image=generated_image,
+            prompt_used=prompt_for_generation,
+        )
+
+        session.save(update_fields=['updated_at'])
+
+        return self._response(request, user_msg, agent_msg)
+
+    def _response(self, request, user_msg, agent_msg):
+        ctx = {'request': request}
+        return Response({
+            'message': SessionMessageSerializer(user_msg, context=ctx).data,
+            'agent_response': SessionMessageSerializer(agent_msg, context=ctx).data,
+        })
 
 
 # =============================================================================

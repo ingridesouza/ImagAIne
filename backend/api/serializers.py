@@ -257,6 +257,71 @@ class StyleSuggestionSerializer(serializers.Serializer):
 
 
 # =============================================================================
+# Creative Agent Serializers
+# =============================================================================
+
+class SessionMessageSerializer(serializers.ModelSerializer):
+    image_url = serializers.SerializerMethodField()
+
+    class Meta:
+        from .models import SessionMessage
+        model = SessionMessage
+        fields = ('id', 'role', 'text', 'image', 'image_url', 'prompt_used', 'created_at')
+        read_only_fields = ('id', 'role', 'image', 'image_url', 'prompt_used', 'created_at')
+
+    @extend_schema_field(serializers.URLField(allow_null=True))
+    def get_image_url(self, obj) -> Optional[str]:
+        if not obj.image or not obj.image.image:
+            return None
+        request = self.context.get('request')
+        url = obj.image.image.url
+        if request:
+            return request.build_absolute_uri(url)
+        return url
+
+
+class CreativeSessionSerializer(serializers.ModelSerializer):
+    user = ImageUserSerializer(read_only=True)
+    messages = SessionMessageSerializer(many=True, read_only=True)
+    message_count = serializers.SerializerMethodField()
+
+    class Meta:
+        from .models import CreativeSession
+        model = CreativeSession
+        fields = ('id', 'user', 'title', 'status', 'messages', 'message_count', 'created_at', 'updated_at')
+        read_only_fields = ('id', 'user', 'messages', 'message_count', 'created_at', 'updated_at')
+
+    @extend_schema_field(serializers.IntegerField())
+    def get_message_count(self, obj) -> int:
+        if hasattr(obj, '_prefetched_objects_cache') and 'messages' in obj._prefetched_objects_cache:
+            return len(obj._prefetched_objects_cache['messages'])
+        return obj.messages.count()
+
+
+class CreativeSessionListSerializer(serializers.ModelSerializer):
+    """Lighter serializer for session lists (no messages)."""
+    message_count = serializers.SerializerMethodField()
+
+    class Meta:
+        from .models import CreativeSession
+        model = CreativeSession
+        fields = ('id', 'title', 'status', 'message_count', 'created_at', 'updated_at')
+        read_only_fields = fields
+
+    @extend_schema_field(serializers.IntegerField())
+    def get_message_count(self, obj) -> int:
+        return getattr(obj, 'message_count', 0)
+
+
+class SessionMessageCreateSerializer(serializers.Serializer):
+    text = serializers.CharField()
+
+
+class SessionCreateSerializer(serializers.Serializer):
+    title = serializers.CharField(max_length=200, required=False, default='Nova sessão')
+
+
+# =============================================================================
 # Projects Serializers
 # =============================================================================
 

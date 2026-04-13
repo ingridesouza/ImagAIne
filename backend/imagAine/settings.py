@@ -206,6 +206,7 @@ SPECTACULAR_SETTINGS = {
     'ENUM_NAME_OVERRIDES': {
         'ImageStatusEnum': 'api.models.Image.Status',
         'AspectRatioEnum': 'api.models.Image.AspectRatio',
+        'SessionStatusEnum': 'api.models.CreativeSession.Status',
     },
     'TAGS': [
         {'name': 'Auth', 'description': 'Autenticação, registro e gerenciamento de conta'},
