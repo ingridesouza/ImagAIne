@@ -37,6 +37,13 @@ class Image(models.Model):
         PORTRAIT = "9:16", "9:16"
         GOLDEN = "3:2", "3:2"
 
+    class GenerationType(models.TextChoices):
+        TXT2IMG = "txt2img", "Text to Image"
+        IMG2IMG = "img2img", "Image to Image"
+        VARIATION = "variation", "Variation"
+        RESTYLE = "restyle", "Restyle"
+        UPSCALE = "upscale", "Upscale"
+
     user = models.ForeignKey(User, on_delete=models.CASCADE, related_name='images')
     prompt = models.TextField(blank=True, null=True)
     negative_prompt = models.TextField(blank=True, null=True)
@@ -57,6 +64,15 @@ class Image(models.Model):
     relevance_score = models.FloatField(default=0.0)
     featured = models.BooleanField(default=False)
     retry_count = models.PositiveIntegerField(default=0)
+    source_image = models.ForeignKey(
+        'self', on_delete=models.SET_NULL, null=True, blank=True, related_name='derivatives',
+    )
+    generation_type = models.CharField(
+        max_length=20,
+        choices=GenerationType.choices,
+        default=GenerationType.TXT2IMG,
+    )
+    strength = models.FloatField(null=True, blank=True, help_text="Transformation strength 0.0-1.0 for img2img")
     created_at = models.DateTimeField(auto_now_add=True)
     tags = models.ManyToManyField(
         "ImageTag",

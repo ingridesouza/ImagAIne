@@ -384,6 +384,26 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/images/{id}/restyle/": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Mudar estilo
+         * @description Aplica um estilo diferente a uma imagem existente. O prompt original é combinado com modificadores do estilo escolhido.
+         */
+        post: operations["images_restyle_create"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/images/{id}/share/": {
         parameters: {
             query?: never;
@@ -406,6 +426,26 @@ export interface paths {
          * @description Altera o status público/privado da imagem.
          */
         patch: operations["images_share_partial_update"];
+        trace?: never;
+    };
+    "/api/images/{id}/variations/": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Gerar variações
+         * @description Gera 1-4 variações de uma imagem existente usando img2img. O strength controla o quanto a variação difere do original (0.1 = quase igual, 0.95 = muito diferente).
+         */
+        post: operations["images_variations_create"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
         trace?: never;
     };
     "/api/images/liked/": {
@@ -837,6 +877,15 @@ export interface components {
             aspect_ratio: components["schemas"]["AspectRatioEnum"];
             seed?: number | null;
         };
+        /**
+         * @description * `txt2img` - Text to Image
+         *     * `img2img` - Image to Image
+         *     * `variation` - Variation
+         *     * `restyle` - Restyle
+         *     * `upscale` - Upscale
+         * @enum {string}
+         */
+        GenerationTypeEnum: "txt2img" | "img2img" | "variation" | "restyle" | "upscale";
         Image: {
             readonly id: number;
             readonly user: components["schemas"]["ImageUser"];
@@ -857,6 +906,13 @@ export interface components {
             readonly relevance_score: number;
             readonly featured: boolean;
             readonly tags: string[];
+            readonly source_image: number | null;
+            readonly generation_type: components["schemas"]["GenerationTypeEnum"];
+            /**
+             * Format: double
+             * @description Transformation strength 0.0-1.0 for img2img
+             */
+            readonly strength: number | null;
             /** Format: date-time */
             readonly created_at: string;
         };
@@ -1066,6 +1122,15 @@ export interface components {
         ReorderResponse: {
             detail: string;
         };
+        /** @description Request to apply a different style to an existing image. */
+        RestyleRequestRequest: {
+            style: components["schemas"]["StyleEnum"];
+            /**
+             * Format: double
+             * @default 0.65
+             */
+            strength: number;
+        };
         /**
          * @description * `user` - User
          *     * `assistant` - Assistant
@@ -1204,6 +1269,16 @@ export interface components {
             profile_picture?: string | null;
             cover_picture?: string | null;
             preferences?: unknown;
+        };
+        /** @description Request to generate variations of an existing image. */
+        VariationRequestRequest: {
+            /** @default 1 */
+            count: number;
+            /**
+             * Format: double
+             * @default 0.65
+             */
+            strength: number;
         };
     };
     responses: never;
@@ -1882,6 +1957,33 @@ export interface operations {
             };
         };
     };
+    images_restyle_create: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: number;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["RestyleRequestRequest"];
+                "application/x-www-form-urlencoded": components["schemas"]["RestyleRequestRequest"];
+                "multipart/form-data": components["schemas"]["RestyleRequestRequest"];
+            };
+        };
+        responses: {
+            202: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Image"];
+                };
+            };
+        };
+    };
     images_share_create: {
         parameters: {
             query?: never;
@@ -1949,6 +2051,33 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content?: never;
+            };
+        };
+    };
+    images_variations_create: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: number;
+            };
+            cookie?: never;
+        };
+        requestBody?: {
+            content: {
+                "application/json": components["schemas"]["VariationRequestRequest"];
+                "application/x-www-form-urlencoded": components["schemas"]["VariationRequestRequest"];
+                "multipart/form-data": components["schemas"]["VariationRequestRequest"];
+            };
+        };
+        responses: {
+            202: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Image"][];
+                };
             };
         };
     };

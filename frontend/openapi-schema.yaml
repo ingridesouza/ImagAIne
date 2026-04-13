@@ -682,6 +682,41 @@ paths:
               schema:
                 $ref: '#/components/schemas/RelatedImagesResponse'
           description: ''
+  /api/images/{id}/restyle/:
+    post:
+      operationId: images_restyle_create
+      description: Aplica um estilo diferente a uma imagem existente. O prompt original
+        é combinado com modificadores do estilo escolhido.
+      summary: Mudar estilo
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        required: true
+      tags:
+      - Image Editing
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/RestyleRequestRequest'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/RestyleRequestRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/RestyleRequestRequest'
+        required: true
+      security:
+      - jwtAuth: []
+      responses:
+        '202':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Image'
+          description: ''
   /api/images/{id}/share/:
     post:
       operationId: images_share_create
@@ -746,6 +781,43 @@ paths:
           description: No response body
         '404':
           description: No response body
+  /api/images/{id}/variations/:
+    post:
+      operationId: images_variations_create
+      description: Gera 1-4 variações de uma imagem existente usando img2img. O strength
+        controla o quanto a variação difere do original (0.1 = quase igual, 0.95 =
+        muito diferente).
+      summary: Gerar variações
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        required: true
+      tags:
+      - Image Editing
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/VariationRequestRequest'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/VariationRequestRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/VariationRequestRequest'
+      security:
+      - jwtAuth: []
+      responses:
+        '202':
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Image'
+          description: ''
   /api/images/liked/:
     get:
       operationId: images_liked_list
@@ -1557,6 +1629,20 @@ components:
           nullable: true
       required:
       - prompt
+    GenerationTypeEnum:
+      enum:
+      - txt2img
+      - img2img
+      - variation
+      - restyle
+      - upscale
+      type: string
+      description: |-
+        * `txt2img` - Text to Image
+        * `img2img` - Image to Image
+        * `variation` - Variation
+        * `restyle` - Restyle
+        * `upscale` - Upscale
     Image:
       type: object
       properties:
@@ -1616,6 +1702,20 @@ components:
           items:
             type: string
           readOnly: true
+        source_image:
+          type: integer
+          readOnly: true
+          nullable: true
+        generation_type:
+          allOf:
+          - $ref: '#/components/schemas/GenerationTypeEnum'
+          readOnly: true
+        strength:
+          type: number
+          format: double
+          readOnly: true
+          nullable: true
+          description: Transformation strength 0.0-1.0 for img2img
         created_at:
           type: string
           format: date-time
@@ -1625,12 +1725,15 @@ components:
       - created_at
       - download_count
       - featured
+      - generation_type
       - id
       - image_url
       - is_liked
       - like_count
       - relevance_score
+      - source_image
       - status
+      - strength
       - tags
       - user
     ImageComment:
@@ -2120,6 +2223,20 @@ components:
           type: string
       required:
       - detail
+    RestyleRequestRequest:
+      type: object
+      description: Request to apply a different style to an existing image.
+      properties:
+        style:
+          $ref: '#/components/schemas/StyleEnum'
+        strength:
+          type: number
+          format: double
+          maximum: 0.9
+          minimum: 0.3
+          default: 0.65
+      required:
+      - style
     RoleEnum:
       enum:
       - user
@@ -2483,6 +2600,21 @@ components:
         preferences: {}
       required:
       - username
+    VariationRequestRequest:
+      type: object
+      description: Request to generate variations of an existing image.
+      properties:
+        count:
+          type: integer
+          maximum: 4
+          minimum: 1
+          default: 1
+        strength:
+          type: number
+          format: double
+          maximum: 0.95
+          minimum: 0.1
+          default: 0.65
   securitySchemes:
     jwtAuth:
       type: http

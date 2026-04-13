@@ -7,6 +7,8 @@ from .views import (
     ImageCommentListCreateView,
     ImageDownloadView,
     ImageLikeView,
+    ImageRestyleView,
+    ImageVariationsView,
     ProjectDetailView,
     ProjectImageManageView,
     ProjectListCreateView,
@@ -37,6 +39,9 @@ urlpatterns = [
     path('images/<int:pk>/comments/<int:comment_id>/', ImageCommentDetailView.as_view(), name='image-comment-detail'),
     path('images/<int:pk>/comments/<int:comment_id>/like/', CommentLikeView.as_view(), name='comment-like'),
     path('images/<int:pk>/download/', ImageDownloadView.as_view(), name='image-download'),
+    # Image-to-Image: Variations & Restyle
+    path('images/<int:pk>/variations/', ImageVariationsView.as_view(), name='image-variations'),
+    path('images/<int:pk>/restyle/', ImageRestyleView.as_view(), name='image-restyle'),
     # Creative Memory - Related Images and Style Suggestions
     path('images/<int:pk>/related/', RelatedImagesView.as_view(), name='image-related'),
     path('users/me/style-suggestions/', StyleSuggestionsView.as_view(), name='style-suggestions'),

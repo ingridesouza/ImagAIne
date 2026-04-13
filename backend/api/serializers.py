@@ -46,6 +46,9 @@ class ImageSerializer(serializers.ModelSerializer):
             'relevance_score',
             'featured',
             'tags',
+            'source_image',
+            'generation_type',
+            'strength',
             'created_at',
         )
         read_only_fields = (
@@ -60,6 +63,9 @@ class ImageSerializer(serializers.ModelSerializer):
             'relevance_score',
             'featured',
             'tags',
+            'source_image',
+            'generation_type',
+            'strength',
             'created_at',
         )
 
@@ -115,6 +121,27 @@ class GenerateImageSerializer(serializers.Serializer):
         required=False,
     )
     seed = serializers.IntegerField(required=False, min_value=0, allow_null=True)
+
+
+class VariationRequestSerializer(serializers.Serializer):
+    """Request to generate variations of an existing image."""
+    count = serializers.IntegerField(min_value=1, max_value=4, default=1)
+    strength = serializers.FloatField(min_value=0.1, max_value=0.95, default=0.65)
+
+
+class RestyleRequestSerializer(serializers.Serializer):
+    """Request to apply a different style to an existing image."""
+    style = serializers.ChoiceField(choices=[
+        ('photorealistic', 'Fotorrealista'),
+        ('anime', 'Anime/Mangá'),
+        ('digital_art', 'Arte Digital'),
+        ('oil_painting', 'Pintura a Óleo'),
+        ('watercolor', 'Aquarela'),
+        ('3d_render', 'Render 3D'),
+        ('pixel_art', 'Pixel Art'),
+        ('sketch', 'Esboço/Desenho'),
+    ])
+    strength = serializers.FloatField(min_value=0.3, max_value=0.9, default=0.65)
 
 
 class ImageShareUpdateSerializer(serializers.Serializer):

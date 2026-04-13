@@ -32,6 +32,8 @@ from .serializers import (
     ImageCommentSerializer,
     ImageSerializer,
     ImageShareUpdateSerializer,
+    RestyleRequestSerializer,
+    VariationRequestSerializer,
     ProjectCreateSerializer,
     ProjectImageAddSerializer,
     ProjectReorderSerializer,
@@ -943,6 +945,132 @@ Formato de resposta (JSON):
         }
 
         return Response(response_data, status=status.HTTP_200_OK)
+
+
+# =============================================================================
+# Image-to-Image: Variations & Restyle
+# =============================================================================
+
+STYLE_PROMPT_MAP = {
+    'photorealistic': 'professional photography, photorealistic, 8k, sharp focus, natural lighting, highly detailed',
+    'anime': 'anime style, cel shading, vibrant colors, manga aesthetic, detailed anime illustration',
+    'digital_art': 'digital painting, detailed illustration, concept art, artstation trending',
+    'oil_painting': 'oil painting, thick brushstrokes, classical art, canvas texture, masterpiece',
+    'watercolor': 'watercolor painting, soft edges, flowing colors, paper texture, artistic',
+    '3d_render': '3D render, octane render, volumetric lighting, subsurface scattering, photorealistic 3D',
+    'pixel_art': 'pixel art, retro gaming style, 16-bit, dithering, sprite art',
+    'sketch': 'pencil sketch, graphite drawing, hand-drawn, crosshatching, artistic sketch',
+}
+
+
+class ImageVariationsView(APIView):
+    """Generate variations of an existing image."""
+    permission_classes = [IsAuthenticated]
+
+    @extend_schema(
+        tags=['Image Editing'],
+        summary='Gerar variações',
+        description=(
+            'Gera 1-4 variações de uma imagem existente usando img2img. '
+            'O strength controla o quanto a variação difere do original '
+            '(0.1 = quase igual, 0.95 = muito diferente).'
+        ),
+        request=VariationRequestSerializer,
+        responses={202: ImageSerializer(many=True)},
+    )
+    def post(self, request, pk):
+        source = get_object_or_404(Image, pk=pk, user=request.user, status=Image.Status.READY)
+        serializer = VariationRequestSerializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+
+        count = serializer.validated_data['count']
+        strength = serializer.validated_data['strength']
+
+        # Check quota
+        quotas = getattr(settings, 'PLAN_QUOTAS', {})
+        quota = quotas.get(getattr(request.user, 'plan', 'free'))
+        if quota is not None and request.user.image_generation_count + count > quota:
+            return Response(
+                {"detail": "Cota mensal insuficiente para gerar essas variações."},
+                status=status.HTTP_429_TOO_MANY_REQUESTS,
+            )
+
+        created_images = []
+        for _ in range(count):
+            img = Image.objects.create(
+                user=request.user,
+                prompt=source.prompt,
+                negative_prompt=source.negative_prompt,
+                aspect_ratio=source.aspect_ratio,
+                source_image=source,
+                generation_type=Image.GenerationType.VARIATION,
+                strength=strength,
+            )
+            request.user.image_generation_count += 1
+            generate_image_task.delay(img.id)
+            created_images.append(img)
+
+        request.user.save(update_fields=['image_generation_count'])
+
+        return Response(
+            ImageSerializer(created_images, many=True, context={'request': request}).data,
+            status=status.HTTP_202_ACCEPTED,
+        )
+
+
+class ImageRestyleView(APIView):
+    """Apply a different style to an existing image."""
+    permission_classes = [IsAuthenticated]
+
+    @extend_schema(
+        tags=['Image Editing'],
+        summary='Mudar estilo',
+        description=(
+            'Aplica um estilo diferente a uma imagem existente. '
+            'O prompt original é combinado com modificadores do estilo escolhido.'
+        ),
+        request=RestyleRequestSerializer,
+        responses={202: ImageSerializer},
+    )
+    def post(self, request, pk):
+        source = get_object_or_404(Image, pk=pk, user=request.user, status=Image.Status.READY)
+        serializer = RestyleRequestSerializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+
+        style = serializer.validated_data['style']
+        strength = serializer.validated_data['strength']
+
+        # Build restyled prompt
+        style_modifiers = STYLE_PROMPT_MAP.get(style, '')
+        original_prompt = source.prompt or ''
+        restyled_prompt = f"{original_prompt}, {style_modifiers}" if original_prompt else style_modifiers
+
+        # Check quota
+        quotas = getattr(settings, 'PLAN_QUOTAS', {})
+        quota = quotas.get(getattr(request.user, 'plan', 'free'))
+        if quota is not None and request.user.image_generation_count >= quota:
+            return Response(
+                {"detail": "Cota mensal atingida."},
+                status=status.HTTP_429_TOO_MANY_REQUESTS,
+            )
+
+        img = Image.objects.create(
+            user=request.user,
+            prompt=restyled_prompt,
+            negative_prompt=source.negative_prompt,
+            aspect_ratio=source.aspect_ratio,
+            source_image=source,
+            generation_type=Image.GenerationType.RESTYLE,
+            strength=strength,
+        )
+        request.user.image_generation_count += 1
+        request.user.save(update_fields=['image_generation_count'])
+        generate_image_task.delay(img.id)
+
+        return Response(
+            ImageSerializer(img, context={'request': request}).data,
+            status=status.HTTP_202_ACCEPTED,
+        )
 
 
 # =============================================================================
