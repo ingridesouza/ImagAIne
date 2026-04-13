@@ -22,7 +22,7 @@ from rest_framework.views import APIView
 from rest_framework.throttling import ScopedRateThrottle
 from drf_spectacular.utils import extend_schema, extend_schema_view, OpenApiParameter, inline_serializer
 
-from .models import Image, ImageComment, ImageLike, CommentLike
+from .models import Image, ImageComment, ImageLike, CommentLike, Project, ProjectImage
 from .relevance import update_image_relevance
 from .serializers import (
     GenerateImageSerializer,
@@ -30,6 +30,10 @@ from .serializers import (
     ImageCommentSerializer,
     ImageSerializer,
     ImageShareUpdateSerializer,
+    ProjectCreateSerializer,
+    ProjectImageAddSerializer,
+    ProjectReorderSerializer,
+    ProjectSerializer,
     RelatedImageSerializer,
     RefinePromptRequestSerializer,
     RefinePromptResponseSerializer,
@@ -934,3 +938,200 @@ Formato de resposta (JSON):
         }
 
         return Response(response_data, status=status.HTTP_200_OK)
+
+
+# =============================================================================
+# Projects
+# =============================================================================
+
+class ProjectListCreateView(APIView):
+    """List user's projects or create a new one."""
+    permission_classes = [IsAuthenticated]
+
+    @extend_schema(
+        tags=['Projects'],
+        summary='Listar projetos',
+        description='Lista projetos do usuário autenticado.',
+        responses={200: ProjectSerializer(many=True)},
+    )
+    def get(self, request):
+        projects = (
+            Project.objects.filter(user=request.user)
+            .select_related('user', 'cover_image')
+            .prefetch_related('images__image', 'tags')
+        )
+        serializer = ProjectSerializer(projects, many=True, context={'request': request})
+        return Response(serializer.data)
+
+    @extend_schema(
+        tags=['Projects'],
+        summary='Criar projeto',
+        description='Cria um novo projeto vazio.',
+        request=ProjectCreateSerializer,
+        responses={201: ProjectSerializer},
+    )
+    def post(self, request):
+        serializer = ProjectCreateSerializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+        project = Project.objects.create(
+            user=request.user,
+            title=serializer.validated_data['title'],
+            description=serializer.validated_data.get('description', ''),
+        )
+        return Response(
+            ProjectSerializer(project, context={'request': request}).data,
+            status=status.HTTP_201_CREATED,
+        )
+
+
+class ProjectDetailView(APIView):
+    """Retrieve, update or delete a project."""
+    permission_classes = [IsAuthenticated]
+
+    def _get_project(self, pk, user):
+        project = get_object_or_404(
+            Project.objects.select_related('user', 'cover_image')
+            .prefetch_related('images__image__user', 'tags'),
+            pk=pk,
+        )
+        if project.user != user:
+            raise PermissionDenied("Você não tem permissão para acessar este projeto.")
+        return project
+
+    @extend_schema(
+        tags=['Projects'],
+        summary='Detalhe do projeto',
+        description='Retorna o projeto com todas as imagens ordenadas.',
+        responses={200: ProjectSerializer},
+    )
+    def get(self, request, pk):
+        project = self._get_project(pk, request.user)
+        return Response(ProjectSerializer(project, context={'request': request}).data)
+
+    @extend_schema(
+        tags=['Projects'],
+        summary='Atualizar projeto',
+        description='Atualiza título, descrição ou visibilidade do projeto.',
+        request=ProjectCreateSerializer,
+        responses={200: ProjectSerializer},
+    )
+    def put(self, request, pk):
+        project = self._get_project(pk, request.user)
+        for field in ('title', 'description', 'is_public'):
+            if field in request.data:
+                setattr(project, field, request.data[field])
+        if 'cover_image' in request.data:
+            cover_id = request.data['cover_image']
+            project.cover_image_id = cover_id if cover_id else None
+        project.save()
+        return Response(ProjectSerializer(project, context={'request': request}).data)
+
+    @extend_schema(
+        tags=['Projects'],
+        summary='Deletar projeto',
+        description='Deleta o projeto. Imagens não são deletadas, apenas desassociadas.',
+        responses={204: None},
+    )
+    def delete(self, request, pk):
+        project = self._get_project(pk, request.user)
+        project.delete()
+        return Response(status=status.HTTP_204_NO_CONTENT)
+
+
+class ProjectImageManageView(APIView):
+    """Add or remove images from a project."""
+    permission_classes = [IsAuthenticated]
+
+    def _get_project(self, pk, user):
+        project = get_object_or_404(Project, pk=pk, user=user)
+        return project
+
+    @extend_schema(
+        tags=['Projects'],
+        summary='Adicionar imagem ao projeto',
+        description='Associa uma imagem existente ao projeto com ordem e legenda.',
+        request=ProjectImageAddSerializer,
+        responses={201: inline_serializer('ProjectImageAdded', fields={
+            'id': drf_serializers.IntegerField(),
+            'image_id': drf_serializers.IntegerField(),
+            'order': drf_serializers.IntegerField(),
+            'caption': drf_serializers.CharField(),
+        })},
+    )
+    def post(self, request, pk):
+        project = self._get_project(pk, request.user)
+        serializer = ProjectImageAddSerializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+
+        image = get_object_or_404(Image, pk=serializer.validated_data['image_id'], user=request.user)
+        pi, created = ProjectImage.objects.get_or_create(
+            project=project,
+            image=image,
+            defaults={
+                'order': serializer.validated_data.get('order', 0),
+                'caption': serializer.validated_data.get('caption', ''),
+            },
+        )
+        return Response(
+            {'id': pi.id, 'image_id': image.id, 'order': pi.order, 'caption': pi.caption},
+            status=status.HTTP_201_CREATED if created else status.HTTP_200_OK,
+        )
+
+    @extend_schema(
+        tags=['Projects'],
+        summary='Remover imagem do projeto',
+        description='Desassocia uma imagem do projeto (não deleta a imagem).',
+        responses={204: None},
+    )
+    def delete(self, request, pk, image_id=None):
+        project = self._get_project(pk, request.user)
+        deleted, _ = ProjectImage.objects.filter(project=project, image_id=image_id).delete()
+        if not deleted:
+            return Response({'detail': 'Imagem não encontrada no projeto.'}, status=status.HTTP_404_NOT_FOUND)
+        return Response(status=status.HTTP_204_NO_CONTENT)
+
+
+class ProjectReorderView(APIView):
+    """Reorder images within a project."""
+    permission_classes = [IsAuthenticated]
+
+    @extend_schema(
+        tags=['Projects'],
+        summary='Reordenar imagens',
+        description='Reordena as imagens do projeto com base na lista de IDs fornecida.',
+        request=ProjectReorderSerializer,
+        responses={200: inline_serializer('ReorderResponse', fields={'detail': drf_serializers.CharField()})},
+    )
+    def patch(self, request, pk):
+        project = get_object_or_404(Project, pk=pk, user=request.user)
+        serializer = ProjectReorderSerializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+
+        image_ids = serializer.validated_data['image_ids']
+        for order, img_id in enumerate(image_ids):
+            ProjectImage.objects.filter(project=project, image_id=img_id).update(order=order)
+
+        return Response({'detail': 'Ordem atualizada.'})
+
+
+class PublicProjectListView(generics.ListAPIView):
+    """List public projects."""
+    serializer_class = ProjectSerializer
+    permission_classes = [AllowAny]
+
+    @extend_schema(
+        tags=['Projects'],
+        summary='Projetos públicos',
+        description='Lista paginada de projetos públicos.',
+    )
+    def list(self, request, *args, **kwargs):
+        return super().list(request, *args, **kwargs)
+
+    def get_queryset(self):
+        return (
+            Project.objects.filter(is_public=True)
+            .select_related('user', 'cover_image')
+            .prefetch_related('images__image', 'tags')
+            .annotate(image_count=Count('images'))
+            .order_by('-updated_at')
+        )

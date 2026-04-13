@@ -7,7 +7,12 @@ from .views import (
     ImageCommentListCreateView,
     ImageDownloadView,
     ImageLikeView,
+    ProjectDetailView,
+    ProjectImageManageView,
+    ProjectListCreateView,
+    ProjectReorderView,
     PublicImageListView,
+    PublicProjectListView,
     RefinePromptView,
     RelatedImagesView,
     ShareImageView,
@@ -34,5 +39,12 @@ urlpatterns = [
     path('users/me/style-suggestions/', StyleSuggestionsView.as_view(), name='style-suggestions'),
     # Prompt Assistant - DeepSeek LLM
     path('refine-prompt/', RefinePromptView.as_view(), name='refine-prompt'),
+    # Projects
+    path('projects/', ProjectListCreateView.as_view(), name='project-list-create'),
+    path('projects/public/', PublicProjectListView.as_view(), name='public-projects'),
+    path('projects/<uuid:pk>/', ProjectDetailView.as_view(), name='project-detail'),
+    path('projects/<uuid:pk>/images/', ProjectImageManageView.as_view(), name='project-image-add'),
+    path('projects/<uuid:pk>/images/<int:image_id>/remove/', ProjectImageManageView.as_view(), name='project-image-remove'),
+    path('projects/<uuid:pk>/images/reorder/', ProjectReorderView.as_view(), name='project-reorder'),
 ]
 

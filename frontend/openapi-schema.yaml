@@ -816,6 +816,299 @@ paths:
               schema:
                 $ref: '#/components/schemas/PaginatedImageList'
           description: ''
+  /api/projects/:
+    get:
+      operationId: projects_list
+      description: Lista projetos do usuário autenticado.
+      summary: Listar projetos
+      tags:
+      - Projects
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Project'
+          description: ''
+    post:
+      operationId: projects_create
+      description: Cria um novo projeto vazio.
+      summary: Criar projeto
+      tags:
+      - Projects
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ProjectCreateRequest'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/ProjectCreateRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/ProjectCreateRequest'
+        required: true
+      security:
+      - jwtAuth: []
+      responses:
+        '201':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Project'
+          description: ''
+  /api/projects/{id}/:
+    get:
+      operationId: projects_retrieve
+      description: Retorna o projeto com todas as imagens ordenadas.
+      summary: Detalhe do projeto
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: string
+          format: uuid
+        required: true
+      tags:
+      - Projects
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Project'
+          description: ''
+    put:
+      operationId: projects_update
+      description: Atualiza título, descrição ou visibilidade do projeto.
+      summary: Atualizar projeto
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: string
+          format: uuid
+        required: true
+      tags:
+      - Projects
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ProjectCreateRequest'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/ProjectCreateRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/ProjectCreateRequest'
+        required: true
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Project'
+          description: ''
+    delete:
+      operationId: projects_destroy
+      description: Deleta o projeto. Imagens não são deletadas, apenas desassociadas.
+      summary: Deletar projeto
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: string
+          format: uuid
+        required: true
+      tags:
+      - Projects
+      security:
+      - jwtAuth: []
+      responses:
+        '204':
+          description: No response body
+  /api/projects/{id}/images/:
+    post:
+      operationId: projects_images_create
+      description: Associa uma imagem existente ao projeto com ordem e legenda.
+      summary: Adicionar imagem ao projeto
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: string
+          format: uuid
+        required: true
+      tags:
+      - Projects
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ProjectImageAddRequest'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/ProjectImageAddRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/ProjectImageAddRequest'
+        required: true
+      security:
+      - jwtAuth: []
+      responses:
+        '201':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ProjectImageAdded'
+          description: ''
+    delete:
+      operationId: projects_images_destroy
+      description: Desassocia uma imagem do projeto (não deleta a imagem).
+      summary: Remover imagem do projeto
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: string
+          format: uuid
+        required: true
+      tags:
+      - Projects
+      security:
+      - jwtAuth: []
+      responses:
+        '204':
+          description: No response body
+  /api/projects/{id}/images/{image_id}/remove/:
+    post:
+      operationId: projects_images_remove_create
+      description: Associa uma imagem existente ao projeto com ordem e legenda.
+      summary: Adicionar imagem ao projeto
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: string
+          format: uuid
+        required: true
+      - in: path
+        name: image_id
+        schema:
+          type: integer
+        required: true
+      tags:
+      - Projects
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ProjectImageAddRequest'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/ProjectImageAddRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/ProjectImageAddRequest'
+        required: true
+      security:
+      - jwtAuth: []
+      responses:
+        '201':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ProjectImageAdded'
+          description: ''
+    delete:
+      operationId: projects_images_remove_destroy
+      description: Desassocia uma imagem do projeto (não deleta a imagem).
+      summary: Remover imagem do projeto
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: string
+          format: uuid
+        required: true
+      - in: path
+        name: image_id
+        schema:
+          type: integer
+        required: true
+      tags:
+      - Projects
+      security:
+      - jwtAuth: []
+      responses:
+        '204':
+          description: No response body
+  /api/projects/{id}/images/reorder/:
+    patch:
+      operationId: projects_images_reorder_partial_update
+      description: Reordena as imagens do projeto com base na lista de IDs fornecida.
+      summary: Reordenar imagens
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: string
+          format: uuid
+        required: true
+      tags:
+      - Projects
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PatchedProjectReorderRequest'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/PatchedProjectReorderRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/PatchedProjectReorderRequest'
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ReorderResponse'
+          description: ''
+  /api/projects/public/:
+    get:
+      operationId: projects_public_list
+      description: List public projects.
+      parameters:
+      - name: page
+        required: false
+        in: query
+        description: A page number within the paginated result set.
+        schema:
+          type: integer
+      tags:
+      - projects
+      security:
+      - jwtAuth: []
+      - {}
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PaginatedProjectList'
+          description: ''
   /api/refine-prompt/:
     post:
       operationId: refine_prompt_create
@@ -1342,6 +1635,29 @@ components:
           type: array
           items:
             $ref: '#/components/schemas/Image'
+    PaginatedProjectList:
+      type: object
+      required:
+      - count
+      - results
+      properties:
+        count:
+          type: integer
+          example: 123
+        next:
+          type: string
+          nullable: true
+          format: uri
+          example: http://api.example.org/accounts/?page=4
+        previous:
+          type: string
+          nullable: true
+          format: uri
+          example: http://api.example.org/accounts/?page=2
+        results:
+          type: array
+          items:
+            $ref: '#/components/schemas/Project'
     PasswordResetConfirmRequest:
       type: object
       description: Serializer for password reset confirmation.
@@ -1374,6 +1690,14 @@ components:
       properties:
         is_public:
           type: boolean
+    PatchedProjectReorderRequest:
+      type: object
+      properties:
+        image_ids:
+          type: array
+          items:
+            type: integer
+          description: Lista ordenada de IDs de imagens no projeto
     PatchedUserRequest:
       type: object
       description: Serializer for user details.
@@ -1402,6 +1726,128 @@ components:
           nullable: true
           maxLength: 100
         preferences: {}
+    Project:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+          readOnly: true
+        user:
+          allOf:
+          - $ref: '#/components/schemas/ImageUser'
+          readOnly: true
+        title:
+          type: string
+          maxLength: 200
+        description:
+          type: string
+        cover_image:
+          type: integer
+          nullable: true
+        cover_image_url:
+          type: string
+          format: uri
+          nullable: true
+          readOnly: true
+        is_public:
+          type: boolean
+        tags:
+          type: array
+          items:
+            type: string
+          readOnly: true
+        images:
+          type: array
+          items:
+            $ref: '#/components/schemas/ProjectImage'
+          readOnly: true
+        image_count:
+          type: integer
+          readOnly: true
+        created_at:
+          type: string
+          format: date-time
+          readOnly: true
+        updated_at:
+          type: string
+          format: date-time
+          readOnly: true
+      required:
+      - cover_image_url
+      - created_at
+      - id
+      - image_count
+      - images
+      - tags
+      - title
+      - updated_at
+      - user
+    ProjectCreateRequest:
+      type: object
+      properties:
+        title:
+          type: string
+          minLength: 1
+          maxLength: 200
+        description:
+          type: string
+          default: ''
+      required:
+      - title
+    ProjectImage:
+      type: object
+      properties:
+        id:
+          type: integer
+          readOnly: true
+        image:
+          allOf:
+          - $ref: '#/components/schemas/Image'
+          readOnly: true
+        order:
+          type: integer
+          maximum: 2147483647
+          minimum: 0
+        caption:
+          type: string
+        created_at:
+          type: string
+          format: date-time
+          readOnly: true
+      required:
+      - created_at
+      - id
+      - image
+    ProjectImageAddRequest:
+      type: object
+      properties:
+        image_id:
+          type: integer
+        order:
+          type: integer
+          default: 0
+        caption:
+          type: string
+          default: ''
+      required:
+      - image_id
+    ProjectImageAdded:
+      type: object
+      properties:
+        id:
+          type: integer
+        image_id:
+          type: integer
+        order:
+          type: integer
+        caption:
+          type: string
+      required:
+      - caption
+      - id
+      - image_id
+      - order
     QuotaExceeded:
       type: object
       properties:
@@ -1463,6 +1909,13 @@ components:
       required:
       - count
       - results
+    ReorderResponse:
+      type: object
+      properties:
+        detail:
+          type: string
+      required:
+      - detail
     ServiceUnavailable:
       type: object
       properties:

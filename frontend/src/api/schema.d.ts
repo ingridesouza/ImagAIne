@@ -456,6 +456,143 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/projects/": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Listar projetos
+         * @description Lista projetos do usuário autenticado.
+         */
+        get: operations["projects_list"];
+        put?: never;
+        /**
+         * Criar projeto
+         * @description Cria um novo projeto vazio.
+         */
+        post: operations["projects_create"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/projects/{id}/": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Detalhe do projeto
+         * @description Retorna o projeto com todas as imagens ordenadas.
+         */
+        get: operations["projects_retrieve"];
+        /**
+         * Atualizar projeto
+         * @description Atualiza título, descrição ou visibilidade do projeto.
+         */
+        put: operations["projects_update"];
+        post?: never;
+        /**
+         * Deletar projeto
+         * @description Deleta o projeto. Imagens não são deletadas, apenas desassociadas.
+         */
+        delete: operations["projects_destroy"];
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/projects/{id}/images/": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Adicionar imagem ao projeto
+         * @description Associa uma imagem existente ao projeto com ordem e legenda.
+         */
+        post: operations["projects_images_create"];
+        /**
+         * Remover imagem do projeto
+         * @description Desassocia uma imagem do projeto (não deleta a imagem).
+         */
+        delete: operations["projects_images_destroy"];
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/projects/{id}/images/{image_id}/remove/": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Adicionar imagem ao projeto
+         * @description Associa uma imagem existente ao projeto com ordem e legenda.
+         */
+        post: operations["projects_images_remove_create"];
+        /**
+         * Remover imagem do projeto
+         * @description Desassocia uma imagem do projeto (não deleta a imagem).
+         */
+        delete: operations["projects_images_remove_destroy"];
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/projects/{id}/images/reorder/": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        /**
+         * Reordenar imagens
+         * @description Reordena as imagens do projeto com base na lista de IDs fornecida.
+         */
+        patch: operations["projects_images_reorder_partial_update"];
+        trace?: never;
+    };
+    "/api/projects/public/": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** @description List public projects. */
+        get: operations["projects_public_list"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/refine-prompt/": {
         parameters: {
             query?: never;
@@ -715,6 +852,21 @@ export interface components {
             previous?: string | null;
             results: components["schemas"]["Image"][];
         };
+        PaginatedProjectList: {
+            /** @example 123 */
+            count: number;
+            /**
+             * Format: uri
+             * @example http://api.example.org/accounts/?page=4
+             */
+            next?: string | null;
+            /**
+             * Format: uri
+             * @example http://api.example.org/accounts/?page=2
+             */
+            previous?: string | null;
+            results: components["schemas"]["Project"][];
+        };
         /** @description Serializer for password reset confirmation. */
         PasswordResetConfirmRequest: {
             /** Format: uuid */
@@ -730,6 +882,10 @@ export interface components {
         PatchedImageShareUpdateRequest: {
             is_public?: boolean;
         };
+        PatchedProjectReorderRequest: {
+            /** @description Lista ordenada de IDs de imagens no projeto */
+            image_ids?: number[];
+        };
         /** @description Serializer for user details. */
         PatchedUserRequest: {
             /** @description Required. 150 characters or fewer. Letters, digits and @/./+/-/_ only. */
@@ -740,6 +896,50 @@ export interface components {
             profile_picture?: string | null;
             cover_picture?: string | null;
             preferences?: unknown;
+        };
+        Project: {
+            /** Format: uuid */
+            readonly id: string;
+            readonly user: components["schemas"]["ImageUser"];
+            title: string;
+            description?: string;
+            cover_image?: number | null;
+            /** Format: uri */
+            readonly cover_image_url: string | null;
+            is_public?: boolean;
+            readonly tags: string[];
+            readonly images: components["schemas"]["ProjectImage"][];
+            readonly image_count: number;
+            /** Format: date-time */
+            readonly created_at: string;
+            /** Format: date-time */
+            readonly updated_at: string;
+        };
+        ProjectCreateRequest: {
+            title: string;
+            /** @default  */
+            description: string;
+        };
+        ProjectImage: {
+            readonly id: number;
+            readonly image: components["schemas"]["Image"];
+            order?: number;
+            caption?: string;
+            /** Format: date-time */
+            readonly created_at: string;
+        };
+        ProjectImageAddRequest: {
+            image_id: number;
+            /** @default 0 */
+            order: number;
+            /** @default  */
+            caption: string;
+        };
+        ProjectImageAdded: {
+            id: number;
+            image_id: number;
+            order: number;
+            caption: string;
         };
         QuotaExceeded: {
             detail: string;
@@ -765,6 +965,9 @@ export interface components {
         RelatedImagesResponse: {
             count: number;
             results: components["schemas"]["RelatedImage"][];
+        };
+        ReorderResponse: {
+            detail: string;
         };
         ServiceUnavailable: {
             detail: string;
@@ -1686,6 +1889,263 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["PaginatedImageList"];
+                };
+            };
+        };
+    };
+    projects_list: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Project"][];
+                };
+            };
+        };
+    };
+    projects_create: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["ProjectCreateRequest"];
+                "application/x-www-form-urlencoded": components["schemas"]["ProjectCreateRequest"];
+                "multipart/form-data": components["schemas"]["ProjectCreateRequest"];
+            };
+        };
+        responses: {
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Project"];
+                };
+            };
+        };
+    };
+    projects_retrieve: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Project"];
+                };
+            };
+        };
+    };
+    projects_update: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["ProjectCreateRequest"];
+                "application/x-www-form-urlencoded": components["schemas"]["ProjectCreateRequest"];
+                "multipart/form-data": components["schemas"]["ProjectCreateRequest"];
+            };
+        };
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Project"];
+                };
+            };
+        };
+    };
+    projects_destroy: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description No response body */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    projects_images_create: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["ProjectImageAddRequest"];
+                "application/x-www-form-urlencoded": components["schemas"]["ProjectImageAddRequest"];
+                "multipart/form-data": components["schemas"]["ProjectImageAddRequest"];
+            };
+        };
+        responses: {
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ProjectImageAdded"];
+                };
+            };
+        };
+    };
+    projects_images_destroy: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description No response body */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    projects_images_remove_create: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+                image_id: number;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["ProjectImageAddRequest"];
+                "application/x-www-form-urlencoded": components["schemas"]["ProjectImageAddRequest"];
+                "multipart/form-data": components["schemas"]["ProjectImageAddRequest"];
+            };
+        };
+        responses: {
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ProjectImageAdded"];
+                };
+            };
+        };
+    };
+    projects_images_remove_destroy: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+                image_id: number;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description No response body */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    projects_images_reorder_partial_update: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: {
+            content: {
+                "application/json": components["schemas"]["PatchedProjectReorderRequest"];
+                "application/x-www-form-urlencoded": components["schemas"]["PatchedProjectReorderRequest"];
+                "multipart/form-data": components["schemas"]["PatchedProjectReorderRequest"];
+            };
+        };
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ReorderResponse"];
+                };
+            };
+        };
+    };
+    projects_public_list: {
+        parameters: {
+            query?: {
+                /** @description A page number within the paginated result set. */
+                page?: number;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PaginatedProjectList"];
                 };
             };
         };

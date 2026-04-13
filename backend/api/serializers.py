@@ -256,6 +256,84 @@ class StyleSuggestionSerializer(serializers.Serializer):
     confidence = serializers.FloatField(read_only=True)
 
 
+# =============================================================================
+# Projects Serializers
+# =============================================================================
+
+class ProjectTagSerializer(serializers.ModelSerializer):
+    class Meta:
+        from .models import ProjectTag
+        model = ProjectTag
+        fields = ('name',)
+
+
+class ProjectImageSerializer(serializers.ModelSerializer):
+    image = ImageSerializer(read_only=True)
+    image_id = serializers.IntegerField(write_only=True)
+
+    class Meta:
+        from .models import ProjectImage
+        model = ProjectImage
+        fields = ('id', 'image', 'image_id', 'order', 'caption', 'created_at')
+        read_only_fields = ('id', 'image', 'created_at')
+
+
+class ProjectSerializer(serializers.ModelSerializer):
+    user = ImageUserSerializer(read_only=True)
+    images = ProjectImageSerializer(many=True, read_only=True)
+    image_count = serializers.SerializerMethodField()
+    tags = serializers.SerializerMethodField()
+    cover_image_url = serializers.SerializerMethodField()
+
+    class Meta:
+        from .models import Project
+        model = Project
+        fields = (
+            'id', 'user', 'title', 'description', 'cover_image',
+            'cover_image_url', 'is_public', 'tags', 'images',
+            'image_count', 'created_at', 'updated_at',
+        )
+        read_only_fields = ('id', 'user', 'images', 'image_count', 'tags', 'cover_image_url', 'created_at', 'updated_at')
+
+    @extend_schema_field(serializers.IntegerField())
+    def get_image_count(self, obj) -> int:
+        if hasattr(obj, '_prefetched_objects_cache') and 'images' in obj._prefetched_objects_cache:
+            return len(obj._prefetched_objects_cache['images'])
+        return obj.images.count()
+
+    @extend_schema_field(serializers.ListField(child=serializers.CharField()))
+    def get_tags(self, obj) -> List[str]:
+        return [tag.name for tag in obj.tags.all()]
+
+    @extend_schema_field(serializers.URLField(allow_null=True))
+    def get_cover_image_url(self, obj) -> Optional[str]:
+        if not obj.cover_image or not obj.cover_image.image:
+            return None
+        request = self.context.get('request')
+        url = obj.cover_image.image.url
+        if request:
+            return request.build_absolute_uri(url)
+        return url
+
+
+class ProjectCreateSerializer(serializers.Serializer):
+    title = serializers.CharField(max_length=200)
+    description = serializers.CharField(required=False, allow_blank=True, default='')
+
+
+class ProjectImageAddSerializer(serializers.Serializer):
+    image_id = serializers.IntegerField()
+    order = serializers.IntegerField(required=False, default=0)
+    caption = serializers.CharField(required=False, allow_blank=True, default='')
+
+
+class ProjectReorderSerializer(serializers.Serializer):
+    image_ids = serializers.ListField(
+        child=serializers.IntegerField(),
+        help_text='Lista ordenada de IDs de imagens no projeto',
+    )
+
+
 # Prompt Assistant - DeepSeek LLM Serializers
 
 class RefinePromptRequestSerializer(serializers.Serializer):
