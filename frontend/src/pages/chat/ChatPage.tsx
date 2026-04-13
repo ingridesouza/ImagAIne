@@ -1,7 +1,7 @@
 import { useState, useRef, useEffect } from 'react';
 import { useParams, useNavigate, Link } from 'react-router-dom';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { Send, Plus, Sparkles, Loader2, Image as ImageIcon, MessageSquare } from 'lucide-react';
+import { Send, Plus, Sparkles, Loader2 } from 'lucide-react';
 import { imagesApi } from '@/features/images/api';
 
 type ChatMessage = {
