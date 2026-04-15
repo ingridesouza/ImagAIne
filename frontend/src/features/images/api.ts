@@ -113,6 +113,15 @@ export const imagesApi = {
     );
     return data;
   },
+  // Image-to-Image
+  async generateVariations(imageId: number, count = 1, strength = 0.65) {
+    const { data } = await apiClient.post<ImageRecord[]>(`/images/${imageId}/variations/`, { count, strength });
+    return data;
+  },
+  async restyleImage(imageId: number, style: string, strength = 0.65) {
+    const { data } = await apiClient.post<ImageRecord>(`/images/${imageId}/restyle/`, { style, strength });
+    return data;
+  },
   // Creative Agent
   async fetchSessions() {
     const { data } = await apiClient.get<{ id: string; title: string; status: string; message_count: number; created_at: string; updated_at: string }[]>('/sessions/');
