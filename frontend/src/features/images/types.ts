@@ -20,6 +20,9 @@ export type ImageRecord = {
   relevance_score: number;
   featured: boolean;
   tags: string[];
+  source_image?: number | null;
+  generation_type?: string;
+  strength?: number | null;
   created_at: string;
 };
 
