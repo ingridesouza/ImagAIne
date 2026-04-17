@@ -113,6 +113,41 @@ export const imagesApi = {
     );
     return data;
   },
+  // Characters
+  async fetchCharacters() {
+    const { data } = await apiClient.get<{ id: string; name: string; description: string; reference_count: number; generation_count: number; thumbnail_url: string | null; created_at: string }[]>('/characters/');
+    return data;
+  },
+  async fetchCharacter(characterId: string) {
+    const { data } = await apiClient.get(`/characters/${characterId}/`);
+    return data;
+  },
+  async createCharacter(payload: { name: string; description?: string; style_notes?: string }) {
+    const { data } = await apiClient.post('/characters/', payload);
+    return data;
+  },
+  async updateCharacter(characterId: string, payload: Partial<{ name: string; description: string; style_notes: string }>) {
+    const { data } = await apiClient.put(`/characters/${characterId}/`, payload);
+    return data;
+  },
+  async deleteCharacter(characterId: string) {
+    await apiClient.delete(`/characters/${characterId}/`);
+  },
+  async uploadCharacterRef(characterId: string, file: File) {
+    const formData = new FormData();
+    formData.append('file', file);
+    const { data } = await apiClient.post(`/characters/${characterId}/references/`, formData, {
+      headers: { 'Content-Type': 'multipart/form-data' },
+    });
+    return data;
+  },
+  async removeCharacterRef(characterId: string, refId: number) {
+    await apiClient.delete(`/characters/${characterId}/references/${refId}/remove/`);
+  },
+  async generateWithCharacter(characterId: string, scene: string, style = 'photorealistic') {
+    const { data } = await apiClient.post<ImageRecord>(`/characters/${characterId}/generate/`, { scene, style });
+    return data;
+  },
   // Image-to-Image
   async generateVariations(imageId: number, count = 1, strength = 0.65) {
     const { data } = await apiClient.post<ImageRecord[]>(`/images/${imageId}/variations/`, { count, strength });
