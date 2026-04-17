@@ -1,6 +1,7 @@
 name: SDD — Validate API Spec
 
 on:
+  workflow_dispatch:
   pull_request:
     paths:
       - 'backend/**'
