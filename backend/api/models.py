@@ -37,6 +37,13 @@ class Image(models.Model):
         PORTRAIT = "9:16", "9:16"
         GOLDEN = "3:2", "3:2"
 
+    class GenerationType(models.TextChoices):
+        TXT2IMG = "txt2img", "Text to Image"
+        IMG2IMG = "img2img", "Image to Image"
+        VARIATION = "variation", "Variation"
+        RESTYLE = "restyle", "Restyle"
+        UPSCALE = "upscale", "Upscale"
+
     user = models.ForeignKey(User, on_delete=models.CASCADE, related_name='images')
     prompt = models.TextField(blank=True, null=True)
     negative_prompt = models.TextField(blank=True, null=True)
@@ -57,6 +64,15 @@ class Image(models.Model):
     relevance_score = models.FloatField(default=0.0)
     featured = models.BooleanField(default=False)
     retry_count = models.PositiveIntegerField(default=0)
+    source_image = models.ForeignKey(
+        'self', on_delete=models.SET_NULL, null=True, blank=True, related_name='derivatives',
+    )
+    generation_type = models.CharField(
+        max_length=20,
+        choices=GenerationType.choices,
+        default=GenerationType.TXT2IMG,
+    )
+    strength = models.FloatField(null=True, blank=True, help_text="Transformation strength 0.0-1.0 for img2img")
     created_at = models.DateTimeField(auto_now_add=True)
     tags = models.ManyToManyField(
         "ImageTag",
@@ -144,6 +160,147 @@ class CommentLike(models.Model):
 
 
 class ImageTag(models.Model):
+    name = models.CharField(max_length=64, unique=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        ordering = ['name']
+
+    def __str__(self):
+        return self.name
+
+
+class Project(models.Model):
+    """A curated collection of images with narrative."""
+    id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
+    user = models.ForeignKey(User, on_delete=models.CASCADE, related_name='projects')
+    title = models.CharField(max_length=200)
+    description = models.TextField(blank=True, default='')
+    cover_image = models.ForeignKey(
+        Image, on_delete=models.SET_NULL, null=True, blank=True, related_name='+',
+    )
+    is_public = models.BooleanField(default=False)
+    tags = models.ManyToManyField('ProjectTag', blank=True, related_name='projects')
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        ordering = ['-updated_at']
+
+    def __str__(self):
+        return f'{self.title} by {self.user.username}'
+
+
+class ProjectImage(models.Model):
+    """An image within a project, with order and caption."""
+    project = models.ForeignKey(Project, on_delete=models.CASCADE, related_name='images')
+    image = models.ForeignKey(Image, on_delete=models.CASCADE, related_name='project_entries')
+    order = models.PositiveIntegerField(default=0)
+    caption = models.TextField(blank=True, default='')
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        ordering = ['order', 'created_at']
+        constraints = [
+            models.UniqueConstraint(fields=['project', 'image'], name='unique_image_per_project')
+        ]
+
+    def __str__(self):
+        return f'Image {self.image_id} in {self.project.title} (#{self.order})'
+
+
+class CreativeSession(models.Model):
+    """A conversational creative session between user and AI agent."""
+    class Status(models.TextChoices):
+        ACTIVE = 'active', 'Active'
+        ARCHIVED = 'archived', 'Archived'
+
+    id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
+    user = models.ForeignKey(User, on_delete=models.CASCADE, related_name='creative_sessions')
+    title = models.CharField(max_length=200, default='Nova sessão')
+    status = models.CharField(max_length=10, choices=Status.choices, default=Status.ACTIVE)
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        ordering = ['-updated_at']
+
+    def __str__(self):
+        return f'{self.title} by {self.user.username}'
+
+
+class SessionMessage(models.Model):
+    """A single message in a creative session."""
+    class Role(models.TextChoices):
+        USER = 'user', 'User'
+        ASSISTANT = 'assistant', 'Assistant'
+
+    session = models.ForeignKey(CreativeSession, on_delete=models.CASCADE, related_name='messages')
+    role = models.CharField(max_length=10, choices=Role.choices)
+    text = models.TextField()
+    image = models.ForeignKey(Image, on_delete=models.SET_NULL, null=True, blank=True, related_name='session_messages')
+    prompt_used = models.TextField(blank=True, default='')
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        ordering = ['created_at']
+
+    def __str__(self):
+        return f'[{self.role}] {self.text[:50]}'
+
+
+class Character(models.Model):
+    """A reusable character with reference images for consistent generation."""
+    id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
+    user = models.ForeignKey(User, on_delete=models.CASCADE, related_name='characters')
+    name = models.CharField(max_length=100)
+    description = models.TextField(blank=True, default='')
+    style_notes = models.TextField(blank=True, default='')
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        ordering = ['-updated_at']
+
+    def __str__(self):
+        return f'{self.name} by {self.user.username}'
+
+
+def character_ref_upload_to(instance, filename):
+    extension = os.path.splitext(filename)[1] or ".png"
+    return f"characters/{instance.character_id}/refs/{uuid.uuid4()}{extension}"
+
+
+class CharacterReference(models.Model):
+    """A reference image for a character."""
+    character = models.ForeignKey(Character, on_delete=models.CASCADE, related_name='references')
+    image = models.ImageField(upload_to=character_ref_upload_to)
+    order = models.PositiveIntegerField(default=0)
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        ordering = ['order', 'created_at']
+
+    def __str__(self):
+        return f'Ref #{self.order} for {self.character.name}'
+
+
+class CharacterGeneration(models.Model):
+    """A generated image featuring a character."""
+    character = models.ForeignKey(Character, on_delete=models.CASCADE, related_name='generations')
+    image = models.ForeignKey(Image, on_delete=models.CASCADE, related_name='character_generations')
+    scene_description = models.TextField(blank=True, default='')
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        ordering = ['-created_at']
+
+    def __str__(self):
+        return f'{self.character.name} in "{self.scene_description[:30]}"'
+
+
+class ProjectTag(models.Model):
+    """Tag for projects."""
     name = models.CharField(max_length=64, unique=True)
     created_at = models.DateTimeField(auto_now_add=True)
 

@@ -206,6 +206,7 @@ SPECTACULAR_SETTINGS = {
     'ENUM_NAME_OVERRIDES': {
         'ImageStatusEnum': 'api.models.Image.Status',
         'AspectRatioEnum': 'api.models.Image.AspectRatio',
+        'SessionStatusEnum': 'api.models.CreativeSession.Status',
     },
     'TAGS': [
         {'name': 'Auth', 'description': 'Autenticação, registro e gerenciamento de conta'},
@@ -215,5 +216,7 @@ SPECTACULAR_SETTINGS = {
         {'name': 'Social', 'description': 'Likes, comentários e downloads'},
         {'name': 'Creative Memory', 'description': 'Imagens relacionadas e sugestões de estilo'},
         {'name': 'Prompt Assistant', 'description': 'Refinamento de prompts via LLM'},
+        {'name': 'Characters', 'description': 'Personagens reutilizáveis com referências visuais'},
+        {'name': 'Image Editing', 'description': 'Variações e mudança de estilo de imagens'},
     ],
 }

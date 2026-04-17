@@ -9,6 +9,29 @@ info:
   license:
     name: Proprietary
 paths:
+  /api/auth/account/:
+    delete:
+      operationId: auth_account_destroy
+      description: Deleta permanentemente a conta do usuário e todas as suas imagens.
+        Requer confirmação com a senha atual. Ação irreversível.
+      summary: Deletar conta
+      tags:
+      - Auth
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/DetailResponse'
+          description: ''
+        '400':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/DetailResponse'
+          description: ''
   /api/auth/login/:
     post:
       operationId: auth_login_create
@@ -37,6 +60,40 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/LoginResponse'
+          description: ''
+  /api/auth/password/change/:
+    post:
+      operationId: auth_password_change_create
+      description: Altera a senha do usuário autenticado. Requer a senha atual.
+      summary: Trocar senha
+      tags:
+      - Auth
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ChangePasswordRequest'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/ChangePasswordRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/ChangePasswordRequest'
+        required: true
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/DetailResponse'
+          description: ''
+        '400':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/DetailResponse'
           description: ''
   /api/auth/password/reset/confirm/:
     post:
@@ -342,6 +399,277 @@ paths:
               schema:
                 $ref: '#/components/schemas/DetailResponse'
           description: ''
+  /api/characters/:
+    get:
+      operationId: characters_list
+      description: Lista personagens do usuário com contagem de referências e gerações.
+      summary: Listar personagens
+      tags:
+      - Characters
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/CharacterList'
+          description: ''
+    post:
+      operationId: characters_create
+      description: Cria um novo personagem. Imagens de referência são adicionadas
+        separadamente.
+      summary: Criar personagem
+      tags:
+      - Characters
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CharacterCreateRequest'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/CharacterCreateRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/CharacterCreateRequest'
+        required: true
+      security:
+      - jwtAuth: []
+      responses:
+        '201':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Character'
+          description: ''
+  /api/characters/{id}/:
+    get:
+      operationId: characters_retrieve
+      description: Retorna personagem com referências e gerações.
+      summary: Detalhe do personagem
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: string
+          format: uuid
+        required: true
+      tags:
+      - Characters
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Character'
+          description: ''
+    put:
+      operationId: characters_update
+      description: Atualiza nome, descrição ou notas de estilo.
+      summary: Atualizar personagem
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: string
+          format: uuid
+        required: true
+      tags:
+      - Characters
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CharacterCreateRequest'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/CharacterCreateRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/CharacterCreateRequest'
+        required: true
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Character'
+          description: ''
+    delete:
+      operationId: characters_destroy
+      description: Deleta personagem e referências. Gerações (imagens) não são deletadas.
+      summary: Deletar personagem
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: string
+          format: uuid
+        required: true
+      tags:
+      - Characters
+      security:
+      - jwtAuth: []
+      responses:
+        '204':
+          description: No response body
+  /api/characters/{id}/generate/:
+    post:
+      operationId: characters_generate_create
+      description: Gera uma imagem com o personagem em uma cena descrita. Combina
+        a descrição do personagem + cena + estilo no prompt.
+      summary: Gerar cena com personagem
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: string
+          format: uuid
+        required: true
+      tags:
+      - Characters
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CharacterGenerateRequest'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/CharacterGenerateRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/CharacterGenerateRequest'
+        required: true
+      security:
+      - jwtAuth: []
+      responses:
+        '202':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Image'
+          description: ''
+  /api/characters/{id}/references/:
+    post:
+      operationId: characters_references_create
+      description: Adiciona uma imagem de referência ao personagem (multipart).
+      summary: Upload referência
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: string
+          format: uuid
+        required: true
+      tags:
+      - Characters
+      requestBody:
+        content:
+          multipart/form-data:
+            schema:
+              type: object
+              properties:
+                file:
+                  type: string
+                  format: binary
+              required:
+              - file
+      security:
+      - jwtAuth: []
+      responses:
+        '201':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/RefUploaded'
+          description: ''
+    delete:
+      operationId: characters_references_destroy
+      description: Remove uma imagem de referência do personagem.
+      summary: Remover referência
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: string
+          format: uuid
+        required: true
+      tags:
+      - Characters
+      security:
+      - jwtAuth: []
+      responses:
+        '204':
+          description: No response body
+  /api/characters/{id}/references/{ref_id}/remove/:
+    post:
+      operationId: characters_references_remove_create
+      description: Adiciona uma imagem de referência ao personagem (multipart).
+      summary: Upload referência
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: string
+          format: uuid
+        required: true
+      - in: path
+        name: ref_id
+        schema:
+          type: integer
+        required: true
+      tags:
+      - Characters
+      requestBody:
+        content:
+          multipart/form-data:
+            schema:
+              type: object
+              properties:
+                file:
+                  type: string
+                  format: binary
+              required:
+              - file
+      security:
+      - jwtAuth: []
+      responses:
+        '201':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/RefUploaded'
+          description: ''
+    delete:
+      operationId: characters_references_remove_destroy
+      description: Remove uma imagem de referência do personagem.
+      summary: Remover referência
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: string
+          format: uuid
+        required: true
+      - in: path
+        name: ref_id
+        schema:
+          type: integer
+        required: true
+      tags:
+      - Characters
+      security:
+      - jwtAuth: []
+      responses:
+        '204':
+          description: No response body
   /api/generate/:
     post:
       operationId: generate_create
@@ -625,6 +953,41 @@ paths:
               schema:
                 $ref: '#/components/schemas/RelatedImagesResponse'
           description: ''
+  /api/images/{id}/restyle/:
+    post:
+      operationId: images_restyle_create
+      description: Aplica um estilo diferente a uma imagem existente. O prompt original
+        é combinado com modificadores do estilo escolhido.
+      summary: Mudar estilo
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        required: true
+      tags:
+      - Image Editing
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/RestyleRequestRequest'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/RestyleRequestRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/RestyleRequestRequest'
+        required: true
+      security:
+      - jwtAuth: []
+      responses:
+        '202':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Image'
+          description: ''
   /api/images/{id}/share/:
     post:
       operationId: images_share_create
@@ -689,6 +1052,43 @@ paths:
           description: No response body
         '404':
           description: No response body
+  /api/images/{id}/variations/:
+    post:
+      operationId: images_variations_create
+      description: Gera 1-4 variações de uma imagem existente usando img2img. O strength
+        controla o quanto a variação difere do original (0.1 = quase igual, 0.95 =
+        muito diferente).
+      summary: Gerar variações
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        required: true
+      tags:
+      - Image Editing
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/VariationRequestRequest'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/VariationRequestRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/VariationRequestRequest'
+      security:
+      - jwtAuth: []
+      responses:
+        '202':
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Image'
+          description: ''
   /api/images/liked/:
     get:
       operationId: images_liked_list
@@ -759,6 +1159,299 @@ paths:
               schema:
                 $ref: '#/components/schemas/PaginatedImageList'
           description: ''
+  /api/projects/:
+    get:
+      operationId: projects_list
+      description: Lista projetos do usuário autenticado.
+      summary: Listar projetos
+      tags:
+      - Projects
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Project'
+          description: ''
+    post:
+      operationId: projects_create
+      description: Cria um novo projeto vazio.
+      summary: Criar projeto
+      tags:
+      - Projects
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ProjectCreateRequest'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/ProjectCreateRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/ProjectCreateRequest'
+        required: true
+      security:
+      - jwtAuth: []
+      responses:
+        '201':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Project'
+          description: ''
+  /api/projects/{id}/:
+    get:
+      operationId: projects_retrieve
+      description: Retorna o projeto com todas as imagens ordenadas.
+      summary: Detalhe do projeto
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: string
+          format: uuid
+        required: true
+      tags:
+      - Projects
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Project'
+          description: ''
+    put:
+      operationId: projects_update
+      description: Atualiza título, descrição ou visibilidade do projeto.
+      summary: Atualizar projeto
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: string
+          format: uuid
+        required: true
+      tags:
+      - Projects
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ProjectCreateRequest'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/ProjectCreateRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/ProjectCreateRequest'
+        required: true
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Project'
+          description: ''
+    delete:
+      operationId: projects_destroy
+      description: Deleta o projeto. Imagens não são deletadas, apenas desassociadas.
+      summary: Deletar projeto
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: string
+          format: uuid
+        required: true
+      tags:
+      - Projects
+      security:
+      - jwtAuth: []
+      responses:
+        '204':
+          description: No response body
+  /api/projects/{id}/images/:
+    post:
+      operationId: projects_images_create
+      description: Associa uma imagem existente ao projeto com ordem e legenda.
+      summary: Adicionar imagem ao projeto
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: string
+          format: uuid
+        required: true
+      tags:
+      - Projects
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ProjectImageAddRequest'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/ProjectImageAddRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/ProjectImageAddRequest'
+        required: true
+      security:
+      - jwtAuth: []
+      responses:
+        '201':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ProjectImageAdded'
+          description: ''
+    delete:
+      operationId: projects_images_destroy
+      description: Desassocia uma imagem do projeto (não deleta a imagem).
+      summary: Remover imagem do projeto
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: string
+          format: uuid
+        required: true
+      tags:
+      - Projects
+      security:
+      - jwtAuth: []
+      responses:
+        '204':
+          description: No response body
+  /api/projects/{id}/images/{image_id}/remove/:
+    post:
+      operationId: projects_images_remove_create
+      description: Associa uma imagem existente ao projeto com ordem e legenda.
+      summary: Adicionar imagem ao projeto
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: string
+          format: uuid
+        required: true
+      - in: path
+        name: image_id
+        schema:
+          type: integer
+        required: true
+      tags:
+      - Projects
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ProjectImageAddRequest'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/ProjectImageAddRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/ProjectImageAddRequest'
+        required: true
+      security:
+      - jwtAuth: []
+      responses:
+        '201':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ProjectImageAdded'
+          description: ''
+    delete:
+      operationId: projects_images_remove_destroy
+      description: Desassocia uma imagem do projeto (não deleta a imagem).
+      summary: Remover imagem do projeto
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: string
+          format: uuid
+        required: true
+      - in: path
+        name: image_id
+        schema:
+          type: integer
+        required: true
+      tags:
+      - Projects
+      security:
+      - jwtAuth: []
+      responses:
+        '204':
+          description: No response body
+  /api/projects/{id}/images/reorder/:
+    patch:
+      operationId: projects_images_reorder_partial_update
+      description: Reordena as imagens do projeto com base na lista de IDs fornecida.
+      summary: Reordenar imagens
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: string
+          format: uuid
+        required: true
+      tags:
+      - Projects
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PatchedProjectReorderRequest'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/PatchedProjectReorderRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/PatchedProjectReorderRequest'
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ReorderResponse'
+          description: ''
+  /api/projects/public/:
+    get:
+      operationId: projects_public_list
+      description: List public projects.
+      parameters:
+      - name: page
+        required: false
+        in: query
+        description: A page number within the paginated result set.
+        schema:
+          type: integer
+      tags:
+      - projects
+      security:
+      - jwtAuth: []
+      - {}
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PaginatedProjectList'
+          description: ''
   /api/refine-prompt/:
     post:
       operationId: refine_prompt_create
@@ -796,6 +1489,128 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/ServiceUnavailable'
+          description: ''
+  /api/sessions/:
+    get:
+      operationId: sessions_list
+      description: Lista sessões criativas do usuário, ordenadas por última atualização.
+      summary: Listar sessões
+      tags:
+      - Creative Agent
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/CreativeSessionList'
+          description: ''
+    post:
+      operationId: sessions_create
+      description: Cria uma nova sessão criativa.
+      summary: Criar sessão
+      tags:
+      - Creative Agent
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/SessionCreateRequest'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/SessionCreateRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/SessionCreateRequest'
+      security:
+      - jwtAuth: []
+      responses:
+        '201':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CreativeSession'
+          description: ''
+  /api/sessions/{id}/:
+    get:
+      operationId: sessions_retrieve
+      description: Retorna a sessão com todas as mensagens.
+      summary: Detalhe da sessão
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: string
+          format: uuid
+        required: true
+      tags:
+      - Creative Agent
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CreativeSession'
+          description: ''
+    delete:
+      operationId: sessions_destroy
+      description: Arquiva a sessão criativa.
+      summary: Arquivar sessão
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: string
+          format: uuid
+        required: true
+      tags:
+      - Creative Agent
+      security:
+      - jwtAuth: []
+      responses:
+        '204':
+          description: No response body
+  /api/sessions/{id}/messages/:
+    post:
+      operationId: sessions_messages_create
+      description: Envia uma mensagem ao agente criativo. O agente responde com texto
+        e, opcionalmente, gera uma imagem se tiver informação suficiente. Usa o DeepSeek
+        LLM para a conversa e FLUX.1-dev para geração.
+      summary: Enviar mensagem
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: string
+          format: uuid
+        required: true
+      tags:
+      - Creative Agent
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/SessionMessageCreateRequest'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/SessionMessageCreateRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/SessionMessageCreateRequest'
+        required: true
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AgentResponse'
           description: ''
   /api/token/:
     post:
@@ -899,6 +1714,16 @@ paths:
           description: ''
 components:
   schemas:
+    AgentResponse:
+      type: object
+      properties:
+        message:
+          $ref: '#/components/schemas/SessionMessage'
+        agent_response:
+          $ref: '#/components/schemas/SessionMessage'
+      required:
+      - agent_response
+      - message
     AspectRatioEnum:
       enum:
       - '1:1'
@@ -913,6 +1738,177 @@ components:
         * `4:3` - 4:3
         * `9:16` - 9:16
         * `3:2` - 3:2
+    ChangePasswordRequest:
+      type: object
+      description: Serializer for changing password while logged in.
+      properties:
+        current_password:
+          type: string
+          writeOnly: true
+          minLength: 1
+        new_password:
+          type: string
+          writeOnly: true
+          minLength: 8
+        new_password_confirm:
+          type: string
+          writeOnly: true
+          minLength: 1
+      required:
+      - current_password
+      - new_password
+      - new_password_confirm
+    Character:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+          readOnly: true
+        user:
+          allOf:
+          - $ref: '#/components/schemas/ImageUser'
+          readOnly: true
+        name:
+          type: string
+          maxLength: 100
+        description:
+          type: string
+        style_notes:
+          type: string
+        references:
+          type: array
+          items:
+            $ref: '#/components/schemas/CharacterReference'
+          readOnly: true
+        generation_count:
+          type: integer
+          readOnly: true
+        created_at:
+          type: string
+          format: date-time
+          readOnly: true
+        updated_at:
+          type: string
+          format: date-time
+          readOnly: true
+      required:
+      - created_at
+      - generation_count
+      - id
+      - name
+      - references
+      - updated_at
+      - user
+    CharacterCreateRequest:
+      type: object
+      properties:
+        name:
+          type: string
+          minLength: 1
+          maxLength: 100
+        description:
+          type: string
+          default: ''
+        style_notes:
+          type: string
+          default: ''
+      required:
+      - name
+    CharacterGenerateRequest:
+      type: object
+      properties:
+        scene:
+          type: string
+          minLength: 1
+          description: 'Descrição da cena (ex: "em uma cafeteria")'
+        style:
+          allOf:
+          - $ref: '#/components/schemas/CharacterGenerateStyleEnum'
+          default: photorealistic
+      required:
+      - scene
+    CharacterGenerateStyleEnum:
+      enum:
+      - photorealistic
+      - anime
+      - digital_art
+      - oil_painting
+      type: string
+      description: |-
+        * `photorealistic` - Fotorrealista
+        * `anime` - Anime
+        * `digital_art` - Arte Digital
+        * `oil_painting` - Pintura a Óleo
+    CharacterList:
+      type: object
+      description: Lighter serializer for character lists.
+      properties:
+        id:
+          type: string
+          format: uuid
+          readOnly: true
+        name:
+          type: string
+          readOnly: true
+        description:
+          type: string
+          readOnly: true
+        reference_count:
+          type: integer
+          readOnly: true
+        generation_count:
+          type: integer
+          readOnly: true
+        thumbnail_url:
+          type: string
+          format: uri
+          nullable: true
+          readOnly: true
+        created_at:
+          type: string
+          format: date-time
+          readOnly: true
+        updated_at:
+          type: string
+          format: date-time
+          readOnly: true
+      required:
+      - created_at
+      - description
+      - generation_count
+      - id
+      - name
+      - reference_count
+      - thumbnail_url
+      - updated_at
+    CharacterReference:
+      type: object
+      properties:
+        id:
+          type: integer
+          readOnly: true
+        image:
+          type: string
+          format: uri
+        image_url:
+          type: string
+          format: uri
+          nullable: true
+          readOnly: true
+        order:
+          type: integer
+          maximum: 2147483647
+          minimum: 0
+        created_at:
+          type: string
+          format: date-time
+          readOnly: true
+      required:
+      - created_at
+      - id
+      - image
+      - image_url
     CommentLikeResponse:
       type: object
       properties:
@@ -939,6 +1935,78 @@ components:
       - comment_id
       - is_liked
       - like_count
+    CreativeSession:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+          readOnly: true
+        user:
+          allOf:
+          - $ref: '#/components/schemas/ImageUser'
+          readOnly: true
+        title:
+          type: string
+          maxLength: 200
+        status:
+          $ref: '#/components/schemas/SessionStatusEnum'
+        messages:
+          type: array
+          items:
+            $ref: '#/components/schemas/SessionMessage'
+          readOnly: true
+        message_count:
+          type: integer
+          readOnly: true
+        created_at:
+          type: string
+          format: date-time
+          readOnly: true
+        updated_at:
+          type: string
+          format: date-time
+          readOnly: true
+      required:
+      - created_at
+      - id
+      - message_count
+      - messages
+      - updated_at
+      - user
+    CreativeSessionList:
+      type: object
+      description: Lighter serializer for session lists (no messages).
+      properties:
+        id:
+          type: string
+          format: uuid
+          readOnly: true
+        title:
+          type: string
+          readOnly: true
+        status:
+          allOf:
+          - $ref: '#/components/schemas/SessionStatusEnum'
+          readOnly: true
+        message_count:
+          type: integer
+          readOnly: true
+        created_at:
+          type: string
+          format: date-time
+          readOnly: true
+        updated_at:
+          type: string
+          format: date-time
+          readOnly: true
+      required:
+      - created_at
+      - id
+      - message_count
+      - status
+      - title
+      - updated_at
     DetailResponse:
       type: object
       properties:
@@ -983,6 +2051,20 @@ components:
           nullable: true
       required:
       - prompt
+    GenerationTypeEnum:
+      enum:
+      - txt2img
+      - img2img
+      - variation
+      - restyle
+      - upscale
+      type: string
+      description: |-
+        * `txt2img` - Text to Image
+        * `img2img` - Image to Image
+        * `variation` - Variation
+        * `restyle` - Restyle
+        * `upscale` - Upscale
     Image:
       type: object
       properties:
@@ -1042,6 +2124,20 @@ components:
           items:
             type: string
           readOnly: true
+        source_image:
+          type: integer
+          readOnly: true
+          nullable: true
+        generation_type:
+          allOf:
+          - $ref: '#/components/schemas/GenerationTypeEnum'
+          readOnly: true
+        strength:
+          type: number
+          format: double
+          readOnly: true
+          nullable: true
+          description: Transformation strength 0.0-1.0 for img2img
         created_at:
           type: string
           format: date-time
@@ -1051,12 +2147,15 @@ components:
       - created_at
       - download_count
       - featured
+      - generation_type
       - id
       - image_url
       - is_liked
       - like_count
       - relevance_score
+      - source_image
       - status
+      - strength
       - tags
       - user
     ImageComment:
@@ -1265,6 +2364,29 @@ components:
           type: array
           items:
             $ref: '#/components/schemas/Image'
+    PaginatedProjectList:
+      type: object
+      required:
+      - count
+      - results
+      properties:
+        count:
+          type: integer
+          example: 123
+        next:
+          type: string
+          nullable: true
+          format: uri
+          example: http://api.example.org/accounts/?page=4
+        previous:
+          type: string
+          nullable: true
+          format: uri
+          example: http://api.example.org/accounts/?page=2
+        results:
+          type: array
+          items:
+            $ref: '#/components/schemas/Project'
     PasswordResetConfirmRequest:
       type: object
       description: Serializer for password reset confirmation.
@@ -1297,6 +2419,14 @@ components:
       properties:
         is_public:
           type: boolean
+    PatchedProjectReorderRequest:
+      type: object
+      properties:
+        image_ids:
+          type: array
+          items:
+            type: integer
+          description: Lista ordenada de IDs de imagens no projeto
     PatchedUserRequest:
       type: object
       description: Serializer for user details.
@@ -1325,6 +2455,128 @@ components:
           nullable: true
           maxLength: 100
         preferences: {}
+    Project:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+          readOnly: true
+        user:
+          allOf:
+          - $ref: '#/components/schemas/ImageUser'
+          readOnly: true
+        title:
+          type: string
+          maxLength: 200
+        description:
+          type: string
+        cover_image:
+          type: integer
+          nullable: true
+        cover_image_url:
+          type: string
+          format: uri
+          nullable: true
+          readOnly: true
+        is_public:
+          type: boolean
+        tags:
+          type: array
+          items:
+            type: string
+          readOnly: true
+        images:
+          type: array
+          items:
+            $ref: '#/components/schemas/ProjectImage'
+          readOnly: true
+        image_count:
+          type: integer
+          readOnly: true
+        created_at:
+          type: string
+          format: date-time
+          readOnly: true
+        updated_at:
+          type: string
+          format: date-time
+          readOnly: true
+      required:
+      - cover_image_url
+      - created_at
+      - id
+      - image_count
+      - images
+      - tags
+      - title
+      - updated_at
+      - user
+    ProjectCreateRequest:
+      type: object
+      properties:
+        title:
+          type: string
+          minLength: 1
+          maxLength: 200
+        description:
+          type: string
+          default: ''
+      required:
+      - title
+    ProjectImage:
+      type: object
+      properties:
+        id:
+          type: integer
+          readOnly: true
+        image:
+          allOf:
+          - $ref: '#/components/schemas/Image'
+          readOnly: true
+        order:
+          type: integer
+          maximum: 2147483647
+          minimum: 0
+        caption:
+          type: string
+        created_at:
+          type: string
+          format: date-time
+          readOnly: true
+      required:
+      - created_at
+      - id
+      - image
+    ProjectImageAddRequest:
+      type: object
+      properties:
+        image_id:
+          type: integer
+        order:
+          type: integer
+          default: 0
+        caption:
+          type: string
+          default: ''
+      required:
+      - image_id
+    ProjectImageAdded:
+      type: object
+      properties:
+        id:
+          type: integer
+        image_id:
+          type: integer
+        order:
+          type: integer
+        caption:
+          type: string
+      required:
+      - caption
+      - id
+      - image_id
+      - order
     QuotaExceeded:
       type: object
       properties:
@@ -1332,6 +2584,20 @@ components:
           type: string
       required:
       - detail
+    RefUploaded:
+      type: object
+      properties:
+        id:
+          type: integer
+        image_url:
+          type: string
+          format: uri
+        order:
+          type: integer
+      required:
+      - id
+      - image_url
+      - order
     RefinePromptRequestRequest:
       type: object
       description: Serializer for prompt refinement request.
@@ -1342,7 +2608,7 @@ components:
           description: User's casual description of what they want to generate
         style:
           allOf:
-          - $ref: '#/components/schemas/StyleEnum'
+          - $ref: '#/components/schemas/Style6fbEnum'
           default: photorealistic
       required:
       - description
@@ -1386,6 +2652,35 @@ components:
       required:
       - count
       - results
+    ReorderResponse:
+      type: object
+      properties:
+        detail:
+          type: string
+      required:
+      - detail
+    RestyleRequestRequest:
+      type: object
+      description: Request to apply a different style to an existing image.
+      properties:
+        style:
+          $ref: '#/components/schemas/Style6fbEnum'
+        strength:
+          type: number
+          format: double
+          maximum: 0.9
+          minimum: 0.3
+          default: 0.65
+      required:
+      - style
+    RoleEnum:
+      enum:
+      - user
+      - assistant
+      type: string
+      description: |-
+        * `user` - User
+        * `assistant` - Assistant
     ServiceUnavailable:
       type: object
       properties:
@@ -1393,7 +2688,67 @@ components:
           type: string
       required:
       - detail
-    StyleEnum:
+    SessionCreateRequest:
+      type: object
+      properties:
+        title:
+          type: string
+          minLength: 1
+          default: Nova sessão
+          maxLength: 200
+    SessionMessage:
+      type: object
+      properties:
+        id:
+          type: integer
+          readOnly: true
+        role:
+          allOf:
+          - $ref: '#/components/schemas/RoleEnum'
+          readOnly: true
+        text:
+          type: string
+        image:
+          type: integer
+          readOnly: true
+          nullable: true
+        image_url:
+          type: string
+          format: uri
+          nullable: true
+          readOnly: true
+        prompt_used:
+          type: string
+          readOnly: true
+        created_at:
+          type: string
+          format: date-time
+          readOnly: true
+      required:
+      - created_at
+      - id
+      - image
+      - image_url
+      - prompt_used
+      - role
+      - text
+    SessionMessageCreateRequest:
+      type: object
+      properties:
+        text:
+          type: string
+          minLength: 1
+      required:
+      - text
+    SessionStatusEnum:
+      enum:
+      - active
+      - archived
+      type: string
+      description: |-
+        * `active` - Active
+        * `archived` - Archived
+    Style6fbEnum:
       enum:
       - photorealistic
       - anime
@@ -1681,6 +3036,21 @@ components:
         preferences: {}
       required:
       - username
+    VariationRequestRequest:
+      type: object
+      description: Request to generate variations of an existing image.
+      properties:
+        count:
+          type: integer
+          maximum: 4
+          minimum: 1
+          default: 1
+        strength:
+          type: number
+          format: double
+          maximum: 0.95
+          minimum: 0.1
+          default: 0.65
   securitySchemes:
     jwtAuth:
       type: http
@@ -1701,3 +3071,7 @@ tags:
   description: Imagens relacionadas e sugestões de estilo
 - name: Prompt Assistant
   description: Refinamento de prompts via LLM
+- name: Characters
+  description: Personagens reutilizáveis com referências visuais
+- name: Image Editing
+  description: Variações e mudança de estilo de imagens
