@@ -22,9 +22,13 @@ from rest_framework.views import APIView
 from rest_framework.throttling import ScopedRateThrottle
 from drf_spectacular.utils import extend_schema, extend_schema_view, OpenApiParameter, inline_serializer
 
-from .models import Image, ImageComment, ImageLike, CommentLike, Project, ProjectImage, CreativeSession, SessionMessage
+from .models import Image, ImageComment, ImageLike, CommentLike, Project, ProjectImage, CreativeSession, SessionMessage, Character, CharacterReference, CharacterGeneration
 from .relevance import update_image_relevance
 from .serializers import (
+    CharacterCreateSerializer,
+    CharacterGenerateSerializer,
+    CharacterListSerializer,
+    CharacterSerializer,
     CreativeSessionListSerializer,
     CreativeSessionSerializer,
     GenerateImageSerializer,
@@ -945,6 +949,200 @@ Formato de resposta (JSON):
         }
 
         return Response(response_data, status=status.HTTP_200_OK)
+
+
+# =============================================================================
+# Characters
+# =============================================================================
+
+class CharacterListCreateView(APIView):
+    """List or create characters."""
+    permission_classes = [IsAuthenticated]
+
+    @extend_schema(
+        tags=['Characters'],
+        summary='Listar personagens',
+        description='Lista personagens do usuário com contagem de referências e gerações.',
+        responses={200: CharacterListSerializer(many=True)},
+    )
+    def get(self, request):
+        characters = (
+            Character.objects.filter(user=request.user)
+            .prefetch_related('references')
+            .annotate(
+                reference_count=Count('references', distinct=True),
+                generation_count=Count('generations', distinct=True),
+            )
+        )
+        return Response(CharacterListSerializer(characters, many=True, context={'request': request}).data)
+
+    @extend_schema(
+        tags=['Characters'],
+        summary='Criar personagem',
+        description='Cria um novo personagem. Imagens de referência são adicionadas separadamente.',
+        request=CharacterCreateSerializer,
+        responses={201: CharacterSerializer},
+    )
+    def post(self, request):
+        serializer = CharacterCreateSerializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+        character = Character.objects.create(
+            user=request.user,
+            **serializer.validated_data,
+        )
+        return Response(
+            CharacterSerializer(character, context={'request': request}).data,
+            status=status.HTTP_201_CREATED,
+        )
+
+
+class CharacterDetailView(APIView):
+    """Retrieve, update or delete a character."""
+    permission_classes = [IsAuthenticated]
+
+    def _get_character(self, pk, user):
+        return get_object_or_404(
+            Character.objects.prefetch_related('references', 'generations__image'),
+            pk=pk, user=user,
+        )
+
+    @extend_schema(
+        tags=['Characters'],
+        summary='Detalhe do personagem',
+        description='Retorna personagem com referências e gerações.',
+        responses={200: CharacterSerializer},
+    )
+    def get(self, request, pk):
+        character = self._get_character(pk, request.user)
+        return Response(CharacterSerializer(character, context={'request': request}).data)
+
+    @extend_schema(
+        tags=['Characters'],
+        summary='Atualizar personagem',
+        description='Atualiza nome, descrição ou notas de estilo.',
+        request=CharacterCreateSerializer,
+        responses={200: CharacterSerializer},
+    )
+    def put(self, request, pk):
+        character = self._get_character(pk, request.user)
+        for field in ('name', 'description', 'style_notes'):
+            if field in request.data:
+                setattr(character, field, request.data[field])
+        character.save()
+        return Response(CharacterSerializer(character, context={'request': request}).data)
+
+    @extend_schema(
+        tags=['Characters'],
+        summary='Deletar personagem',
+        description='Deleta personagem e referências. Gerações (imagens) não são deletadas.',
+        responses={204: None},
+    )
+    def delete(self, request, pk):
+        character = self._get_character(pk, request.user)
+        character.delete()
+        return Response(status=status.HTTP_204_NO_CONTENT)
+
+
+class CharacterReferenceUploadView(APIView):
+    """Upload or remove reference images for a character."""
+    permission_classes = [IsAuthenticated]
+
+    @extend_schema(
+        tags=['Characters'],
+        summary='Upload referência',
+        description='Adiciona uma imagem de referência ao personagem (multipart).',
+        request={'multipart/form-data': {'type': 'object', 'properties': {
+            'file': {'type': 'string', 'format': 'binary'},
+        }, 'required': ['file']}},
+        responses={201: inline_serializer('RefUploaded', fields={
+            'id': drf_serializers.IntegerField(),
+            'image_url': drf_serializers.URLField(),
+            'order': drf_serializers.IntegerField(),
+        })},
+    )
+    def post(self, request, pk):
+        character = get_object_or_404(Character, pk=pk, user=request.user)
+        file = request.FILES.get('file')
+        if not file:
+            return Response({"detail": "Nenhum arquivo enviado."}, status=status.HTTP_400_BAD_REQUEST)
+
+        order = character.references.count()
+        ref = CharacterReference.objects.create(character=character, image=file, order=order)
+        url = request.build_absolute_uri(ref.image.url) if ref.image else None
+        return Response({'id': ref.id, 'image_url': url, 'order': ref.order}, status=status.HTTP_201_CREATED)
+
+    @extend_schema(
+        tags=['Characters'],
+        summary='Remover referência',
+        description='Remove uma imagem de referência do personagem.',
+        responses={204: None},
+    )
+    def delete(self, request, pk, ref_id=None):
+        character = get_object_or_404(Character, pk=pk, user=request.user)
+        deleted, _ = CharacterReference.objects.filter(character=character, pk=ref_id).delete()
+        if not deleted:
+            return Response({"detail": "Referência não encontrada."}, status=status.HTTP_404_NOT_FOUND)
+        return Response(status=status.HTTP_204_NO_CONTENT)
+
+
+class CharacterGenerateView(APIView):
+    """Generate a scene featuring a character."""
+    permission_classes = [IsAuthenticated]
+
+    @extend_schema(
+        tags=['Characters'],
+        summary='Gerar cena com personagem',
+        description=(
+            'Gera uma imagem com o personagem em uma cena descrita. '
+            'Combina a descrição do personagem + cena + estilo no prompt.'
+        ),
+        request=CharacterGenerateSerializer,
+        responses={202: ImageSerializer},
+    )
+    def post(self, request, pk):
+        character = get_object_or_404(
+            Character.objects.prefetch_related('references'),
+            pk=pk, user=request.user,
+        )
+        serializer = CharacterGenerateSerializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+
+        scene = serializer.validated_data['scene']
+        style = serializer.validated_data.get('style', 'photorealistic')
+
+        # Build prompt combining character + scene + style
+        style_mods = STYLE_PROMPT_MAP.get(style, '')
+        char_desc = character.description or character.name
+        prompt = f"{char_desc}, {scene}, {style_mods}".strip(', ')
+
+        # Check quota
+        quotas = getattr(settings, 'PLAN_QUOTAS', {})
+        quota = quotas.get(getattr(request.user, 'plan', 'free'))
+        if quota is not None and request.user.image_generation_count >= quota:
+            return Response(
+                {"detail": "Cota mensal atingida."},
+                status=status.HTTP_429_TOO_MANY_REQUESTS,
+            )
+
+        image = Image.objects.create(
+            user=request.user,
+            prompt=prompt,
+            aspect_ratio=Image.AspectRatio.SQUARE,
+            generation_type=Image.GenerationType.TXT2IMG,
+        )
+        request.user.image_generation_count += 1
+        request.user.save(update_fields=['image_generation_count'])
+
+        CharacterGeneration.objects.create(
+            character=character, image=image, scene_description=scene,
+        )
+
+        generate_image_task.delay(image.id)
+
+        return Response(
+            ImageSerializer(image, context={'request': request}).data,
+            status=status.HTTP_202_ACCEPTED,
+        )
 
 
 # =============================================================================

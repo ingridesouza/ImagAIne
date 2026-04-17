@@ -399,6 +399,277 @@ paths:
               schema:
                 $ref: '#/components/schemas/DetailResponse'
           description: ''
+  /api/characters/:
+    get:
+      operationId: characters_list
+      description: Lista personagens do usuário com contagem de referências e gerações.
+      summary: Listar personagens
+      tags:
+      - Characters
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/CharacterList'
+          description: ''
+    post:
+      operationId: characters_create
+      description: Cria um novo personagem. Imagens de referência são adicionadas
+        separadamente.
+      summary: Criar personagem
+      tags:
+      - Characters
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CharacterCreateRequest'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/CharacterCreateRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/CharacterCreateRequest'
+        required: true
+      security:
+      - jwtAuth: []
+      responses:
+        '201':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Character'
+          description: ''
+  /api/characters/{id}/:
+    get:
+      operationId: characters_retrieve
+      description: Retorna personagem com referências e gerações.
+      summary: Detalhe do personagem
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: string
+          format: uuid
+        required: true
+      tags:
+      - Characters
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Character'
+          description: ''
+    put:
+      operationId: characters_update
+      description: Atualiza nome, descrição ou notas de estilo.
+      summary: Atualizar personagem
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: string
+          format: uuid
+        required: true
+      tags:
+      - Characters
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CharacterCreateRequest'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/CharacterCreateRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/CharacterCreateRequest'
+        required: true
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Character'
+          description: ''
+    delete:
+      operationId: characters_destroy
+      description: Deleta personagem e referências. Gerações (imagens) não são deletadas.
+      summary: Deletar personagem
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: string
+          format: uuid
+        required: true
+      tags:
+      - Characters
+      security:
+      - jwtAuth: []
+      responses:
+        '204':
+          description: No response body
+  /api/characters/{id}/generate/:
+    post:
+      operationId: characters_generate_create
+      description: Gera uma imagem com o personagem em uma cena descrita. Combina
+        a descrição do personagem + cena + estilo no prompt.
+      summary: Gerar cena com personagem
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: string
+          format: uuid
+        required: true
+      tags:
+      - Characters
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CharacterGenerateRequest'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/CharacterGenerateRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/CharacterGenerateRequest'
+        required: true
+      security:
+      - jwtAuth: []
+      responses:
+        '202':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Image'
+          description: ''
+  /api/characters/{id}/references/:
+    post:
+      operationId: characters_references_create
+      description: Adiciona uma imagem de referência ao personagem (multipart).
+      summary: Upload referência
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: string
+          format: uuid
+        required: true
+      tags:
+      - Characters
+      requestBody:
+        content:
+          multipart/form-data:
+            schema:
+              type: object
+              properties:
+                file:
+                  type: string
+                  format: binary
+              required:
+              - file
+      security:
+      - jwtAuth: []
+      responses:
+        '201':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/RefUploaded'
+          description: ''
+    delete:
+      operationId: characters_references_destroy
+      description: Remove uma imagem de referência do personagem.
+      summary: Remover referência
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: string
+          format: uuid
+        required: true
+      tags:
+      - Characters
+      security:
+      - jwtAuth: []
+      responses:
+        '204':
+          description: No response body
+  /api/characters/{id}/references/{ref_id}/remove/:
+    post:
+      operationId: characters_references_remove_create
+      description: Adiciona uma imagem de referência ao personagem (multipart).
+      summary: Upload referência
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: string
+          format: uuid
+        required: true
+      - in: path
+        name: ref_id
+        schema:
+          type: integer
+        required: true
+      tags:
+      - Characters
+      requestBody:
+        content:
+          multipart/form-data:
+            schema:
+              type: object
+              properties:
+                file:
+                  type: string
+                  format: binary
+              required:
+              - file
+      security:
+      - jwtAuth: []
+      responses:
+        '201':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/RefUploaded'
+          description: ''
+    delete:
+      operationId: characters_references_remove_destroy
+      description: Remove uma imagem de referência do personagem.
+      summary: Remover referência
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: string
+          format: uuid
+        required: true
+      - in: path
+        name: ref_id
+        schema:
+          type: integer
+        required: true
+      tags:
+      - Characters
+      security:
+      - jwtAuth: []
+      responses:
+        '204':
+          description: No response body
   /api/generate/:
     post:
       operationId: generate_create
@@ -1487,6 +1758,157 @@ components:
       - current_password
       - new_password
       - new_password_confirm
+    Character:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+          readOnly: true
+        user:
+          allOf:
+          - $ref: '#/components/schemas/ImageUser'
+          readOnly: true
+        name:
+          type: string
+          maxLength: 100
+        description:
+          type: string
+        style_notes:
+          type: string
+        references:
+          type: array
+          items:
+            $ref: '#/components/schemas/CharacterReference'
+          readOnly: true
+        generation_count:
+          type: integer
+          readOnly: true
+        created_at:
+          type: string
+          format: date-time
+          readOnly: true
+        updated_at:
+          type: string
+          format: date-time
+          readOnly: true
+      required:
+      - created_at
+      - generation_count
+      - id
+      - name
+      - references
+      - updated_at
+      - user
+    CharacterCreateRequest:
+      type: object
+      properties:
+        name:
+          type: string
+          minLength: 1
+          maxLength: 100
+        description:
+          type: string
+          default: ''
+        style_notes:
+          type: string
+          default: ''
+      required:
+      - name
+    CharacterGenerateRequest:
+      type: object
+      properties:
+        scene:
+          type: string
+          minLength: 1
+          description: 'Descrição da cena (ex: "em uma cafeteria")'
+        style:
+          allOf:
+          - $ref: '#/components/schemas/CharacterGenerateStyleEnum'
+          default: photorealistic
+      required:
+      - scene
+    CharacterGenerateStyleEnum:
+      enum:
+      - photorealistic
+      - anime
+      - digital_art
+      - oil_painting
+      type: string
+      description: |-
+        * `photorealistic` - Fotorrealista
+        * `anime` - Anime
+        * `digital_art` - Arte Digital
+        * `oil_painting` - Pintura a Óleo
+    CharacterList:
+      type: object
+      description: Lighter serializer for character lists.
+      properties:
+        id:
+          type: string
+          format: uuid
+          readOnly: true
+        name:
+          type: string
+          readOnly: true
+        description:
+          type: string
+          readOnly: true
+        reference_count:
+          type: integer
+          readOnly: true
+        generation_count:
+          type: integer
+          readOnly: true
+        thumbnail_url:
+          type: string
+          format: uri
+          nullable: true
+          readOnly: true
+        created_at:
+          type: string
+          format: date-time
+          readOnly: true
+        updated_at:
+          type: string
+          format: date-time
+          readOnly: true
+      required:
+      - created_at
+      - description
+      - generation_count
+      - id
+      - name
+      - reference_count
+      - thumbnail_url
+      - updated_at
+    CharacterReference:
+      type: object
+      properties:
+        id:
+          type: integer
+          readOnly: true
+        image:
+          type: string
+          format: uri
+        image_url:
+          type: string
+          format: uri
+          nullable: true
+          readOnly: true
+        order:
+          type: integer
+          maximum: 2147483647
+          minimum: 0
+        created_at:
+          type: string
+          format: date-time
+          readOnly: true
+      required:
+      - created_at
+      - id
+      - image
+      - image_url
     CommentLikeResponse:
       type: object
       properties:
@@ -2162,6 +2584,20 @@ components:
           type: string
       required:
       - detail
+    RefUploaded:
+      type: object
+      properties:
+        id:
+          type: integer
+        image_url:
+          type: string
+          format: uri
+        order:
+          type: integer
+      required:
+      - id
+      - image_url
+      - order
     RefinePromptRequestRequest:
       type: object
       description: Serializer for prompt refinement request.
@@ -2172,7 +2608,7 @@ components:
           description: User's casual description of what they want to generate
         style:
           allOf:
-          - $ref: '#/components/schemas/StyleEnum'
+          - $ref: '#/components/schemas/Style6fbEnum'
           default: photorealistic
       required:
       - description
@@ -2228,7 +2664,7 @@ components:
       description: Request to apply a different style to an existing image.
       properties:
         style:
-          $ref: '#/components/schemas/StyleEnum'
+          $ref: '#/components/schemas/Style6fbEnum'
         strength:
           type: number
           format: double
@@ -2312,7 +2748,7 @@ components:
       description: |-
         * `active` - Active
         * `archived` - Archived
-    StyleEnum:
+    Style6fbEnum:
       enum:
       - photorealistic
       - anime
@@ -2635,3 +3071,7 @@ tags:
   description: Imagens relacionadas e sugestões de estilo
 - name: Prompt Assistant
   description: Refinamento de prompts via LLM
+- name: Characters
+  description: Personagens reutilizáveis com referências visuais
+- name: Image Editing
+  description: Variações e mudança de estilo de imagens

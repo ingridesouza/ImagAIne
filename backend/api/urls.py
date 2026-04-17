@@ -7,6 +7,10 @@ from .views import (
     ImageCommentListCreateView,
     ImageDownloadView,
     ImageLikeView,
+    CharacterDetailView,
+    CharacterGenerateView,
+    CharacterListCreateView,
+    CharacterReferenceUploadView,
     ImageRestyleView,
     ImageVariationsView,
     ProjectDetailView,
@@ -39,6 +43,12 @@ urlpatterns = [
     path('images/<int:pk>/comments/<int:comment_id>/', ImageCommentDetailView.as_view(), name='image-comment-detail'),
     path('images/<int:pk>/comments/<int:comment_id>/like/', CommentLikeView.as_view(), name='comment-like'),
     path('images/<int:pk>/download/', ImageDownloadView.as_view(), name='image-download'),
+    # Characters
+    path('characters/', CharacterListCreateView.as_view(), name='character-list-create'),
+    path('characters/<uuid:pk>/', CharacterDetailView.as_view(), name='character-detail'),
+    path('characters/<uuid:pk>/references/', CharacterReferenceUploadView.as_view(), name='character-ref-upload'),
+    path('characters/<uuid:pk>/references/<int:ref_id>/remove/', CharacterReferenceUploadView.as_view(), name='character-ref-remove'),
+    path('characters/<uuid:pk>/generate/', CharacterGenerateView.as_view(), name='character-generate'),
     # Image-to-Image: Variations & Restyle
     path('images/<int:pk>/variations/', ImageVariationsView.as_view(), name='image-variations'),
     path('images/<int:pk>/restyle/', ImageRestyleView.as_view(), name='image-restyle'),

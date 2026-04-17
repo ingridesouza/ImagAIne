@@ -284,6 +284,101 @@ class StyleSuggestionSerializer(serializers.Serializer):
 
 
 # =============================================================================
+# Character Serializers
+# =============================================================================
+
+class CharacterReferenceSerializer(serializers.ModelSerializer):
+    image_url = serializers.SerializerMethodField()
+
+    class Meta:
+        from .models import CharacterReference
+        model = CharacterReference
+        fields = ('id', 'image', 'image_url', 'order', 'created_at')
+        read_only_fields = ('id', 'image_url', 'created_at')
+
+    @extend_schema_field(serializers.URLField(allow_null=True))
+    def get_image_url(self, obj) -> Optional[str]:
+        if not obj.image:
+            return None
+        request = self.context.get('request')
+        if request:
+            return request.build_absolute_uri(obj.image.url)
+        return obj.image.url
+
+
+class CharacterSerializer(serializers.ModelSerializer):
+    user = ImageUserSerializer(read_only=True)
+    references = CharacterReferenceSerializer(many=True, read_only=True)
+    generation_count = serializers.SerializerMethodField()
+
+    class Meta:
+        from .models import Character
+        model = Character
+        fields = ('id', 'user', 'name', 'description', 'style_notes', 'references', 'generation_count', 'created_at', 'updated_at')
+        read_only_fields = ('id', 'user', 'references', 'generation_count', 'created_at', 'updated_at')
+
+    @extend_schema_field(serializers.IntegerField())
+    def get_generation_count(self, obj) -> int:
+        return getattr(obj, 'generation_count', obj.generations.count())
+
+
+class CharacterListSerializer(serializers.ModelSerializer):
+    """Lighter serializer for character lists."""
+    reference_count = serializers.SerializerMethodField()
+    generation_count = serializers.SerializerMethodField()
+    thumbnail_url = serializers.SerializerMethodField()
+
+    class Meta:
+        from .models import Character
+        model = Character
+        fields = ('id', 'name', 'description', 'reference_count', 'generation_count', 'thumbnail_url', 'created_at', 'updated_at')
+        read_only_fields = fields
+
+    @extend_schema_field(serializers.IntegerField())
+    def get_reference_count(self, obj) -> int:
+        return getattr(obj, 'reference_count', 0)
+
+    @extend_schema_field(serializers.IntegerField())
+    def get_generation_count(self, obj) -> int:
+        return getattr(obj, 'generation_count', 0)
+
+    @extend_schema_field(serializers.URLField(allow_null=True))
+    def get_thumbnail_url(self, obj) -> Optional[str]:
+        first_ref = obj.references.first() if hasattr(obj, '_prefetched_objects_cache') else None
+        if not first_ref:
+            try:
+                first_ref = obj.references.first()
+            except Exception:
+                return None
+        if first_ref and first_ref.image:
+            request = self.context.get('request')
+            if request:
+                return request.build_absolute_uri(first_ref.image.url)
+            return first_ref.image.url
+        return None
+
+
+class CharacterCreateSerializer(serializers.Serializer):
+    name = serializers.CharField(max_length=100)
+    description = serializers.CharField(required=False, allow_blank=True, default='')
+    style_notes = serializers.CharField(required=False, allow_blank=True, default='')
+
+
+class CharacterGenerateSerializer(serializers.Serializer):
+    scene = serializers.CharField(help_text='Descrição da cena (ex: "em uma cafeteria")')
+    style = serializers.ChoiceField(
+        choices=[
+            ('photorealistic', 'Fotorrealista'),
+            ('anime', 'Anime'),
+            ('digital_art', 'Arte Digital'),
+            ('oil_painting', 'Pintura a Óleo'),
+        ],
+        required=False,
+        default='photorealistic',
+    )
+
+
+# =============================================================================
 # Creative Agent Serializers
 # =============================================================================
 

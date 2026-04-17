@@ -216,5 +216,7 @@ SPECTACULAR_SETTINGS = {
         {'name': 'Social', 'description': 'Likes, comentários e downloads'},
         {'name': 'Creative Memory', 'description': 'Imagens relacionadas e sugestões de estilo'},
         {'name': 'Prompt Assistant', 'description': 'Refinamento de prompts via LLM'},
+        {'name': 'Characters', 'description': 'Personagens reutilizáveis com referências visuais'},
+        {'name': 'Image Editing', 'description': 'Variações e mudança de estilo de imagens'},
     ],
 }

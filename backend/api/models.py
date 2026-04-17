@@ -249,6 +249,56 @@ class SessionMessage(models.Model):
         return f'[{self.role}] {self.text[:50]}'
 
 
+class Character(models.Model):
+    """A reusable character with reference images for consistent generation."""
+    id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
+    user = models.ForeignKey(User, on_delete=models.CASCADE, related_name='characters')
+    name = models.CharField(max_length=100)
+    description = models.TextField(blank=True, default='')
+    style_notes = models.TextField(blank=True, default='')
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        ordering = ['-updated_at']
+
+    def __str__(self):
+        return f'{self.name} by {self.user.username}'
+
+
+def character_ref_upload_to(instance, filename):
+    extension = os.path.splitext(filename)[1] or ".png"
+    return f"characters/{instance.character_id}/refs/{uuid.uuid4()}{extension}"
+
+
+class CharacterReference(models.Model):
+    """A reference image for a character."""
+    character = models.ForeignKey(Character, on_delete=models.CASCADE, related_name='references')
+    image = models.ImageField(upload_to=character_ref_upload_to)
+    order = models.PositiveIntegerField(default=0)
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        ordering = ['order', 'created_at']
+
+    def __str__(self):
+        return f'Ref #{self.order} for {self.character.name}'
+
+
+class CharacterGeneration(models.Model):
+    """A generated image featuring a character."""
+    character = models.ForeignKey(Character, on_delete=models.CASCADE, related_name='generations')
+    image = models.ForeignKey(Image, on_delete=models.CASCADE, related_name='character_generations')
+    scene_description = models.TextField(blank=True, default='')
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        ordering = ['-created_at']
+
+    def __str__(self):
+        return f'{self.character.name} in "{self.scene_description[:30]}"'
+
+
 class ProjectTag(models.Model):
     """Tag for projects."""
     name = models.CharField(max_length=64, unique=True)
