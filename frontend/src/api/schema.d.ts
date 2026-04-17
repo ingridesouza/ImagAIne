@@ -4,6 +4,26 @@
  */
 
 export interface paths {
+    "/api/auth/account/": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post?: never;
+        /**
+         * Deletar conta
+         * @description Deleta permanentemente a conta do usuário e todas as suas imagens. Requer confirmação com a senha atual. Ação irreversível.
+         */
+        delete: operations["auth_account_destroy"];
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/auth/login/": {
         parameters: {
             query?: never;
@@ -18,6 +38,26 @@ export interface paths {
          * @description Autentica o usuário e retorna par de tokens JWT (access + refresh).
          */
         post: operations["auth_login_create"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/auth/password/change/": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Trocar senha
+         * @description Altera a senha do usuário autenticado. Requer a senha atual.
+         */
+        post: operations["auth_password_change_create"];
         delete?: never;
         options?: never;
         head?: never;
@@ -204,6 +244,126 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/characters/": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Listar personagens
+         * @description Lista personagens do usuário com contagem de referências e gerações.
+         */
+        get: operations["characters_list"];
+        put?: never;
+        /**
+         * Criar personagem
+         * @description Cria um novo personagem. Imagens de referência são adicionadas separadamente.
+         */
+        post: operations["characters_create"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/characters/{id}/": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Detalhe do personagem
+         * @description Retorna personagem com referências e gerações.
+         */
+        get: operations["characters_retrieve"];
+        /**
+         * Atualizar personagem
+         * @description Atualiza nome, descrição ou notas de estilo.
+         */
+        put: operations["characters_update"];
+        post?: never;
+        /**
+         * Deletar personagem
+         * @description Deleta personagem e referências. Gerações (imagens) não são deletadas.
+         */
+        delete: operations["characters_destroy"];
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/characters/{id}/generate/": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Gerar cena com personagem
+         * @description Gera uma imagem com o personagem em uma cena descrita. Combina a descrição do personagem + cena + estilo no prompt.
+         */
+        post: operations["characters_generate_create"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/characters/{id}/references/": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Upload referência
+         * @description Adiciona uma imagem de referência ao personagem (multipart).
+         */
+        post: operations["characters_references_create"];
+        /**
+         * Remover referência
+         * @description Remove uma imagem de referência do personagem.
+         */
+        delete: operations["characters_references_destroy"];
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/characters/{id}/references/{ref_id}/remove/": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Upload referência
+         * @description Adiciona uma imagem de referência ao personagem (multipart).
+         */
+        post: operations["characters_references_remove_create"];
+        /**
+         * Remover referência
+         * @description Remove uma imagem de referência do personagem.
+         */
+        delete: operations["characters_references_remove_destroy"];
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/generate/": {
         parameters: {
             query?: never;
@@ -344,6 +504,26 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/images/{id}/restyle/": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Mudar estilo
+         * @description Aplica um estilo diferente a uma imagem existente. O prompt original é combinado com modificadores do estilo escolhido.
+         */
+        post: operations["images_restyle_create"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/images/{id}/share/": {
         parameters: {
             query?: never;
@@ -366,6 +546,26 @@ export interface paths {
          * @description Altera o status público/privado da imagem.
          */
         patch: operations["images_share_partial_update"];
+        trace?: never;
+    };
+    "/api/images/{id}/variations/": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Gerar variações
+         * @description Gera 1-4 variações de uma imagem existente usando img2img. O strength controla o quanto a variação difere do original (0.1 = quase igual, 0.95 = muito diferente).
+         */
+        post: operations["images_variations_create"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
         trace?: never;
     };
     "/api/images/liked/": {
@@ -416,6 +616,143 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/projects/": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Listar projetos
+         * @description Lista projetos do usuário autenticado.
+         */
+        get: operations["projects_list"];
+        put?: never;
+        /**
+         * Criar projeto
+         * @description Cria um novo projeto vazio.
+         */
+        post: operations["projects_create"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/projects/{id}/": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Detalhe do projeto
+         * @description Retorna o projeto com todas as imagens ordenadas.
+         */
+        get: operations["projects_retrieve"];
+        /**
+         * Atualizar projeto
+         * @description Atualiza título, descrição ou visibilidade do projeto.
+         */
+        put: operations["projects_update"];
+        post?: never;
+        /**
+         * Deletar projeto
+         * @description Deleta o projeto. Imagens não são deletadas, apenas desassociadas.
+         */
+        delete: operations["projects_destroy"];
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/projects/{id}/images/": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Adicionar imagem ao projeto
+         * @description Associa uma imagem existente ao projeto com ordem e legenda.
+         */
+        post: operations["projects_images_create"];
+        /**
+         * Remover imagem do projeto
+         * @description Desassocia uma imagem do projeto (não deleta a imagem).
+         */
+        delete: operations["projects_images_destroy"];
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/projects/{id}/images/{image_id}/remove/": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Adicionar imagem ao projeto
+         * @description Associa uma imagem existente ao projeto com ordem e legenda.
+         */
+        post: operations["projects_images_remove_create"];
+        /**
+         * Remover imagem do projeto
+         * @description Desassocia uma imagem do projeto (não deleta a imagem).
+         */
+        delete: operations["projects_images_remove_destroy"];
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/projects/{id}/images/reorder/": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        /**
+         * Reordenar imagens
+         * @description Reordena as imagens do projeto com base na lista de IDs fornecida.
+         */
+        patch: operations["projects_images_reorder_partial_update"];
+        trace?: never;
+    };
+    "/api/projects/public/": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** @description List public projects. */
+        get: operations["projects_public_list"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/refine-prompt/": {
         parameters: {
             query?: never;
@@ -430,6 +767,74 @@ export interface paths {
          * @description Transforma uma descrição casual em um prompt otimizado para geração de imagem. Usa o DeepSeek LLM para gerar prompt em inglês com modificadores técnicos.
          */
         post: operations["refine_prompt_create"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/sessions/": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Listar sessões
+         * @description Lista sessões criativas do usuário, ordenadas por última atualização.
+         */
+        get: operations["sessions_list"];
+        put?: never;
+        /**
+         * Criar sessão
+         * @description Cria uma nova sessão criativa.
+         */
+        post: operations["sessions_create"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/sessions/{id}/": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Detalhe da sessão
+         * @description Retorna a sessão com todas as mensagens.
+         */
+        get: operations["sessions_retrieve"];
+        put?: never;
+        post?: never;
+        /**
+         * Arquivar sessão
+         * @description Arquiva a sessão criativa.
+         */
+        delete: operations["sessions_destroy"];
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/sessions/{id}/messages/": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Enviar mensagem
+         * @description Envia uma mensagem ao agente criativo. O agente responde com texto e, opcionalmente, gera uma imagem se tiver informação suficiente. Usa o DeepSeek LLM para a conversa e FLUX.1-dev para geração.
+         */
+        post: operations["sessions_messages_create"];
         delete?: never;
         options?: never;
         head?: never;
@@ -520,6 +925,10 @@ export interface paths {
 export type webhooks = Record<string, never>;
 export interface components {
     schemas: {
+        AgentResponse: {
+            message: components["schemas"]["SessionMessage"];
+            agent_response: components["schemas"]["SessionMessage"];
+        };
         /**
          * @description * `1:1` - 1:1
          *     * `16:9` - 16:9
@@ -529,6 +938,72 @@ export interface components {
          * @enum {string}
          */
         AspectRatioEnum: "1:1" | "16:9" | "4:3" | "9:16" | "3:2";
+        /** @description Serializer for changing password while logged in. */
+        ChangePasswordRequest: {
+            current_password: string;
+            new_password: string;
+            new_password_confirm: string;
+        };
+        Character: {
+            /** Format: uuid */
+            readonly id: string;
+            readonly user: components["schemas"]["ImageUser"];
+            name: string;
+            description?: string;
+            style_notes?: string;
+            readonly references: components["schemas"]["CharacterReference"][];
+            readonly generation_count: number;
+            /** Format: date-time */
+            readonly created_at: string;
+            /** Format: date-time */
+            readonly updated_at: string;
+        };
+        CharacterCreateRequest: {
+            name: string;
+            /** @default  */
+            description: string;
+            /** @default  */
+            style_notes: string;
+        };
+        CharacterGenerateRequest: {
+            /** @description Descrição da cena (ex: "em uma cafeteria") */
+            scene: string;
+            /** @default photorealistic */
+            style: components["schemas"]["CharacterGenerateStyleEnum"];
+        };
+        /**
+         * @description * `photorealistic` - Fotorrealista
+         *     * `anime` - Anime
+         *     * `digital_art` - Arte Digital
+         *     * `oil_painting` - Pintura a Óleo
+         * @enum {string}
+         */
+        CharacterGenerateStyleEnum: "photorealistic" | "anime" | "digital_art" | "oil_painting";
+        /** @description Lighter serializer for character lists. */
+        CharacterList: {
+            /** Format: uuid */
+            readonly id: string;
+            readonly name: string;
+            readonly description: string;
+            readonly reference_count: number;
+            readonly generation_count: number;
+            /** Format: uri */
+            readonly thumbnail_url: string | null;
+            /** Format: date-time */
+            readonly created_at: string;
+            /** Format: date-time */
+            readonly updated_at: string;
+        };
+        CharacterReference: {
+            readonly id: number;
+            /** Format: uri */
+            image: string;
+            /** Format: uri */
+            readonly image_url: string | null;
+            order?: number;
+            /** Format: date-time */
+            readonly created_at: string;
+        };
         CommentLikeResponse: {
             comment_id: number;
             is_liked: boolean;
@@ -538,6 +1013,31 @@ export interface components {
             comment_id: number;
             is_liked: boolean;
             like_count: number;
+        };
+        CreativeSession: {
+            /** Format: uuid */
+            readonly id: string;
+            readonly user: components["schemas"]["ImageUser"];
+            title?: string;
+            status?: components["schemas"]["SessionStatusEnum"];
+            readonly messages: components["schemas"]["SessionMessage"][];
+            readonly message_count: number;
+            /** Format: date-time */
+            readonly created_at: string;
+            /** Format: date-time */
+            readonly updated_at: string;
+        };
+        /** @description Lighter serializer for session lists (no messages). */
+        CreativeSessionList: {
+            /** Format: uuid */
+            readonly id: string;
+            readonly title: string;
+            readonly status: components["schemas"]["SessionStatusEnum"];
+            readonly message_count: number;
+            /** Format: date-time */
+            readonly created_at: string;
+            /** Format: date-time */
+            readonly updated_at: string;
         };
         DetailResponse: {
             detail: string;
@@ -557,6 +1057,15 @@ export interface components {
             aspect_ratio: components["schemas"]["AspectRatioEnum"];
             seed?: number | null;
         };
+        /**
+         * @description * `txt2img` - Text to Image
+         *     * `img2img` - Image to Image
+         *     * `variation` - Variation
+         *     * `restyle` - Restyle
+         *     * `upscale` - Upscale
+         * @enum {string}
+         */
+        GenerationTypeEnum: "txt2img" | "img2img" | "variation" | "restyle" | "upscale";
         Image: {
             readonly id: number;
             readonly user: components["schemas"]["ImageUser"];
@@ -577,6 +1086,13 @@ export interface components {
             readonly relevance_score: number;
             readonly featured: boolean;
             readonly tags: string[];
+            readonly source_image: number | null;
+            readonly generation_type: components["schemas"]["GenerationTypeEnum"];
+            /**
+             * Format: double
+             * @description Transformation strength 0.0-1.0 for img2img
+             */
+            readonly strength: number | null;
             /** Format: date-time */
             readonly created_at: string;
         };
@@ -669,6 +1185,21 @@ export interface components {
             previous?: string | null;
             results: components["schemas"]["Image"][];
         };
+        PaginatedProjectList: {
+            /** @example 123 */
+            count: number;
+            /**
+             * Format: uri
+             * @example http://api.example.org/accounts/?page=4
+             */
+            next?: string | null;
+            /**
+             * Format: uri
+             * @example http://api.example.org/accounts/?page=2
+             */
+            previous?: string | null;
+            results: components["schemas"]["Project"][];
+        };
         /** @description Serializer for password reset confirmation. */
         PasswordResetConfirmRequest: {
             /** Format: uuid */
@@ -684,6 +1215,10 @@ export interface components {
         PatchedImageShareUpdateRequest: {
             is_public?: boolean;
         };
+        PatchedProjectReorderRequest: {
+            /** @description Lista ordenada de IDs de imagens no projeto */
+            image_ids?: number[];
+        };
         /** @description Serializer for user details. */
         PatchedUserRequest: {
             /** @description Required. 150 characters or fewer. Letters, digits and @/./+/-/_ only. */
@@ -695,15 +1230,65 @@ export interface components {
             cover_picture?: string | null;
             preferences?: unknown;
         };
+        Project: {
+            /** Format: uuid */
+            readonly id: string;
+            readonly user: components["schemas"]["ImageUser"];
+            title: string;
+            description?: string;
+            cover_image?: number | null;
+            /** Format: uri */
+            readonly cover_image_url: string | null;
+            is_public?: boolean;
+            readonly tags: string[];
+            readonly images: components["schemas"]["ProjectImage"][];
+            readonly image_count: number;
+            /** Format: date-time */
+            readonly created_at: string;
+            /** Format: date-time */
+            readonly updated_at: string;
+        };
+        ProjectCreateRequest: {
+            title: string;
+            /** @default  */
+            description: string;
+        };
+        ProjectImage: {
+            readonly id: number;
+            readonly image: components["schemas"]["Image"];
+            order?: number;
+            caption?: string;
+            /** Format: date-time */
+            readonly created_at: string;
+        };
+        ProjectImageAddRequest: {
+            image_id: number;
+            /** @default 0 */
+            order: number;
+            /** @default  */
+            caption: string;
+        };
+        ProjectImageAdded: {
+            id: number;
+            image_id: number;
+            order: number;
+            caption: string;
+        };
         QuotaExceeded: {
             detail: string;
+        };
+        RefUploaded: {
+            id: number;
+            /** Format: uri */
+            image_url: string;
+            order: number;
         };
         /** @description Serializer for prompt refinement request. */
         RefinePromptRequestRequest: {
             /** @description User's casual description of what they want to generate */
             description: string;
             /** @default photorealistic */
-            style: components["schemas"]["StyleEnum"];
+            style: components["schemas"]["Style6fbEnum"];
         };
         /** @description Serializer for prompt refinement response. */
         RefinePromptResponse: {
@@ -720,9 +1305,51 @@ export interface components {
             count: number;
             results: components["schemas"]["RelatedImage"][];
         };
+        ReorderResponse: {
+            detail: string;
+        };
+        /** @description Request to apply a different style to an existing image. */
+        RestyleRequestRequest: {
+            style: components["schemas"]["Style6fbEnum"];
+            /**
+             * Format: double
+             * @default 0.65
+             */
+            strength: number;
+        };
+        /**
+         * @description * `user` - User
+         *     * `assistant` - Assistant
+         * @enum {string}
+         */
+        RoleEnum: "user" | "assistant";
         ServiceUnavailable: {
             detail: string;
         };
+        SessionCreateRequest: {
+            /** @default Nova sessão */
+            title: string;
+        };
+        SessionMessage: {
+            readonly id: number;
+            readonly role: components["schemas"]["RoleEnum"];
+            text: string;
+            readonly image: number | null;
+            /** Format: uri */
+            readonly image_url: string | null;
+            readonly prompt_used: string;
+            /** Format: date-time */
+            readonly created_at: string;
+        };
+        SessionMessageCreateRequest: {
+            text: string;
+        };
+        /**
+         * @description * `active` - Active
+         *     * `archived` - Archived
+         * @enum {string}
+         */
+        SessionStatusEnum: "active" | "archived";
         /**
          * @description * `photorealistic` - Fotorrealista
          *     * `anime` - Anime/Mangá
@@ -734,7 +1361,7 @@ export interface components {
          *     * `sketch` - Esboço/Desenho
          * @enum {string}
          */
-        StyleEnum: "photorealistic" | "anime" | "digital_art" | "oil_painting" | "watercolor" | "3d_render" | "pixel_art" | "sketch";
+        Style6fbEnum: "photorealistic" | "anime" | "digital_art" | "oil_painting" | "watercolor" | "3d_render" | "pixel_art" | "sketch";
         /** @description Serializer for a style suggestion. */
         StyleSuggestion: {
             readonly label: string;
@@ -829,6 +1456,16 @@ export interface components {
             cover_picture?: string | null;
             preferences?: unknown;
         };
+        /** @description Request to generate variations of an existing image. */
+        VariationRequestRequest: {
+            /** @default 1 */
+            count: number;
+            /**
+             * Format: double
+             * @default 0.65
+             */
+            strength: number;
+        };
     };
     responses: never;
     parameters: never;
@@ -838,6 +1475,33 @@ export interface components {
 }
 export type $defs = Record<string, never>;
 export interface operations {
+    auth_account_destroy: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["DetailResponse"];
+                };
+            };
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["DetailResponse"];
+                };
+            };
+        };
+    };
     auth_login_create: {
         parameters: {
             query?: never;
@@ -859,6 +1523,39 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["LoginResponse"];
+                };
+            };
+        };
+    };
+    auth_password_change_create: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["ChangePasswordRequest"];
+                "application/x-www-form-urlencoded": components["schemas"]["ChangePasswordRequest"];
+                "multipart/form-data": components["schemas"]["ChangePasswordRequest"];
+            };
+        };
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["DetailResponse"];
+                };
+            };
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["DetailResponse"];
                 };
             };
         };
@@ -1173,6 +1870,243 @@ export interface operations {
             };
         };
     };
+    characters_list: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["CharacterList"][];
+                };
+            };
+        };
+    };
+    characters_create: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["CharacterCreateRequest"];
+                "application/x-www-form-urlencoded": components["schemas"]["CharacterCreateRequest"];
+                "multipart/form-data": components["schemas"]["CharacterCreateRequest"];
+            };
+        };
+        responses: {
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Character"];
+                };
+            };
+        };
+    };
+    characters_retrieve: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Character"];
+                };
+            };
+        };
+    };
+    characters_update: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["CharacterCreateRequest"];
+                "application/x-www-form-urlencoded": components["schemas"]["CharacterCreateRequest"];
+                "multipart/form-data": components["schemas"]["CharacterCreateRequest"];
+            };
+        };
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Character"];
+                };
+            };
+        };
+    };
+    characters_destroy: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description No response body */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    characters_generate_create: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["CharacterGenerateRequest"];
+                "application/x-www-form-urlencoded": components["schemas"]["CharacterGenerateRequest"];
+                "multipart/form-data": components["schemas"]["CharacterGenerateRequest"];
+            };
+        };
+        responses: {
+            202: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Image"];
+                };
+            };
+        };
+    };
+    characters_references_create: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: {
+            content: {
+                "multipart/form-data": {
+                    /** Format: binary */
+                    file: string;
+                };
+            };
+        };
+        responses: {
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["RefUploaded"];
+                };
+            };
+        };
+    };
+    characters_references_destroy: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description No response body */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    characters_references_remove_create: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+                ref_id: number;
+            };
+            cookie?: never;
+        };
+        requestBody?: {
+            content: {
+                "multipart/form-data": {
+                    /** Format: binary */
+                    file: string;
+                };
+            };
+        };
+        responses: {
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["RefUploaded"];
+                };
+            };
+        };
+    };
+    characters_references_remove_destroy: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+                ref_id: number;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description No response body */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
     generate_create: {
         parameters: {
             query?: never;
@@ -1446,6 +2380,33 @@ export interface operations {
             };
         };
     };
+    images_restyle_create: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: number;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["RestyleRequestRequest"];
+                "application/x-www-form-urlencoded": components["schemas"]["RestyleRequestRequest"];
+                "multipart/form-data": components["schemas"]["RestyleRequestRequest"];
+            };
+        };
+        responses: {
+            202: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Image"];
+                };
+            };
+        };
+    };
     images_share_create: {
         parameters: {
             query?: never;
@@ -1513,6 +2474,33 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content?: never;
+            };
+        };
+    };
+    images_variations_create: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: number;
+            };
+            cookie?: never;
+        };
+        requestBody?: {
+            content: {
+                "application/json": components["schemas"]["VariationRequestRequest"];
+                "application/x-www-form-urlencoded": components["schemas"]["VariationRequestRequest"];
+                "multipart/form-data": components["schemas"]["VariationRequestRequest"];
+            };
+        };
+        responses: {
+            202: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Image"][];
+                };
             };
         };
     };
@@ -1584,6 +2572,263 @@ export interface operations {
             };
         };
     };
+    projects_list: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Project"][];
+                };
+            };
+        };
+    };
+    projects_create: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["ProjectCreateRequest"];
+                "application/x-www-form-urlencoded": components["schemas"]["ProjectCreateRequest"];
+                "multipart/form-data": components["schemas"]["ProjectCreateRequest"];
+            };
+        };
+        responses: {
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Project"];
+                };
+            };
+        };
+    };
+    projects_retrieve: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Project"];
+                };
+            };
+        };
+    };
+    projects_update: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["ProjectCreateRequest"];
+                "application/x-www-form-urlencoded": components["schemas"]["ProjectCreateRequest"];
+                "multipart/form-data": components["schemas"]["ProjectCreateRequest"];
+            };
+        };
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Project"];
+                };
+            };
+        };
+    };
+    projects_destroy: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description No response body */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    projects_images_create: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["ProjectImageAddRequest"];
+                "application/x-www-form-urlencoded": components["schemas"]["ProjectImageAddRequest"];
+                "multipart/form-data": components["schemas"]["ProjectImageAddRequest"];
+            };
+        };
+        responses: {
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ProjectImageAdded"];
+                };
+            };
+        };
+    };
+    projects_images_destroy: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description No response body */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    projects_images_remove_create: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+                image_id: number;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["ProjectImageAddRequest"];
+                "application/x-www-form-urlencoded": components["schemas"]["ProjectImageAddRequest"];
+                "multipart/form-data": components["schemas"]["ProjectImageAddRequest"];
+            };
+        };
+        responses: {
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ProjectImageAdded"];
+                };
+            };
+        };
+    };
+    projects_images_remove_destroy: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+                image_id: number;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description No response body */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    projects_images_reorder_partial_update: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: {
+            content: {
+                "application/json": components["schemas"]["PatchedProjectReorderRequest"];
+                "application/x-www-form-urlencoded": components["schemas"]["PatchedProjectReorderRequest"];
+                "multipart/form-data": components["schemas"]["PatchedProjectReorderRequest"];
+            };
+        };
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ReorderResponse"];
+                };
+            };
+        };
+    };
+    projects_public_list: {
+        parameters: {
+            query?: {
+                /** @description A page number within the paginated result set. */
+                page?: number;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PaginatedProjectList"];
+                };
+            };
+        };
+    };
     refine_prompt_create: {
         parameters: {
             query?: never;
@@ -1620,6 +2865,118 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["ServiceUnavailable"];
+                };
+            };
+        };
+    };
+    sessions_list: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["CreativeSessionList"][];
+                };
+            };
+        };
+    };
+    sessions_create: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: {
+            content: {
+                "application/json": components["schemas"]["SessionCreateRequest"];
+                "application/x-www-form-urlencoded": components["schemas"]["SessionCreateRequest"];
+                "multipart/form-data": components["schemas"]["SessionCreateRequest"];
+            };
+        };
+        responses: {
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["CreativeSession"];
+                };
+            };
+        };
+    };
+    sessions_retrieve: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["CreativeSession"];
+                };
+            };
+        };
+    };
+    sessions_destroy: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description No response body */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    sessions_messages_create: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["SessionMessageCreateRequest"];
+                "application/x-www-form-urlencoded": components["schemas"]["SessionMessageCreateRequest"];
+                "multipart/form-data": components["schemas"]["SessionMessageCreateRequest"];
+            };
+        };
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["AgentResponse"];
                 };
             };
         };

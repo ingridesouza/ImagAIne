@@ -1,11 +1,44 @@
-import { Link } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 import { useQuery } from '@tanstack/react-query';
+import { Sparkles } from 'lucide-react';
 import { imagesApi } from '@/features/images/api';
 import { ImageGrid } from '@/features/images/components/ImageGrid';
 import { StatCard } from '@/components/ui/StatCard';
 import { DashboardSkeleton } from '@/components/ui/Skeleton';
 import { QUERY_KEYS } from '@/lib/constants';
 import type { ImageRecord } from '@/features/images/types';
+
+function StyleSuggestionsWidget() {
+  const navigate = useNavigate();
+  const { data, isLoading } = useQuery({
+    queryKey: ['style-suggestions'],
+    queryFn: () => imagesApi.fetchStyleSuggestions(5),
+    retry: false,
+  });
+
+  if (isLoading || !data || data.results.length === 0) return null;
+
+  return (
+    <div className="mt-6">
+      <div className="mb-3 flex items-center gap-2">
+        <Sparkles className="h-4 w-4 text-accent" />
+        <h2 className="m-0 text-lg font-medium text-fg">Sugestões para você</h2>
+      </div>
+      <div className="flex gap-2 overflow-x-auto pb-1 no-scrollbar">
+        {data.results.map((suggestion) => (
+          <button
+            key={suggestion.label}
+            onClick={() => navigate('/generate', { state: { prompt: suggestion.example_prompt } })}
+            className="flex-shrink-0 rounded-xl border border-border bg-surface px-4 py-3 text-left transition-colors hover:border-accent hover:bg-accent-soft"
+          >
+            <span className="block text-sm font-medium text-fg">{suggestion.label}</span>
+            <span className="mt-0.5 block text-xs text-fg-muted line-clamp-1">{suggestion.example_prompt}</span>
+          </button>
+        ))}
+      </div>
+    </div>
+  );
+}
 
 export const DashboardPage = () => {
   const { data: myImagesResponse, isLoading } = useQuery({
@@ -43,6 +76,8 @@ export const DashboardPage = () => {
         <StatCard label="Galeria pública" value={publicCount} helper="Visíveis no feed global" />
         <StatCard label="Total" value={myImages.length} helper="Inclui falhas e imagens privadas" />
       </div>
+
+      <StyleSuggestionsWidget />
 
       <div className="mt-8">
         <div className="mb-4 flex items-center justify-between">

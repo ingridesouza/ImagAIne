@@ -19,6 +19,8 @@ from rest_framework import serializers as drf_serializers
 
 from .models import PasswordResetToken, User
 from .serializers import (
+    ChangePasswordSerializer,
+    DeleteAccountSerializer,
     PasswordResetConfirmSerializer,
     PasswordResetRequestSerializer,
     UserLoginSerializer,
@@ -357,3 +359,68 @@ class PreferencesView(APIView):
         request.user.preferences = prefs
         request.user.save(update_fields=["preferences"])
         return Response(prefs, status=status.HTTP_200_OK)
+
+
+class ChangePasswordView(APIView):
+    """Change password for authenticated user."""
+    permission_classes = [permissions.IsAuthenticated]
+
+    @extend_schema(
+        tags=['Auth'],
+        summary='Trocar senha',
+        description='Altera a senha do usuário autenticado. Requer a senha atual.',
+        request=ChangePasswordSerializer,
+        responses={200: _detail_response, 400: _detail_response},
+    )
+    def post(self, request):
+        serializer = ChangePasswordSerializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+
+        if not request.user.check_password(serializer.validated_data['current_password']):
+            return Response(
+                {"detail": "Senha atual incorreta."},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+
+        request.user.set_password(serializer.validated_data['new_password'])
+        request.user.save()
+
+        return Response(
+            {"detail": "Senha alterada com sucesso."},
+            status=status.HTTP_200_OK,
+        )
+
+
+class DeleteAccountView(APIView):
+    """Delete user account permanently."""
+    permission_classes = [permissions.IsAuthenticated]
+
+    @extend_schema(
+        tags=['Auth'],
+        summary='Deletar conta',
+        description=(
+            'Deleta permanentemente a conta do usuário e todas as suas imagens. '
+            'Requer confirmação com a senha atual. Ação irreversível.'
+        ),
+        request=DeleteAccountSerializer,
+        responses={
+            200: _detail_response,
+            400: _detail_response,
+        },
+    )
+    def delete(self, request):
+        serializer = DeleteAccountSerializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+
+        if not request.user.check_password(serializer.validated_data['password']):
+            return Response(
+                {"detail": "Senha incorreta."},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+
+        request.user.delete()
+
+        return Response(
+            {"detail": "Conta deletada com sucesso."},
+            status=status.HTTP_200_OK,
+        )

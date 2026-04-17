@@ -1,8 +1,12 @@
 import { useMemo, useState } from 'react';
+import { useForm } from 'react-hook-form';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import { useNavigate } from 'react-router-dom';
+import { toast } from 'sonner';
 import { useAuthStore } from '@/features/auth/store';
 import { authApi } from '@/features/auth/api';
 import { QUERY_KEYS } from '@/lib/constants';
+import { Eye, EyeOff } from 'lucide-react';
 
 type AspectOption = '1:1' | '16:9' | '9:16' | '21:9';
 
@@ -20,9 +24,49 @@ const ASPECT_OPTIONS: { value: AspectOption; label: string; shape: 'square' | 'l
   { value: '21:9', label: '21:9 Cinema', shape: 'landscape' },
 ];
 
+type ChangePasswordForm = {
+  current_password: string;
+  new_password: string;
+  new_password_confirm: string;
+};
+
 export const SettingsPage = () => {
   const user = useAuthStore((state) => state.user);
   const logout = useAuthStore((state) => state.logout);
+  const navigate = useNavigate();
+
+  const [showChangePassword, setShowChangePassword] = useState(false);
+  const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
+  const [deletePassword, setDeletePassword] = useState('');
+  const [showPasswords, setShowPasswords] = useState(false);
+
+  const pwForm = useForm<ChangePasswordForm>();
+
+  const changePasswordMutation = useMutation({
+    mutationFn: (data: ChangePasswordForm) => authApi.changePassword(data),
+    onSuccess: () => {
+      toast.success('Senha alterada com sucesso.');
+      setShowChangePassword(false);
+      pwForm.reset();
+    },
+    onError: (err: unknown) => {
+      const error = err as { response?: { data?: { detail?: string } } };
+      toast.error(error.response?.data?.detail || 'Erro ao alterar senha.');
+    },
+  });
+
+  const deleteAccountMutation = useMutation({
+    mutationFn: (password: string) => authApi.deleteAccount({ password }),
+    onSuccess: () => {
+      toast.success('Conta deletada.');
+      logout();
+      navigate('/login');
+    },
+    onError: (err: unknown) => {
+      const error = err as { response?: { data?: { detail?: string } } };
+      toast.error(error.response?.data?.detail || 'Erro ao deletar conta.');
+    },
+  });
 
   const [selectedModel, setSelectedModel] = useState(MODEL_OPTIONS[0]);
   const [aspect, setAspect] = useState<AspectOption>('1:1');
@@ -117,11 +161,63 @@ export const SettingsPage = () => {
                 </div>
                 <button
                   type="button"
+                  onClick={() => setShowChangePassword(!showChangePassword)}
                   className="h-11 w-full rounded-full border border-border bg-body px-6 text-sm font-semibold transition-colors hover:border-accent md:w-auto"
                 >
-                  Alterar senha
+                  {showChangePassword ? 'Cancelar' : 'Alterar senha'}
                 </button>
               </div>
+
+              {showChangePassword && (
+                <form
+                  onSubmit={pwForm.handleSubmit((data) => changePasswordMutation.mutate(data))}
+                  className="mb-6 space-y-4 rounded-xl border border-border bg-body p-5"
+                >
+                  <div>
+                    <label className="mb-1.5 block text-sm font-medium text-fg-sec">Senha atual</label>
+                    <div className="relative">
+                      <input
+                        type={showPasswords ? 'text' : 'password'}
+                        className="form-input h-11 w-full rounded-lg border border-border bg-inset px-4 text-fg focus:border-accent focus:ring-0"
+                        {...pwForm.register('current_password', { required: 'Obrigatório' })}
+                      />
+                      <button type="button" onClick={() => setShowPasswords(!showPasswords)} className="absolute right-3 top-1/2 -translate-y-1/2 text-fg-muted">
+                        {showPasswords ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+                      </button>
+                    </div>
+                    {pwForm.formState.errors.current_password && <p className="mt-1 text-xs text-danger">{pwForm.formState.errors.current_password.message}</p>}
+                  </div>
+                  <div>
+                    <label className="mb-1.5 block text-sm font-medium text-fg-sec">Nova senha</label>
+                    <input
+                      type={showPasswords ? 'text' : 'password'}
+                      className="form-input h-11 w-full rounded-lg border border-border bg-inset px-4 text-fg focus:border-accent focus:ring-0"
+                      placeholder="Mínimo 8 caracteres"
+                      {...pwForm.register('new_password', { required: 'Obrigatório', minLength: { value: 8, message: 'Mínimo 8 caracteres' } })}
+                    />
+                    {pwForm.formState.errors.new_password && <p className="mt-1 text-xs text-danger">{pwForm.formState.errors.new_password.message}</p>}
+                  </div>
+                  <div>
+                    <label className="mb-1.5 block text-sm font-medium text-fg-sec">Confirmar nova senha</label>
+                    <input
+                      type={showPasswords ? 'text' : 'password'}
+                      className="form-input h-11 w-full rounded-lg border border-border bg-inset px-4 text-fg focus:border-accent focus:ring-0"
+                      {...pwForm.register('new_password_confirm', {
+                        required: 'Obrigatório',
+                        validate: (val) => val === pwForm.watch('new_password') || 'As senhas não coincidem',
+                      })}
+                    />
+                    {pwForm.formState.errors.new_password_confirm && <p className="mt-1 text-xs text-danger">{pwForm.formState.errors.new_password_confirm.message}</p>}
+                  </div>
+                  <button
+                    type="submit"
+                    disabled={changePasswordMutation.isPending}
+                    className="w-full rounded-full bg-accent py-2.5 text-sm font-semibold text-fg-inv transition-colors hover:bg-accent-hover disabled:opacity-50"
+                  >
+                    {changePasswordMutation.isPending ? 'Alterando...' : 'Confirmar alteração'}
+                  </button>
+                </form>
+              )}
 
               <div className="grid grid-cols-1 gap-6 md:grid-cols-2">
                 <label className="block">
@@ -311,11 +407,34 @@ export const SettingsPage = () => {
                   </div>
                   <button
                     type="button"
+                    onClick={() => setShowDeleteConfirm(!showDeleteConfirm)}
                     className="whitespace-nowrap rounded-full border border-red-900/50 bg-red-900/30 px-4 py-2 text-sm font-bold text-red-300 transition-colors hover:bg-red-900/50 hover:text-red-200"
                   >
-                    Deletar minha conta
+                    {showDeleteConfirm ? 'Cancelar' : 'Deletar minha conta'}
                   </button>
                 </div>
+                {showDeleteConfirm && (
+                  <div className="mt-4 space-y-3 rounded-xl border border-red-900/40 bg-red-950/20 p-4">
+                    <p className="text-sm text-fg-sec">
+                      Digite sua senha para confirmar. <strong className="text-danger">Todos os seus dados e imagens serão permanentemente deletados.</strong>
+                    </p>
+                    <input
+                      type="password"
+                      placeholder="Sua senha"
+                      value={deletePassword}
+                      onChange={(e) => setDeletePassword(e.target.value)}
+                      className="form-input h-11 w-full rounded-lg border border-red-900/40 bg-body px-4 text-fg placeholder:text-fg-muted focus:border-danger focus:ring-0"
+                    />
+                    <button
+                      type="button"
+                      disabled={!deletePassword || deleteAccountMutation.isPending}
+                      onClick={() => deleteAccountMutation.mutate(deletePassword)}
+                      className="w-full rounded-full bg-danger py-2.5 text-sm font-bold text-white transition-colors hover:bg-red-700 disabled:opacity-50"
+                    >
+                      {deleteAccountMutation.isPending ? 'Deletando...' : 'Confirmar exclusão permanente'}
+                    </button>
+                  </div>
+                )}
               </div>
             </div>
           </section>

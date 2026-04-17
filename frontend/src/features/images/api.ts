@@ -3,6 +3,7 @@ import type {
   GenerateImagePayload,
   ImageRecord,
   PaginatedResponse,
+  ProjectRecord,
 } from '@/features/images/types';
 import type { ImageComment } from '@/features/images/components/ImageDetailsDialog';
 
@@ -110,6 +111,129 @@ export const imagesApi = {
       `/images/${imageId}/comments/`,
       { text, parent_id: parentId }
     );
+    return data;
+  },
+  // Characters
+  async fetchCharacters() {
+    const { data } = await apiClient.get<{ id: string; name: string; description: string; reference_count: number; generation_count: number; thumbnail_url: string | null; created_at: string }[]>('/characters/');
+    return data;
+  },
+  async fetchCharacter(characterId: string) {
+    const { data } = await apiClient.get(`/characters/${characterId}/`);
+    return data;
+  },
+  async createCharacter(payload: { name: string; description?: string; style_notes?: string }) {
+    const { data } = await apiClient.post('/characters/', payload);
+    return data;
+  },
+  async updateCharacter(characterId: string, payload: Partial<{ name: string; description: string; style_notes: string }>) {
+    const { data } = await apiClient.put(`/characters/${characterId}/`, payload);
+    return data;
+  },
+  async deleteCharacter(characterId: string) {
+    await apiClient.delete(`/characters/${characterId}/`);
+  },
+  async uploadCharacterRef(characterId: string, file: File) {
+    const formData = new FormData();
+    formData.append('file', file);
+    const { data } = await apiClient.post(`/characters/${characterId}/references/`, formData, {
+      headers: { 'Content-Type': 'multipart/form-data' },
+    });
+    return data;
+  },
+  async removeCharacterRef(characterId: string, refId: number) {
+    await apiClient.delete(`/characters/${characterId}/references/${refId}/remove/`);
+  },
+  async generateWithCharacter(characterId: string, scene: string, style = 'photorealistic') {
+    const { data } = await apiClient.post<ImageRecord>(`/characters/${characterId}/generate/`, { scene, style });
+    return data;
+  },
+  // Image-to-Image
+  async generateVariations(imageId: number, count = 1, strength = 0.65) {
+    const { data } = await apiClient.post<ImageRecord[]>(`/images/${imageId}/variations/`, { count, strength });
+    return data;
+  },
+  async restyleImage(imageId: number, style: string, strength = 0.65) {
+    const { data } = await apiClient.post<ImageRecord>(`/images/${imageId}/restyle/`, { style, strength });
+    return data;
+  },
+  // Creative Agent
+  async fetchSessions() {
+    const { data } = await apiClient.get<{ id: string; title: string; status: string; message_count: number; created_at: string; updated_at: string }[]>('/sessions/');
+    return data;
+  },
+  async createSession(title = 'Nova sessão') {
+    const { data } = await apiClient.post('/sessions/', { title });
+    return data;
+  },
+  async fetchSession(sessionId: string) {
+    const { data } = await apiClient.get(`/sessions/${sessionId}/`);
+    return data;
+  },
+  async archiveSession(sessionId: string) {
+    await apiClient.delete(`/sessions/${sessionId}/`);
+  },
+  async sendMessage(sessionId: string, text: string) {
+    const { data } = await apiClient.post<{
+      message: { id: number; role: string; text: string; image: number | null; image_url: string | null; prompt_used: string; created_at: string };
+      agent_response: { id: number; role: string; text: string; image: number | null; image_url: string | null; prompt_used: string; created_at: string };
+    }>(`/sessions/${sessionId}/messages/`, { text });
+    return data;
+  },
+  // Projects
+  async fetchProjects() {
+    const { data } = await apiClient.get<ProjectRecord[]>('/projects/');
+    return data;
+  },
+  async fetchProject(projectId: string) {
+    const { data } = await apiClient.get<ProjectRecord>(`/projects/${projectId}/`);
+    return data;
+  },
+  async createProject(payload: { title: string; description?: string }) {
+    const { data } = await apiClient.post<ProjectRecord>('/projects/', payload);
+    return data;
+  },
+  async updateProject(projectId: string, payload: Partial<{ title: string; description: string; is_public: boolean; cover_image: number | null }>) {
+    const { data } = await apiClient.put<ProjectRecord>(`/projects/${projectId}/`, payload);
+    return data;
+  },
+  async deleteProject(projectId: string) {
+    await apiClient.delete(`/projects/${projectId}/`);
+  },
+  async addImageToProject(projectId: string, imageId: number, order = 0, caption = '') {
+    const { data } = await apiClient.post(`/projects/${projectId}/images/`, { image_id: imageId, order, caption });
+    return data;
+  },
+  async removeImageFromProject(projectId: string, imageId: number) {
+    await apiClient.delete(`/projects/${projectId}/images/${imageId}/remove/`);
+  },
+  async reorderProjectImages(projectId: string, imageIds: number[]) {
+    const { data } = await apiClient.patch(`/projects/${projectId}/images/reorder/`, { image_ids: imageIds });
+    return data;
+  },
+  async fetchPublicProjects(page = 1) {
+    const { data } = await apiClient.get<PaginatedResponse<ProjectRecord>>('/projects/public/', { params: { page } });
+    return data;
+  },
+  // Related & Suggestions
+  async fetchRelatedImages(imageId: number, limit = 6) {
+    const { data } = await apiClient.get<{
+      count: number;
+      results: { image: ImageRecord; similarity_score: number }[];
+    }>(`/images/${imageId}/related/`, { params: { limit } });
+    return data;
+  },
+  async fetchStyleSuggestions(limit = 5) {
+    const { data } = await apiClient.get<{
+      count: number;
+      results: {
+        label: string;
+        example_prompt: string;
+        example_image_id: number;
+        frequency: number;
+        confidence: number;
+      }[];
+    }>('/users/me/style-suggestions/', { params: { limit } });
     return data;
   },
   async refinePrompt(description: string, style?: string) {

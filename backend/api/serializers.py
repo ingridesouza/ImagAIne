@@ -46,6 +46,9 @@ class ImageSerializer(serializers.ModelSerializer):
             'relevance_score',
             'featured',
             'tags',
+            'source_image',
+            'generation_type',
+            'strength',
             'created_at',
         )
         read_only_fields = (
@@ -60,6 +63,9 @@ class ImageSerializer(serializers.ModelSerializer):
             'relevance_score',
             'featured',
             'tags',
+            'source_image',
+            'generation_type',
+            'strength',
             'created_at',
         )
 
@@ -115,6 +121,27 @@ class GenerateImageSerializer(serializers.Serializer):
         required=False,
     )
     seed = serializers.IntegerField(required=False, min_value=0, allow_null=True)
+
+
+class VariationRequestSerializer(serializers.Serializer):
+    """Request to generate variations of an existing image."""
+    count = serializers.IntegerField(min_value=1, max_value=4, default=1)
+    strength = serializers.FloatField(min_value=0.1, max_value=0.95, default=0.65)
+
+
+class RestyleRequestSerializer(serializers.Serializer):
+    """Request to apply a different style to an existing image."""
+    style = serializers.ChoiceField(choices=[
+        ('photorealistic', 'Fotorrealista'),
+        ('anime', 'Anime/Mangá'),
+        ('digital_art', 'Arte Digital'),
+        ('oil_painting', 'Pintura a Óleo'),
+        ('watercolor', 'Aquarela'),
+        ('3d_render', 'Render 3D'),
+        ('pixel_art', 'Pixel Art'),
+        ('sketch', 'Esboço/Desenho'),
+    ])
+    strength = serializers.FloatField(min_value=0.3, max_value=0.9, default=0.65)
 
 
 class ImageShareUpdateSerializer(serializers.Serializer):
@@ -254,6 +281,244 @@ class StyleSuggestionSerializer(serializers.Serializer):
     example_image_id = serializers.IntegerField(read_only=True)
     frequency = serializers.IntegerField(read_only=True)
     confidence = serializers.FloatField(read_only=True)
+
+
+# =============================================================================
+# Character Serializers
+# =============================================================================
+
+class CharacterReferenceSerializer(serializers.ModelSerializer):
+    image_url = serializers.SerializerMethodField()
+
+    class Meta:
+        from .models import CharacterReference
+        model = CharacterReference
+        fields = ('id', 'image', 'image_url', 'order', 'created_at')
+        read_only_fields = ('id', 'image_url', 'created_at')
+
+    @extend_schema_field(serializers.URLField(allow_null=True))
+    def get_image_url(self, obj) -> Optional[str]:
+        if not obj.image:
+            return None
+        request = self.context.get('request')
+        if request:
+            return request.build_absolute_uri(obj.image.url)
+        return obj.image.url
+
+
+class CharacterSerializer(serializers.ModelSerializer):
+    user = ImageUserSerializer(read_only=True)
+    references = CharacterReferenceSerializer(many=True, read_only=True)
+    generation_count = serializers.SerializerMethodField()
+
+    class Meta:
+        from .models import Character
+        model = Character
+        fields = ('id', 'user', 'name', 'description', 'style_notes', 'references', 'generation_count', 'created_at', 'updated_at')
+        read_only_fields = ('id', 'user', 'references', 'generation_count', 'created_at', 'updated_at')
+
+    @extend_schema_field(serializers.IntegerField())
+    def get_generation_count(self, obj) -> int:
+        return getattr(obj, 'generation_count', obj.generations.count())
+
+
+class CharacterListSerializer(serializers.ModelSerializer):
+    """Lighter serializer for character lists."""
+    reference_count = serializers.SerializerMethodField()
+    generation_count = serializers.SerializerMethodField()
+    thumbnail_url = serializers.SerializerMethodField()
+
+    class Meta:
+        from .models import Character
+        model = Character
+        fields = ('id', 'name', 'description', 'reference_count', 'generation_count', 'thumbnail_url', 'created_at', 'updated_at')
+        read_only_fields = fields
+
+    @extend_schema_field(serializers.IntegerField())
+    def get_reference_count(self, obj) -> int:
+        return getattr(obj, 'reference_count', 0)
+
+    @extend_schema_field(serializers.IntegerField())
+    def get_generation_count(self, obj) -> int:
+        return getattr(obj, 'generation_count', 0)
+
+    @extend_schema_field(serializers.URLField(allow_null=True))
+    def get_thumbnail_url(self, obj) -> Optional[str]:
+        first_ref = obj.references.first() if hasattr(obj, '_prefetched_objects_cache') else None
+        if not first_ref:
+            try:
+                first_ref = obj.references.first()
+            except Exception:
+                return None
+        if first_ref and first_ref.image:
+            request = self.context.get('request')
+            if request:
+                return request.build_absolute_uri(first_ref.image.url)
+            return first_ref.image.url
+        return None
+
+
+class CharacterCreateSerializer(serializers.Serializer):
+    name = serializers.CharField(max_length=100)
+    description = serializers.CharField(required=False, allow_blank=True, default='')
+    style_notes = serializers.CharField(required=False, allow_blank=True, default='')
+
+
+class CharacterGenerateSerializer(serializers.Serializer):
+    scene = serializers.CharField(help_text='Descrição da cena (ex: "em uma cafeteria")')
+    style = serializers.ChoiceField(
+        choices=[
+            ('photorealistic', 'Fotorrealista'),
+            ('anime', 'Anime'),
+            ('digital_art', 'Arte Digital'),
+            ('oil_painting', 'Pintura a Óleo'),
+        ],
+        required=False,
+        default='photorealistic',
+    )
+
+
+# =============================================================================
+# Creative Agent Serializers
+# =============================================================================
+
+class SessionMessageSerializer(serializers.ModelSerializer):
+    image_url = serializers.SerializerMethodField()
+
+    class Meta:
+        from .models import SessionMessage
+        model = SessionMessage
+        fields = ('id', 'role', 'text', 'image', 'image_url', 'prompt_used', 'created_at')
+        read_only_fields = ('id', 'role', 'image', 'image_url', 'prompt_used', 'created_at')
+
+    @extend_schema_field(serializers.URLField(allow_null=True))
+    def get_image_url(self, obj) -> Optional[str]:
+        if not obj.image or not obj.image.image:
+            return None
+        request = self.context.get('request')
+        url = obj.image.image.url
+        if request:
+            return request.build_absolute_uri(url)
+        return url
+
+
+class CreativeSessionSerializer(serializers.ModelSerializer):
+    user = ImageUserSerializer(read_only=True)
+    messages = SessionMessageSerializer(many=True, read_only=True)
+    message_count = serializers.SerializerMethodField()
+
+    class Meta:
+        from .models import CreativeSession
+        model = CreativeSession
+        fields = ('id', 'user', 'title', 'status', 'messages', 'message_count', 'created_at', 'updated_at')
+        read_only_fields = ('id', 'user', 'messages', 'message_count', 'created_at', 'updated_at')
+
+    @extend_schema_field(serializers.IntegerField())
+    def get_message_count(self, obj) -> int:
+        if hasattr(obj, '_prefetched_objects_cache') and 'messages' in obj._prefetched_objects_cache:
+            return len(obj._prefetched_objects_cache['messages'])
+        return obj.messages.count()
+
+
+class CreativeSessionListSerializer(serializers.ModelSerializer):
+    """Lighter serializer for session lists (no messages)."""
+    message_count = serializers.SerializerMethodField()
+
+    class Meta:
+        from .models import CreativeSession
+        model = CreativeSession
+        fields = ('id', 'title', 'status', 'message_count', 'created_at', 'updated_at')
+        read_only_fields = fields
+
+    @extend_schema_field(serializers.IntegerField())
+    def get_message_count(self, obj) -> int:
+        return getattr(obj, 'message_count', 0)
+
+
+class SessionMessageCreateSerializer(serializers.Serializer):
+    text = serializers.CharField()
+
+
+class SessionCreateSerializer(serializers.Serializer):
+    title = serializers.CharField(max_length=200, required=False, default='Nova sessão')
+
+
+# =============================================================================
+# Projects Serializers
+# =============================================================================
+
+class ProjectTagSerializer(serializers.ModelSerializer):
+    class Meta:
+        from .models import ProjectTag
+        model = ProjectTag
+        fields = ('name',)
+
+
+class ProjectImageSerializer(serializers.ModelSerializer):
+    image = ImageSerializer(read_only=True)
+    image_id = serializers.IntegerField(write_only=True)
+
+    class Meta:
+        from .models import ProjectImage
+        model = ProjectImage
+        fields = ('id', 'image', 'image_id', 'order', 'caption', 'created_at')
+        read_only_fields = ('id', 'image', 'created_at')
+
+
+class ProjectSerializer(serializers.ModelSerializer):
+    user = ImageUserSerializer(read_only=True)
+    images = ProjectImageSerializer(many=True, read_only=True)
+    image_count = serializers.SerializerMethodField()
+    tags = serializers.SerializerMethodField()
+    cover_image_url = serializers.SerializerMethodField()
+
+    class Meta:
+        from .models import Project
+        model = Project
+        fields = (
+            'id', 'user', 'title', 'description', 'cover_image',
+            'cover_image_url', 'is_public', 'tags', 'images',
+            'image_count', 'created_at', 'updated_at',
+        )
+        read_only_fields = ('id', 'user', 'images', 'image_count', 'tags', 'cover_image_url', 'created_at', 'updated_at')
+
+    @extend_schema_field(serializers.IntegerField())
+    def get_image_count(self, obj) -> int:
+        if hasattr(obj, '_prefetched_objects_cache') and 'images' in obj._prefetched_objects_cache:
+            return len(obj._prefetched_objects_cache['images'])
+        return obj.images.count()
+
+    @extend_schema_field(serializers.ListField(child=serializers.CharField()))
+    def get_tags(self, obj) -> List[str]:
+        return [tag.name for tag in obj.tags.all()]
+
+    @extend_schema_field(serializers.URLField(allow_null=True))
+    def get_cover_image_url(self, obj) -> Optional[str]:
+        if not obj.cover_image or not obj.cover_image.image:
+            return None
+        request = self.context.get('request')
+        url = obj.cover_image.image.url
+        if request:
+            return request.build_absolute_uri(url)
+        return url
+
+
+class ProjectCreateSerializer(serializers.Serializer):
+    title = serializers.CharField(max_length=200)
+    description = serializers.CharField(required=False, allow_blank=True, default='')
+
+
+class ProjectImageAddSerializer(serializers.Serializer):
+    image_id = serializers.IntegerField()
+    order = serializers.IntegerField(required=False, default=0)
+    caption = serializers.CharField(required=False, allow_blank=True, default='')
+
+
+class ProjectReorderSerializer(serializers.Serializer):
+    image_ids = serializers.ListField(
+        child=serializers.IntegerField(),
+        help_text='Lista ordenada de IDs de imagens no projeto',
+    )
 
 
 # Prompt Assistant - DeepSeek LLM Serializers

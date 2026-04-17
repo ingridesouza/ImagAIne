@@ -22,17 +22,32 @@ from rest_framework.views import APIView
 from rest_framework.throttling import ScopedRateThrottle
 from drf_spectacular.utils import extend_schema, extend_schema_view, OpenApiParameter, inline_serializer
 
-from .models import Image, ImageComment, ImageLike, CommentLike
+from .models import Image, ImageComment, ImageLike, CommentLike, Project, ProjectImage, CreativeSession, SessionMessage, Character, CharacterReference, CharacterGeneration
 from .relevance import update_image_relevance
 from .serializers import (
+    CharacterCreateSerializer,
+    CharacterGenerateSerializer,
+    CharacterListSerializer,
+    CharacterSerializer,
+    CreativeSessionListSerializer,
+    CreativeSessionSerializer,
     GenerateImageSerializer,
     ImageCommentCreateSerializer,
     ImageCommentSerializer,
     ImageSerializer,
     ImageShareUpdateSerializer,
+    RestyleRequestSerializer,
+    VariationRequestSerializer,
+    ProjectCreateSerializer,
+    ProjectImageAddSerializer,
+    ProjectReorderSerializer,
+    ProjectSerializer,
     RelatedImageSerializer,
     RefinePromptRequestSerializer,
     RefinePromptResponseSerializer,
+    SessionCreateSerializer,
+    SessionMessageCreateSerializer,
+    SessionMessageSerializer,
     StyleSuggestionSerializer,
 )
 from .throttles import PlanQuotaThrottle
@@ -150,6 +165,7 @@ class GenerateImageView(APIView):
         ),
         parameters=[
             OpenApiParameter('search', str, description='Busca no texto do prompt'),
+            OpenApiParameter('tag', str, description='Filtra por nome de tag (case insensitive)'),
         ],
     ),
 )
@@ -163,6 +179,10 @@ class PublicImageListView(generics.ListAPIView):
         base_queryset = Image.objects.filter(is_public=True).select_related(
             "user"
         ).prefetch_related("tags")
+
+        tag = self.request.query_params.get("tag")
+        if tag:
+            base_queryset = base_queryset.filter(tags__name__iexact=tag)
         annotated_queryset = base_queryset.annotate(
             like_count=Count("likes", distinct=True),
             comment_count=Count("comments", distinct=True),
@@ -194,6 +214,9 @@ class PublicImageListView(generics.ListAPIView):
         tags=['Gallery'],
         summary='Minhas imagens',
         description='Lista paginada de todas as imagens do usuário autenticado.',
+        parameters=[
+            OpenApiParameter('tag', str, description='Filtra por nome de tag (case insensitive)'),
+        ],
     ),
 )
 class UserImageListView(generics.ListAPIView):
@@ -201,11 +224,16 @@ class UserImageListView(generics.ListAPIView):
     permission_classes = [IsAuthenticated]
 
     def get_queryset(self):
+        queryset = Image.objects.filter(user=self.request.user).select_related(
+            "user"
+        ).prefetch_related("tags")
+
+        tag = self.request.query_params.get("tag")
+        if tag:
+            queryset = queryset.filter(tags__name__iexact=tag)
+
         queryset = (
-            Image.objects.filter(user=self.request.user)
-            .select_related("user")
-            .prefetch_related("tags")
-            .annotate(
+            queryset.annotate(
                 like_count=Count("likes", distinct=True),
                 comment_count=Count("comments", distinct=True),
                 effective_score=Coalesce(F("relevance_score"), Value(0.0)),
@@ -921,3 +949,741 @@ Formato de resposta (JSON):
         }
 
         return Response(response_data, status=status.HTTP_200_OK)
+
+
+# =============================================================================
+# Characters
+# =============================================================================
+
+class CharacterListCreateView(APIView):
+    """List or create characters."""
+    permission_classes = [IsAuthenticated]
+
+    @extend_schema(
+        tags=['Characters'],
+        summary='Listar personagens',
+        description='Lista personagens do usuário com contagem de referências e gerações.',
+        responses={200: CharacterListSerializer(many=True)},
+    )
+    def get(self, request):
+        characters = (
+            Character.objects.filter(user=request.user)
+            .prefetch_related('references')
+            .annotate(
+                reference_count=Count('references', distinct=True),
+                generation_count=Count('generations', distinct=True),
+            )
+        )
+        return Response(CharacterListSerializer(characters, many=True, context={'request': request}).data)
+
+    @extend_schema(
+        tags=['Characters'],
+        summary='Criar personagem',
+        description='Cria um novo personagem. Imagens de referência são adicionadas separadamente.',
+        request=CharacterCreateSerializer,
+        responses={201: CharacterSerializer},
+    )
+    def post(self, request):
+        serializer = CharacterCreateSerializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+        character = Character.objects.create(
+            user=request.user,
+            **serializer.validated_data,
+        )
+        return Response(
+            CharacterSerializer(character, context={'request': request}).data,
+            status=status.HTTP_201_CREATED,
+        )
+
+
+class CharacterDetailView(APIView):
+    """Retrieve, update or delete a character."""
+    permission_classes = [IsAuthenticated]
+
+    def _get_character(self, pk, user):
+        return get_object_or_404(
+            Character.objects.prefetch_related('references', 'generations__image'),
+            pk=pk, user=user,
+        )
+
+    @extend_schema(
+        tags=['Characters'],
+        summary='Detalhe do personagem',
+        description='Retorna personagem com referências e gerações.',
+        responses={200: CharacterSerializer},
+    )
+    def get(self, request, pk):
+        character = self._get_character(pk, request.user)
+        return Response(CharacterSerializer(character, context={'request': request}).data)
+
+    @extend_schema(
+        tags=['Characters'],
+        summary='Atualizar personagem',
+        description='Atualiza nome, descrição ou notas de estilo.',
+        request=CharacterCreateSerializer,
+        responses={200: CharacterSerializer},
+    )
+    def put(self, request, pk):
+        character = self._get_character(pk, request.user)
+        for field in ('name', 'description', 'style_notes'):
+            if field in request.data:
+                setattr(character, field, request.data[field])
+        character.save()
+        return Response(CharacterSerializer(character, context={'request': request}).data)
+
+    @extend_schema(
+        tags=['Characters'],
+        summary='Deletar personagem',
+        description='Deleta personagem e referências. Gerações (imagens) não são deletadas.',
+        responses={204: None},
+    )
+    def delete(self, request, pk):
+        character = self._get_character(pk, request.user)
+        character.delete()
+        return Response(status=status.HTTP_204_NO_CONTENT)
+
+
+class CharacterReferenceUploadView(APIView):
+    """Upload or remove reference images for a character."""
+    permission_classes = [IsAuthenticated]
+
+    @extend_schema(
+        tags=['Characters'],
+        summary='Upload referência',
+        description='Adiciona uma imagem de referência ao personagem (multipart).',
+        request={'multipart/form-data': {'type': 'object', 'properties': {
+            'file': {'type': 'string', 'format': 'binary'},
+        }, 'required': ['file']}},
+        responses={201: inline_serializer('RefUploaded', fields={
+            'id': drf_serializers.IntegerField(),
+            'image_url': drf_serializers.URLField(),
+            'order': drf_serializers.IntegerField(),
+        })},
+    )
+    def post(self, request, pk):
+        character = get_object_or_404(Character, pk=pk, user=request.user)
+        file = request.FILES.get('file')
+        if not file:
+            return Response({"detail": "Nenhum arquivo enviado."}, status=status.HTTP_400_BAD_REQUEST)
+
+        order = character.references.count()
+        ref = CharacterReference.objects.create(character=character, image=file, order=order)
+        url = request.build_absolute_uri(ref.image.url) if ref.image else None
+        return Response({'id': ref.id, 'image_url': url, 'order': ref.order}, status=status.HTTP_201_CREATED)
+
+    @extend_schema(
+        tags=['Characters'],
+        summary='Remover referência',
+        description='Remove uma imagem de referência do personagem.',
+        responses={204: None},
+    )
+    def delete(self, request, pk, ref_id=None):
+        character = get_object_or_404(Character, pk=pk, user=request.user)
+        deleted, _ = CharacterReference.objects.filter(character=character, pk=ref_id).delete()
+        if not deleted:
+            return Response({"detail": "Referência não encontrada."}, status=status.HTTP_404_NOT_FOUND)
+        return Response(status=status.HTTP_204_NO_CONTENT)
+
+
+class CharacterGenerateView(APIView):
+    """Generate a scene featuring a character."""
+    permission_classes = [IsAuthenticated]
+
+    @extend_schema(
+        tags=['Characters'],
+        summary='Gerar cena com personagem',
+        description=(
+            'Gera uma imagem com o personagem em uma cena descrita. '
+            'Combina a descrição do personagem + cena + estilo no prompt.'
+        ),
+        request=CharacterGenerateSerializer,
+        responses={202: ImageSerializer},
+    )
+    def post(self, request, pk):
+        character = get_object_or_404(
+            Character.objects.prefetch_related('references'),
+            pk=pk, user=request.user,
+        )
+        serializer = CharacterGenerateSerializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+
+        scene = serializer.validated_data['scene']
+        style = serializer.validated_data.get('style', 'photorealistic')
+
+        # Build prompt combining character + scene + style
+        style_mods = STYLE_PROMPT_MAP.get(style, '')
+        char_desc = character.description or character.name
+        prompt = f"{char_desc}, {scene}, {style_mods}".strip(', ')
+
+        # Check quota
+        quotas = getattr(settings, 'PLAN_QUOTAS', {})
+        quota = quotas.get(getattr(request.user, 'plan', 'free'))
+        if quota is not None and request.user.image_generation_count >= quota:
+            return Response(
+                {"detail": "Cota mensal atingida."},
+                status=status.HTTP_429_TOO_MANY_REQUESTS,
+            )
+
+        image = Image.objects.create(
+            user=request.user,
+            prompt=prompt,
+            aspect_ratio=Image.AspectRatio.SQUARE,
+            generation_type=Image.GenerationType.TXT2IMG,
+        )
+        request.user.image_generation_count += 1
+        request.user.save(update_fields=['image_generation_count'])
+
+        CharacterGeneration.objects.create(
+            character=character, image=image, scene_description=scene,
+        )
+
+        generate_image_task.delay(image.id)
+
+        return Response(
+            ImageSerializer(image, context={'request': request}).data,
+            status=status.HTTP_202_ACCEPTED,
+        )
+
+
+# =============================================================================
+# Image-to-Image: Variations & Restyle
+# =============================================================================
+
+STYLE_PROMPT_MAP = {
+    'photorealistic': 'professional photography, photorealistic, 8k, sharp focus, natural lighting, highly detailed',
+    'anime': 'anime style, cel shading, vibrant colors, manga aesthetic, detailed anime illustration',
+    'digital_art': 'digital painting, detailed illustration, concept art, artstation trending',
+    'oil_painting': 'oil painting, thick brushstrokes, classical art, canvas texture, masterpiece',
+    'watercolor': 'watercolor painting, soft edges, flowing colors, paper texture, artistic',
+    '3d_render': '3D render, octane render, volumetric lighting, subsurface scattering, photorealistic 3D',
+    'pixel_art': 'pixel art, retro gaming style, 16-bit, dithering, sprite art',
+    'sketch': 'pencil sketch, graphite drawing, hand-drawn, crosshatching, artistic sketch',
+}
+
+
+class ImageVariationsView(APIView):
+    """Generate variations of an existing image."""
+    permission_classes = [IsAuthenticated]
+
+    @extend_schema(
+        tags=['Image Editing'],
+        summary='Gerar variações',
+        description=(
+            'Gera 1-4 variações de uma imagem existente usando img2img. '
+            'O strength controla o quanto a variação difere do original '
+            '(0.1 = quase igual, 0.95 = muito diferente).'
+        ),
+        request=VariationRequestSerializer,
+        responses={202: ImageSerializer(many=True)},
+    )
+    def post(self, request, pk):
+        source = get_object_or_404(Image, pk=pk, user=request.user, status=Image.Status.READY)
+        serializer = VariationRequestSerializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+
+        count = serializer.validated_data['count']
+        strength = serializer.validated_data['strength']
+
+        # Check quota
+        quotas = getattr(settings, 'PLAN_QUOTAS', {})
+        quota = quotas.get(getattr(request.user, 'plan', 'free'))
+        if quota is not None and request.user.image_generation_count + count > quota:
+            return Response(
+                {"detail": "Cota mensal insuficiente para gerar essas variações."},
+                status=status.HTTP_429_TOO_MANY_REQUESTS,
+            )
+
+        created_images = []
+        for _ in range(count):
+            img = Image.objects.create(
+                user=request.user,
+                prompt=source.prompt,
+                negative_prompt=source.negative_prompt,
+                aspect_ratio=source.aspect_ratio,
+                source_image=source,
+                generation_type=Image.GenerationType.VARIATION,
+                strength=strength,
+            )
+            request.user.image_generation_count += 1
+            generate_image_task.delay(img.id)
+            created_images.append(img)
+
+        request.user.save(update_fields=['image_generation_count'])
+
+        return Response(
+            ImageSerializer(created_images, many=True, context={'request': request}).data,
+            status=status.HTTP_202_ACCEPTED,
+        )
+
+
+class ImageRestyleView(APIView):
+    """Apply a different style to an existing image."""
+    permission_classes = [IsAuthenticated]
+
+    @extend_schema(
+        tags=['Image Editing'],
+        summary='Mudar estilo',
+        description=(
+            'Aplica um estilo diferente a uma imagem existente. '
+            'O prompt original é combinado com modificadores do estilo escolhido.'
+        ),
+        request=RestyleRequestSerializer,
+        responses={202: ImageSerializer},
+    )
+    def post(self, request, pk):
+        source = get_object_or_404(Image, pk=pk, user=request.user, status=Image.Status.READY)
+        serializer = RestyleRequestSerializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+
+        style = serializer.validated_data['style']
+        strength = serializer.validated_data['strength']
+
+        # Build restyled prompt
+        style_modifiers = STYLE_PROMPT_MAP.get(style, '')
+        original_prompt = source.prompt or ''
+        restyled_prompt = f"{original_prompt}, {style_modifiers}" if original_prompt else style_modifiers
+
+        # Check quota
+        quotas = getattr(settings, 'PLAN_QUOTAS', {})
+        quota = quotas.get(getattr(request.user, 'plan', 'free'))
+        if quota is not None and request.user.image_generation_count >= quota:
+            return Response(
+                {"detail": "Cota mensal atingida."},
+                status=status.HTTP_429_TOO_MANY_REQUESTS,
+            )
+
+        img = Image.objects.create(
+            user=request.user,
+            prompt=restyled_prompt,
+            negative_prompt=source.negative_prompt,
+            aspect_ratio=source.aspect_ratio,
+            source_image=source,
+            generation_type=Image.GenerationType.RESTYLE,
+            strength=strength,
+        )
+        request.user.image_generation_count += 1
+        request.user.save(update_fields=['image_generation_count'])
+        generate_image_task.delay(img.id)
+
+        return Response(
+            ImageSerializer(img, context={'request': request}).data,
+            status=status.HTTP_202_ACCEPTED,
+        )
+
+
+# =============================================================================
+# Creative Agent
+# =============================================================================
+
+class SessionListCreateView(APIView):
+    """List or create creative sessions."""
+    permission_classes = [IsAuthenticated]
+
+    @extend_schema(
+        tags=['Creative Agent'],
+        summary='Listar sessões',
+        description='Lista sessões criativas do usuário, ordenadas por última atualização.',
+        responses={200: CreativeSessionListSerializer(many=True)},
+    )
+    def get(self, request):
+        sessions = (
+            CreativeSession.objects.filter(user=request.user)
+            .annotate(message_count=Count('messages'))
+        )
+        return Response(CreativeSessionListSerializer(sessions, many=True).data)
+
+    @extend_schema(
+        tags=['Creative Agent'],
+        summary='Criar sessão',
+        description='Cria uma nova sessão criativa.',
+        request=SessionCreateSerializer,
+        responses={201: CreativeSessionSerializer},
+    )
+    def post(self, request):
+        serializer = SessionCreateSerializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+        session = CreativeSession.objects.create(
+            user=request.user,
+            title=serializer.validated_data.get('title', 'Nova sessão'),
+        )
+        return Response(
+            CreativeSessionSerializer(session, context={'request': request}).data,
+            status=status.HTTP_201_CREATED,
+        )
+
+
+class SessionDetailView(APIView):
+    """Retrieve or archive a creative session."""
+    permission_classes = [IsAuthenticated]
+
+    @extend_schema(
+        tags=['Creative Agent'],
+        summary='Detalhe da sessão',
+        description='Retorna a sessão com todas as mensagens.',
+        responses={200: CreativeSessionSerializer},
+    )
+    def get(self, request, pk):
+        session = get_object_or_404(
+            CreativeSession.objects.prefetch_related('messages__image'),
+            pk=pk, user=request.user,
+        )
+        return Response(CreativeSessionSerializer(session, context={'request': request}).data)
+
+    @extend_schema(
+        tags=['Creative Agent'],
+        summary='Arquivar sessão',
+        description='Arquiva a sessão criativa.',
+        responses={204: None},
+    )
+    def delete(self, request, pk):
+        session = get_object_or_404(CreativeSession, pk=pk, user=request.user)
+        session.status = CreativeSession.Status.ARCHIVED
+        session.save(update_fields=['status'])
+        return Response(status=status.HTTP_204_NO_CONTENT)
+
+
+class SessionMessageView(APIView):
+    """Send a message to the creative agent."""
+    permission_classes = [IsAuthenticated]
+    throttle_classes = [ScopedRateThrottle]
+    throttle_scope = "llm_refine"
+
+    @extend_schema(
+        tags=['Creative Agent'],
+        summary='Enviar mensagem',
+        description=(
+            'Envia uma mensagem ao agente criativo. O agente responde com texto e, '
+            'opcionalmente, gera uma imagem se tiver informação suficiente. '
+            'Usa o DeepSeek LLM para a conversa e FLUX.1-dev para geração.'
+        ),
+        request=SessionMessageCreateSerializer,
+        responses={200: inline_serializer('AgentResponse', fields={
+            'message': SessionMessageSerializer(),
+            'agent_response': SessionMessageSerializer(),
+        })},
+    )
+    def post(self, request, pk):
+        import requests as http_requests
+        import json
+        import logging
+
+        logger = logging.getLogger(__name__)
+
+        session = get_object_or_404(CreativeSession, pk=pk, user=request.user)
+        serializer = SessionMessageCreateSerializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+
+        user_text = serializer.validated_data['text']
+
+        # Save user message
+        user_msg = SessionMessage.objects.create(
+            session=session, role=SessionMessage.Role.USER, text=user_text,
+        )
+
+        # Build conversation history for LLM
+        from .agent_prompt import CREATIVE_AGENT_SYSTEM_PROMPT
+        history = list(
+            SessionMessage.objects.filter(session=session)
+            .order_by('created_at')
+            .values_list('role', 'text')[:20]  # Last 20 messages for context
+        )
+
+        llm_messages = [{"role": "system", "content": CREATIVE_AGENT_SYSTEM_PROMPT}]
+        for role, text in history:
+            llm_messages.append({"role": role, "content": text})
+
+        # Call DeepSeek LLM
+        api_key = getattr(settings, 'DEEPSEEK_API_KEY', '')
+        base_url = getattr(settings, 'DEEPSEEK_BASE_URL', 'https://api.deepseek.com')
+        model = getattr(settings, 'DEEPSEEK_MODEL', 'deepseek-chat')
+
+        if not api_key:
+            agent_msg = SessionMessage.objects.create(
+                session=session,
+                role=SessionMessage.Role.ASSISTANT,
+                text='Desculpe, o assistente criativo não está configurado no momento.',
+            )
+            return self._response(request, user_msg, agent_msg)
+
+        try:
+            llm_response = http_requests.post(
+                f"{base_url}/v1/chat/completions",
+                headers={"Authorization": f"Bearer {api_key}", "Content-Type": "application/json"},
+                json={"model": model, "messages": llm_messages, "temperature": 0.7, "max_tokens": 800},
+                timeout=30,
+            )
+            llm_response.raise_for_status()
+            content = llm_response.json()['choices'][0]['message']['content']
+        except Exception as e:
+            logger.error(f"DeepSeek error in agent: {e}")
+            agent_msg = SessionMessage.objects.create(
+                session=session,
+                role=SessionMessage.Role.ASSISTANT,
+                text='Desculpe, tive um problema ao processar sua mensagem. Tente novamente.',
+            )
+            return self._response(request, user_msg, agent_msg)
+
+        # Parse agent response
+        agent_text = content
+        should_generate = False
+        prompt_for_generation = ''
+        negative_prompt = ''
+
+        try:
+            if '{' in content and '}' in content:
+                json_start = content.index('{')
+                json_end = content.rindex('}') + 1
+                parsed = json.loads(content[json_start:json_end])
+                agent_text = parsed.get('message', content)
+                if parsed.get('action') == 'generate':
+                    should_generate = True
+                    prompt_for_generation = parsed.get('prompt', '')
+                    negative_prompt = parsed.get('negative_prompt', '')
+        except (json.JSONDecodeError, KeyError):
+            pass
+
+        # Generate image if agent decided to
+        generated_image = None
+        if should_generate and prompt_for_generation:
+            # Check quota
+            quotas = getattr(settings, 'PLAN_QUOTAS', {})
+            quota = quotas.get(getattr(request.user, 'plan', 'free'))
+            can_generate = quota is None or request.user.image_generation_count < quota
+
+            if can_generate:
+                image = Image.objects.create(
+                    user=request.user,
+                    prompt=prompt_for_generation,
+                    negative_prompt=negative_prompt,
+                    aspect_ratio=Image.AspectRatio.SQUARE,
+                )
+                # Increment quota
+                request.user.image_generation_count += 1
+                request.user.save(update_fields=['image_generation_count'])
+
+                generate_image_task.delay(image.id)
+                generated_image = image
+
+                # Auto-title session from first generation
+                if session.title == 'Nova sessão':
+                    session.title = user_text[:80]
+                    session.save(update_fields=['title'])
+            else:
+                agent_text += '\n\n⚠️ Sua cota mensal de geração foi atingida.'
+
+        # Save agent message
+        agent_msg = SessionMessage.objects.create(
+            session=session,
+            role=SessionMessage.Role.ASSISTANT,
+            text=agent_text,
+            image=generated_image,
+            prompt_used=prompt_for_generation,
+        )
+
+        session.save(update_fields=['updated_at'])
+
+        return self._response(request, user_msg, agent_msg)
+
+    def _response(self, request, user_msg, agent_msg):
+        ctx = {'request': request}
+        return Response({
+            'message': SessionMessageSerializer(user_msg, context=ctx).data,
+            'agent_response': SessionMessageSerializer(agent_msg, context=ctx).data,
+        })
+
+
+# =============================================================================
+# Projects
+# =============================================================================
+
+class ProjectListCreateView(APIView):
+    """List user's projects or create a new one."""
+    permission_classes = [IsAuthenticated]
+
+    @extend_schema(
+        tags=['Projects'],
+        summary='Listar projetos',
+        description='Lista projetos do usuário autenticado.',
+        responses={200: ProjectSerializer(many=True)},
+    )
+    def get(self, request):
+        projects = (
+            Project.objects.filter(user=request.user)
+            .select_related('user', 'cover_image')
+            .prefetch_related('images__image', 'tags')
+        )
+        serializer = ProjectSerializer(projects, many=True, context={'request': request})
+        return Response(serializer.data)
+
+    @extend_schema(
+        tags=['Projects'],
+        summary='Criar projeto',
+        description='Cria um novo projeto vazio.',
+        request=ProjectCreateSerializer,
+        responses={201: ProjectSerializer},
+    )
+    def post(self, request):
+        serializer = ProjectCreateSerializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+        project = Project.objects.create(
+            user=request.user,
+            title=serializer.validated_data['title'],
+            description=serializer.validated_data.get('description', ''),
+        )
+        return Response(
+            ProjectSerializer(project, context={'request': request}).data,
+            status=status.HTTP_201_CREATED,
+        )
+
+
+class ProjectDetailView(APIView):
+    """Retrieve, update or delete a project."""
+    permission_classes = [IsAuthenticated]
+
+    def _get_project(self, pk, user):
+        project = get_object_or_404(
+            Project.objects.select_related('user', 'cover_image')
+            .prefetch_related('images__image__user', 'tags'),
+            pk=pk,
+        )
+        if project.user != user:
+            raise PermissionDenied("Você não tem permissão para acessar este projeto.")
+        return project
+
+    @extend_schema(
+        tags=['Projects'],
+        summary='Detalhe do projeto',
+        description='Retorna o projeto com todas as imagens ordenadas.',
+        responses={200: ProjectSerializer},
+    )
+    def get(self, request, pk):
+        project = self._get_project(pk, request.user)
+        return Response(ProjectSerializer(project, context={'request': request}).data)
+
+    @extend_schema(
+        tags=['Projects'],
+        summary='Atualizar projeto',
+        description='Atualiza título, descrição ou visibilidade do projeto.',
+        request=ProjectCreateSerializer,
+        responses={200: ProjectSerializer},
+    )
+    def put(self, request, pk):
+        project = self._get_project(pk, request.user)
+        for field in ('title', 'description', 'is_public'):
+            if field in request.data:
+                setattr(project, field, request.data[field])
+        if 'cover_image' in request.data:
+            cover_id = request.data['cover_image']
+            project.cover_image_id = cover_id if cover_id else None
+        project.save()
+        return Response(ProjectSerializer(project, context={'request': request}).data)
+
+    @extend_schema(
+        tags=['Projects'],
+        summary='Deletar projeto',
+        description='Deleta o projeto. Imagens não são deletadas, apenas desassociadas.',
+        responses={204: None},
+    )
+    def delete(self, request, pk):
+        project = self._get_project(pk, request.user)
+        project.delete()
+        return Response(status=status.HTTP_204_NO_CONTENT)
+
+
+class ProjectImageManageView(APIView):
+    """Add or remove images from a project."""
+    permission_classes = [IsAuthenticated]
+
+    def _get_project(self, pk, user):
+        project = get_object_or_404(Project, pk=pk, user=user)
+        return project
+
+    @extend_schema(
+        tags=['Projects'],
+        summary='Adicionar imagem ao projeto',
+        description='Associa uma imagem existente ao projeto com ordem e legenda.',
+        request=ProjectImageAddSerializer,
+        responses={201: inline_serializer('ProjectImageAdded', fields={
+            'id': drf_serializers.IntegerField(),
+            'image_id': drf_serializers.IntegerField(),
+            'order': drf_serializers.IntegerField(),
+            'caption': drf_serializers.CharField(),
+        })},
+    )
+    def post(self, request, pk):
+        project = self._get_project(pk, request.user)
+        serializer = ProjectImageAddSerializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+
+        image = get_object_or_404(Image, pk=serializer.validated_data['image_id'], user=request.user)
+        pi, created = ProjectImage.objects.get_or_create(
+            project=project,
+            image=image,
+            defaults={
+                'order': serializer.validated_data.get('order', 0),
+                'caption': serializer.validated_data.get('caption', ''),
+            },
+        )
+        return Response(
+            {'id': pi.id, 'image_id': image.id, 'order': pi.order, 'caption': pi.caption},
+            status=status.HTTP_201_CREATED if created else status.HTTP_200_OK,
+        )
+
+    @extend_schema(
+        tags=['Projects'],
+        summary='Remover imagem do projeto',
+        description='Desassocia uma imagem do projeto (não deleta a imagem).',
+        responses={204: None},
+    )
+    def delete(self, request, pk, image_id=None):
+        project = self._get_project(pk, request.user)
+        deleted, _ = ProjectImage.objects.filter(project=project, image_id=image_id).delete()
+        if not deleted:
+            return Response({'detail': 'Imagem não encontrada no projeto.'}, status=status.HTTP_404_NOT_FOUND)
+        return Response(status=status.HTTP_204_NO_CONTENT)
+
+
+class ProjectReorderView(APIView):
+    """Reorder images within a project."""
+    permission_classes = [IsAuthenticated]
+
+    @extend_schema(
+        tags=['Projects'],
+        summary='Reordenar imagens',
+        description='Reordena as imagens do projeto com base na lista de IDs fornecida.',
+        request=ProjectReorderSerializer,
+        responses={200: inline_serializer('ReorderResponse', fields={'detail': drf_serializers.CharField()})},
+    )
+    def patch(self, request, pk):
+        project = get_object_or_404(Project, pk=pk, user=request.user)
+        serializer = ProjectReorderSerializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+
+        image_ids = serializer.validated_data['image_ids']
+        for order, img_id in enumerate(image_ids):
+            ProjectImage.objects.filter(project=project, image_id=img_id).update(order=order)
+
+        return Response({'detail': 'Ordem atualizada.'})
+
+
+class PublicProjectListView(generics.ListAPIView):
+    """List public projects."""
+    serializer_class = ProjectSerializer
+    permission_classes = [AllowAny]
+
+    @extend_schema(
+        tags=['Projects'],
+        summary='Projetos públicos',
+        description='Lista paginada de projetos públicos.',
+    )
+    def list(self, request, *args, **kwargs):
+        return super().list(request, *args, **kwargs)
+
+    def get_queryset(self):
+        return (
+            Project.objects.filter(is_public=True)
+            .select_related('user', 'cover_image')
+            .prefetch_related('images__image', 'tags')
+            .annotate(image_count=Count('images'))
+            .order_by('-updated_at')
+        )
