@@ -129,18 +129,21 @@ class VariationRequestSerializer(serializers.Serializer):
     strength = serializers.FloatField(min_value=0.1, max_value=0.95, default=0.65)
 
 
+STYLE_CHOICES = [
+    ('photorealistic', 'Fotorrealista'),
+    ('anime', 'Anime/Mangá'),
+    ('digital_art', 'Arte Digital'),
+    ('oil_painting', 'Pintura a Óleo'),
+    ('watercolor', 'Aquarela'),
+    ('3d_render', 'Render 3D'),
+    ('pixel_art', 'Pixel Art'),
+    ('sketch', 'Esboço/Desenho'),
+]
+
+
 class RestyleRequestSerializer(serializers.Serializer):
     """Request to apply a different style to an existing image."""
-    style = serializers.ChoiceField(choices=[
-        ('photorealistic', 'Fotorrealista'),
-        ('anime', 'Anime/Mangá'),
-        ('digital_art', 'Arte Digital'),
-        ('oil_painting', 'Pintura a Óleo'),
-        ('watercolor', 'Aquarela'),
-        ('3d_render', 'Render 3D'),
-        ('pixel_art', 'Pixel Art'),
-        ('sketch', 'Esboço/Desenho'),
-    ])
+    style = serializers.ChoiceField(choices=STYLE_CHOICES)
     strength = serializers.FloatField(min_value=0.3, max_value=0.9, default=0.65)
 
 
@@ -367,12 +370,7 @@ class CharacterCreateSerializer(serializers.Serializer):
 class CharacterGenerateSerializer(serializers.Serializer):
     scene = serializers.CharField(help_text='Descrição da cena (ex: "em uma cafeteria")')
     style = serializers.ChoiceField(
-        choices=[
-            ('photorealistic', 'Fotorrealista'),
-            ('anime', 'Anime'),
-            ('digital_art', 'Arte Digital'),
-            ('oil_painting', 'Pintura a Óleo'),
-        ],
+        choices=STYLE_CHOICES,
         required=False,
         default='photorealistic',
     )
@@ -529,16 +527,7 @@ class RefinePromptRequestSerializer(serializers.Serializer):
         help_text="User's casual description of what they want to generate"
     )
     style = serializers.ChoiceField(
-        choices=[
-            ('photorealistic', 'Fotorrealista'),
-            ('anime', 'Anime/Mangá'),
-            ('digital_art', 'Arte Digital'),
-            ('oil_painting', 'Pintura a Óleo'),
-            ('watercolor', 'Aquarela'),
-            ('3d_render', 'Render 3D'),
-            ('pixel_art', 'Pixel Art'),
-            ('sketch', 'Esboço/Desenho'),
-        ],
+        choices=STYLE_CHOICES,
         required=False,
         default='photorealistic',
     )

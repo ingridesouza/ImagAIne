@@ -1824,22 +1824,10 @@ components:
           description: 'Descrição da cena (ex: "em uma cafeteria")'
         style:
           allOf:
-          - $ref: '#/components/schemas/CharacterGenerateStyleEnum'
+          - $ref: '#/components/schemas/StyleEnum'
           default: photorealistic
       required:
       - scene
-    CharacterGenerateStyleEnum:
-      enum:
-      - photorealistic
-      - anime
-      - digital_art
-      - oil_painting
-      type: string
-      description: |-
-        * `photorealistic` - Fotorrealista
-        * `anime` - Anime
-        * `digital_art` - Arte Digital
-        * `oil_painting` - Pintura a Óleo
     CharacterList:
       type: object
       description: Lighter serializer for character lists.
@@ -2608,7 +2596,7 @@ components:
           description: User's casual description of what they want to generate
         style:
           allOf:
-          - $ref: '#/components/schemas/Style6fbEnum'
+          - $ref: '#/components/schemas/StyleEnum'
           default: photorealistic
       required:
       - description
@@ -2664,7 +2652,7 @@ components:
       description: Request to apply a different style to an existing image.
       properties:
         style:
-          $ref: '#/components/schemas/Style6fbEnum'
+          $ref: '#/components/schemas/StyleEnum'
         strength:
           type: number
           format: double
@@ -2748,7 +2736,7 @@ components:
       description: |-
         * `active` - Active
         * `archived` - Archived
-    Style6fbEnum:
+    StyleEnum:
       enum:
       - photorealistic
       - anime

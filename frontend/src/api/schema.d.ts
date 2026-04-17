@@ -969,16 +969,8 @@ export interface components {
             /** @description Descrição da cena (ex: "em uma cafeteria") */
             scene: string;
             /** @default photorealistic */
-            style: components["schemas"]["CharacterGenerateStyleEnum"];
+            style: components["schemas"]["StyleEnum"];
         };
-        /**
-         * @description * `photorealistic` - Fotorrealista
-         *     * `anime` - Anime
-         *     * `digital_art` - Arte Digital
-         *     * `oil_painting` - Pintura a Óleo
-         * @enum {string}
-         */
-        CharacterGenerateStyleEnum: "photorealistic" | "anime" | "digital_art" | "oil_painting";
         /** @description Lighter serializer for character lists. */
         CharacterList: {
             /** Format: uuid */
@@ -1288,7 +1280,7 @@ export interface components {
             /** @description User's casual description of what they want to generate */
             description: string;
             /** @default photorealistic */
-            style: components["schemas"]["Style6fbEnum"];
+            style: components["schemas"]["StyleEnum"];
         };
         /** @description Serializer for prompt refinement response. */
         RefinePromptResponse: {
@@ -1310,7 +1302,7 @@ export interface components {
         };
         /** @description Request to apply a different style to an existing image. */
         RestyleRequestRequest: {
-            style: components["schemas"]["Style6fbEnum"];
+            style: components["schemas"]["StyleEnum"];
             /**
              * Format: double
              * @default 0.65
@@ -1361,7 +1353,7 @@ export interface components {
          *     * `sketch` - Esboço/Desenho
          * @enum {string}
          */
-        Style6fbEnum: "photorealistic" | "anime" | "digital_art" | "oil_painting" | "watercolor" | "3d_render" | "pixel_art" | "sketch";
+        StyleEnum: "photorealistic" | "anime" | "digital_art" | "oil_painting" | "watercolor" | "3d_render" | "pixel_art" | "sketch";
         /** @description Serializer for a style suggestion. */
         StyleSuggestion: {
             readonly label: string;
