@@ -41,11 +41,11 @@ export const SidebarNav = ({ onNavigate, collapsed = false }: SidebarNavProps) =
   <nav className="flex flex-col gap-6">
     {(Object.keys(sections) as (keyof typeof sections)[]).map((sectionKey) => (
       <div key={sectionKey} className="flex flex-col gap-1">
-        {!collapsed ? (
-          <p className="mb-1.5 px-3 text-[10px] font-medium uppercase tracking-widest text-fg-muted">
+        {!collapsed && (
+          <p className="mb-1 px-3 text-xs font-medium uppercase tracking-widest text-fg-muted">
             {SECTION_LABELS[sectionKey]}
           </p>
-        ) : null}
+        )}
         <div className="flex flex-col gap-0.5">
           {sections[sectionKey].map(({ label, path }) => (
             <RouterNavLink
@@ -53,8 +53,8 @@ export const SidebarNav = ({ onNavigate, collapsed = false }: SidebarNavProps) =
               to={path}
               className={({ isActive }) =>
                 clsx(
-                  'group flex items-center rounded-lg transition-all duration-150',
-                  collapsed ? 'justify-center p-2.5' : 'gap-3 px-3 py-2.5',
+                  'group flex items-center rounded-lg transition-colors duration-fast',
+                  collapsed ? 'justify-center p-2' : 'gap-3 px-3 py-2',
                   isActive
                     ? 'bg-accent-soft text-accent'
                     : 'text-fg-muted hover:bg-inset hover:text-fg-sec',
@@ -66,17 +66,17 @@ export const SidebarNav = ({ onNavigate, collapsed = false }: SidebarNavProps) =
                 <>
                   <span
                     className={clsx(
-                      'material-symbols-outlined !text-[20px] transition-colors',
-                      isActive && 'text-accent'
+                      'material-symbols-outlined text-xl transition-colors',
+                      isActive && 'text-accent',
                     )}
                     style={{ fontVariationSettings: `'FILL' ${isActive ? 1 : 0}` }}
                     aria-hidden
                   >
                     {getIconName(path)}
                   </span>
-                  {!collapsed ? (
-                    <span className="text-[13px] font-medium">{label}</span>
-                  ) : null}
+                  {!collapsed && (
+                    <span className="text-sm font-medium">{label}</span>
+                  )}
                 </>
               )}
             </RouterNavLink>

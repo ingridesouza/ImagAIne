@@ -16,20 +16,12 @@ export const EmptyState = ({
   onAction,
   icon,
 }: EmptyStateProps) => (
-  <div
-    style={{
-      border: '1px dashed #c7d2fe',
-      borderRadius: '1rem',
-      padding: '2rem',
-      textAlign: 'center',
-      background: '#fff',
-    }}
-  >
-    {icon ? <div style={{ marginBottom: '0.5rem' }}>{icon}</div> : null}
-    <h3 style={{ margin: '0 0 0.5rem' }}>{title}</h3>
-    {description ? <p style={{ margin: '0 0 1rem', color: '#475569' }}>{description}</p> : null}
+  <div className="flex flex-col items-center gap-3 rounded-2xl border border-dashed border-border bg-surface/50 px-6 py-12 text-center">
+    {icon ? <div className="mb-1 text-fg-muted">{icon}</div> : null}
+    <h3 className="text-lg font-semibold text-fg">{title}</h3>
+    {description ? <p className="max-w-sm text-sm text-fg-muted">{description}</p> : null}
     {actionLabel && onAction ? (
-      <Button type="button" variant="secondary" onClick={onAction}>
+      <Button type="button" variant="secondary" size="sm" onClick={onAction} className="mt-2">
         {actionLabel}
       </Button>
     ) : null}
