@@ -73,13 +73,9 @@ export const AppSidebar = ({ isOpen, isCollapsed, onClose, onToggleCollapse }: A
                 style={{ width: `${percent}%` }}
               />
             </div>
-            <button
-              type="button"
-              className="flex w-full items-center justify-center gap-1.5 rounded-lg py-1.5 text-xs font-medium text-fg-muted transition-colors hover:bg-inset hover:text-fg-sec"
-            >
-              <span className="material-symbols-outlined !text-[14px]">bolt</span>
-              Upgrade
-            </button>
+            <span className="flex w-full items-center justify-center gap-1.5 py-1.5 text-[10px] font-medium text-fg-muted">
+              Plano atual: Free
+            </span>
           </div>
         ) : (
           <button

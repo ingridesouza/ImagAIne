@@ -2,6 +2,7 @@ import { useCallback, useEffect, useMemo, useState } from 'react';
 import type { FormEvent } from 'react';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { useNavigate } from 'react-router-dom';
+import { toast } from 'sonner';
 import { imagesApi } from '@/features/images/api';
 import { ImageDetailsDialog, type ImageComment } from '@/features/images/components/ImageDetailsDialog';
 import { GalleryCard } from '@/features/images/components/GalleryCard';
@@ -283,7 +284,7 @@ export const ExplorePage = () => {
       }
     } else {
       await navigator.clipboard.writeText(shareUrl);
-      // TODO: Add toast notification
+      toast.success('Link copiado!');
     }
   };
 
