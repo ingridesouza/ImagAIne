@@ -34,7 +34,6 @@ export const ImageCard = ({
   const statusConfig = STATUS_CONFIG[image.status];
   const StatusIcon = statusConfig.icon;
   const showActions = image.status === 'READY';
-  const previewClasses = `image-card__preview${onSelect ? ' image-card__preview--clickable' : ''}`;
 
   const handlePreviewKeyDown = (event: KeyboardEvent<HTMLDivElement>) => {
     if (!onSelect) return;
@@ -45,9 +44,12 @@ export const ImageCard = ({
   };
 
   return (
-    <article className="image-card group">
+    <article className="group overflow-hidden rounded-xl border border-border bg-surface transition-colors duration-fast hover:border-border-strong">
       <div
-        className={previewClasses}
+        className={clsx(
+          'relative aspect-square overflow-hidden bg-inset',
+          onSelect && 'cursor-pointer',
+        )}
         onClick={onSelect ? () => onSelect(image) : undefined}
         role={onSelect ? 'button' : undefined}
         tabIndex={onSelect ? 0 : undefined}
@@ -56,64 +58,53 @@ export const ImageCard = ({
       >
         {image.image_url ? (
           <>
-            <img src={image.image_url} alt={image.prompt} loading="lazy" />
-            {showActions ? (
-              <div className="absolute inset-0 flex items-end justify-center gap-1.5 bg-gradient-to-t from-black/70 via-transparent to-transparent p-3 opacity-0 transition-opacity duration-200 group-hover:opacity-100">
-                {onToggleLike ? (
+            <img src={image.image_url} alt={image.prompt} loading="lazy" className="h-full w-full object-cover" />
+            {showActions && (
+              <div className="absolute inset-0 flex items-end justify-center gap-1.5 bg-gradient-to-t from-black/70 via-transparent to-transparent p-3 opacity-0 transition-opacity duration-normal group-hover:opacity-100">
+                {onToggleLike && (
                   <button
                     type="button"
                     onClick={(e) => { e.stopPropagation(); onToggleLike(image); }}
                     className={clsx(
-                      'flex size-8 items-center justify-center rounded-lg backdrop-blur-md transition-all',
-                      image.is_liked ? 'bg-like-soft text-like' : 'bg-white/10 text-white/80 hover:bg-white/20'
+                      'flex size-8 items-center justify-center rounded-lg backdrop-blur-md transition-colors duration-fast',
+                      image.is_liked ? 'bg-like-soft text-like' : 'bg-white/10 text-white/80 hover:bg-white/20',
                     )}
                     aria-label={image.is_liked ? 'Remover curtida' : 'Curtir'}
                   >
                     <Heart size={15} fill={image.is_liked ? 'currentColor' : 'none'} />
                   </button>
-                ) : null}
-                {onDownload ? (
-                  <button
-                    type="button"
-                    onClick={(e) => { e.stopPropagation(); onDownload(image); }}
-                    className="flex size-8 items-center justify-center rounded-lg bg-white/10 text-white/80 backdrop-blur-md transition-all hover:bg-white/20"
-                    aria-label="Download"
-                  >
+                )}
+                {onDownload && (
+                  <button type="button" onClick={(e) => { e.stopPropagation(); onDownload(image); }}
+                    className="flex size-8 items-center justify-center rounded-lg bg-white/10 text-white/80 backdrop-blur-md transition-colors duration-fast hover:bg-white/20" aria-label="Download">
                     <Download size={15} />
                   </button>
-                ) : null}
-                {canToggleVisibility && onToggleVisibility ? (
-                  <button
-                    type="button"
-                    onClick={(e) => { e.stopPropagation(); onToggleVisibility(image); }}
-                    className="flex size-8 items-center justify-center rounded-lg bg-white/10 text-white/80 backdrop-blur-md transition-all hover:bg-white/20"
-                    aria-label={image.is_public ? 'Tornar privada' : 'Tornar pública'}
-                  >
+                )}
+                {canToggleVisibility && onToggleVisibility && (
+                  <button type="button" onClick={(e) => { e.stopPropagation(); onToggleVisibility(image); }}
+                    className="flex size-8 items-center justify-center rounded-lg bg-white/10 text-white/80 backdrop-blur-md transition-colors duration-fast hover:bg-white/20"
+                    aria-label={image.is_public ? 'Tornar privada' : 'Tornar pública'}>
                     {image.is_public ? <Eye size={15} /> : <EyeOff size={15} />}
                   </button>
-                ) : null}
-                {onShare ? (
-                  <button
-                    type="button"
-                    onClick={(e) => { e.stopPropagation(); onShare(image); }}
-                    className="flex size-8 items-center justify-center rounded-lg bg-white/10 text-white/80 backdrop-blur-md transition-all hover:bg-white/20"
-                    aria-label="Compartilhar"
-                  >
+                )}
+                {onShare && (
+                  <button type="button" onClick={(e) => { e.stopPropagation(); onShare(image); }}
+                    className="flex size-8 items-center justify-center rounded-lg bg-white/10 text-white/80 backdrop-blur-md transition-colors duration-fast hover:bg-white/20" aria-label="Compartilhar">
                     <Share2 size={15} />
                   </button>
-                ) : null}
+                )}
               </div>
-            ) : null}
+            )}
           </>
         ) : (
-          <div className="flex flex-col items-center gap-2 text-fg-muted">
+          <div className="flex h-full items-center justify-center text-fg-muted">
             <StatusIcon size={22} className={statusConfig.className} />
           </div>
         )}
       </div>
-      <div className="flex items-center justify-between gap-2 px-0.5 pt-0.5">
-        <p className="truncate text-[13px] text-fg-sec">{image.prompt}</p>
-        <div className="flex shrink-0 items-center gap-2 text-[11px] text-fg-muted">
+      <div className="flex items-center justify-between gap-2 px-3 py-2">
+        <p className="truncate text-sm text-fg-sec">{image.prompt}</p>
+        <div className="flex shrink-0 items-center gap-2 text-xs text-fg-muted">
           <span className="flex items-center gap-0.5">
             <Heart size={11} />
             {image.like_count}
