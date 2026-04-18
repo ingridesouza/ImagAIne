@@ -135,7 +135,7 @@ export const MyImagesPage = () => {
               >
                 Limpar
               </button>
-              <Link to="/images/generate" className="button button--primary my-images__action">
+              <Link to="/generate" className="button button--primary my-images__action">
                 Criar nova imagem
               </Link>
             </div>

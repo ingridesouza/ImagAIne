@@ -94,13 +94,14 @@ export const AppHeader = ({ onOpenSidebar, onToggleSidebarCollapse, isSidebarCol
             </span>
           </button>
 
-          <button
-            type="button"
+          <Link
+            to="/chat"
             className="hidden size-9 items-center justify-center rounded-lg text-fg-muted transition-colors hover:bg-surface hover:text-fg sm:flex"
-            aria-label="Notificações"
+            aria-label="Agente Criativo"
+            title="Agente Criativo"
           >
-            <span className="material-symbols-outlined !text-[20px]">notifications</span>
-          </button>
+            <span className="material-symbols-outlined !text-[20px]">chat</span>
+          </Link>
           <Link
             to="/generate"
             className="flex size-9 items-center justify-center rounded-lg bg-accent text-fg-inv transition-all hover:bg-accent-hover active:scale-95"

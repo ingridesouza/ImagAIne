@@ -19,6 +19,7 @@ import { ProjectsPage } from '@/pages/projects/ProjectsPage';
 import { ProjectDetailPage } from '@/pages/projects/ProjectDetailPage';
 import { ChatPage } from '@/pages/chat/ChatPage';
 import { ImageEditPage } from '@/pages/images/ImageEditPage';
+import { MyImagesPage } from '@/pages/images/MyImagesPage';
 import { CharactersPage } from '@/pages/characters/CharactersPage';
 import { CharacterDetailPage } from '@/pages/characters/CharacterDetailPage';
 
@@ -40,6 +41,7 @@ export const router = createBrowserRouter([
           { path: 'profile', element: <ProfilePage /> },
           { path: 'projects', element: <ProjectsPage /> },
           { path: 'projects/:id', element: <ProjectDetailPage /> },
+          { path: 'my-images', element: <MyImagesPage /> },
           { path: 'images/:id/edit', element: <ImageEditPage /> },
           { path: 'characters', element: <CharactersPage /> },
           { path: 'characters/:id', element: <CharacterDetailPage /> },
