@@ -711,12 +711,15 @@ class RelatedImagesView(APIView):
         except (ValueError, TypeError):
             limit = 12
 
-        # Find related images
-        related = find_related_images(
-            image_id=pk,
-            user_id=user_id,
-            limit=limit,
-        )
+        # Find related images (graceful fallback if pgvector unavailable)
+        try:
+            related = find_related_images(
+                image_id=pk,
+                user_id=user_id,
+                limit=limit,
+            )
+        except Exception:
+            related = []
 
         if not related:
             return Response({
@@ -793,10 +796,13 @@ class StyleSuggestionsView(APIView):
         except (ValueError, TypeError):
             limit = 5
 
-        suggestions = get_user_style_suggestions(
-            user_id=user_id,
-            limit=limit,
-        )
+        try:
+            suggestions = get_user_style_suggestions(
+                user_id=user_id,
+                limit=limit,
+            )
+        except Exception:
+            suggestions = []
 
         return Response({
             'count': len(suggestions),
