@@ -1,61 +1,59 @@
-﻿@import url('https://fonts.googleapis.com/css2?family=Google+Sans:wght@400;500;700&family=Inter:wght@300;400;500;600;700&display=swap');
+﻿@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500&display=swap');
 
-/* ========================================
-   THEME TOKENS — Light (default)
-   Sober, concrete palette
-   ======================================== */
+/* ==========================================================================
+   DESIGN SYSTEM — ImagAIne "Quiet Glow"
+   ==========================================================================
+   Regra: NENHUM valor hardcoded nos componentes.
+   Toda cor, sombra, radius e spacing vem destes tokens.
+   ========================================================================== */
+
 :root {
-  font-family: 'Inter', 'Google Sans', 'Segoe UI', system-ui, -apple-system, BlinkMacSystemFont, sans-serif;
+  font-family: 'Inter', system-ui, -apple-system, sans-serif;
   line-height: 1.5;
   font-weight: 400;
   color-scheme: light;
 
-  /* Backgrounds */
-  --color-bg:        #ffffff;
-  --color-surface:   #f4f4f5;
-  --color-elevated:  #ffffff;
-  --color-inset:     #ebebed;
-  --color-overlay:   rgba(0, 0, 0, 0.45);
-  --color-backdrop:  rgba(255, 255, 255, 0.85);
+  /* ---- Surfaces ---- */
+  --color-bg:           #ffffff;
+  --color-surface:      #f8f8f9;
+  --color-elevated:     #ffffff;
+  --color-inset:        #f0f0f2;
+  --color-overlay:      rgba(0, 0, 0, 0.5);
+  --color-backdrop:     rgba(255, 255, 255, 0.85);
 
-  /* Text */
-  --color-text:       #18181b;
-  --color-text-sec:   #52525b;
-  --color-text-muted: #a1a1aa;
-  --color-text-inv:   #ffffff;
+  /* ---- Foreground ---- */
+  --color-text:         #0f0f10;
+  --color-text-sec:     #52525b;
+  --color-text-muted:   #a1a1aa;
+  --color-text-inv:     #ffffff;
 
-  /* Borders */
-  --color-border:        #e4e4e7;
-  --color-border-strong: #d4d4d8;
+  /* ---- Borders ---- */
+  --color-border:       #e4e4e7;
+  --color-border-strong:#d4d4d8;
 
-  /* Accent — sober indigo */
-  --color-accent:     #4f46e5;
+  /* ---- Accent (indigo) ---- */
+  --color-accent:       #4f46e5;
   --color-accent-hover: #4338ca;
-  --color-accent-soft: rgba(79, 70, 229, 0.08);
-  --color-accent-text: #4f46e5;
+  --color-accent-soft:  rgba(79, 70, 229, 0.06);
+  --color-accent-text:  #4338ca;
 
-  /* Status */
-  --color-success: #16a34a;
-  --color-warning: #ca8a04;
-  --color-danger:  #dc2626;
+  /* ---- Status ---- */
+  --color-success:      #16a34a;
+  --color-warning:      #ca8a04;
+  --color-danger:       #dc2626;
 
-  /* Like */
-  --color-like:      #ef4444;
-  --color-like-soft: rgba(239, 68, 68, 0.1);
+  /* ---- Like ---- */
+  --color-like:         #ef4444;
+  --color-like-soft:    rgba(239, 68, 68, 0.08);
 
-  /* Shadows */
-  --shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.05);
-  --shadow-md: 0 4px 12px rgba(0, 0, 0, 0.08);
-  --shadow-lg: 0 12px 40px rgba(0, 0, 0, 0.12);
+  /* ---- Shadows (light) ---- */
+  --shadow-color: rgba(0, 0, 0, 0.06);
 
-  /* Layout */
-  --sidebar-width: 18rem;
-  --radius-md: 10px;
-  --radius-lg: 14px;
-  --radius-xl: 20px;
-  --radius-pill: 999px;
+  /* ---- Layout ---- */
+  --sidebar-width: 15rem;
 
-  /* Legacy aliases (consumed by older BEM classes) */
+  /* ---- Legacy aliases (temporary, for BEM classes not yet migrated) ---- */
   --bg-body: var(--color-bg);
   --surface: var(--color-surface);
   --surface-strong: var(--color-elevated);
@@ -66,44 +64,46 @@
   --text-muted: var(--color-text-muted);
   --accent-primary: var(--color-accent);
   --accent-secondary: var(--color-accent-hover);
+  --radius-md: 8px;
+  --radius-lg: 12px;
+  --radius-xl: 16px;
+  --radius-pill: 9999px;
 }
 
-/* ========================================
-   THEME TOKENS — Dark
-   ======================================== */
+/* ==========================================================================
+   DARK MODE
+   ========================================================================== */
 .dark {
   color-scheme: dark;
 
-  --color-bg:        #111113;
-  --color-surface:   #1a1a1e;
-  --color-elevated:  #222226;
-  --color-inset:     #151517;
-  --color-overlay:   rgba(0, 0, 0, 0.7);
-  --color-backdrop:  rgba(17, 17, 19, 0.85);
+  --color-bg:           #0c0c0e;
+  --color-surface:      #141416;
+  --color-elevated:     #1c1c20;
+  --color-inset:        #0a0a0c;
+  --color-overlay:      rgba(0, 0, 0, 0.75);
+  --color-backdrop:     rgba(12, 12, 14, 0.9);
 
-  --color-text:       #e4e4e7;
-  --color-text-sec:   #a1a1aa;
-  --color-text-muted: #71717a;
-  --color-text-inv:   #18181b;
+  --color-text:         #ececef;
+  --color-text-sec:     #a1a1aa;
+  --color-text-muted:   #63636e;
+  --color-text-inv:     #0f0f10;
 
-  --color-border:        #27272a;
-  --color-border-strong: #3f3f46;
+  --color-border:       #232328;
+  --color-border-strong:#38383f;
 
-  --color-accent:      #818cf8;
+  --color-accent:       #818cf8;
   --color-accent-hover: #6366f1;
-  --color-accent-soft:  rgba(129, 140, 248, 0.1);
+  --color-accent-soft:  rgba(129, 140, 248, 0.08);
   --color-accent-text:  #a5b4fc;
 
-  --color-success: #4ade80;
-  --color-warning: #facc15;
-  --color-danger:  #f87171;
+  --color-success:      #4ade80;
+  --color-warning:      #facc15;
+  --color-danger:       #f87171;
 
-  --color-like:      #f87171;
-  --color-like-soft: rgba(248, 113, 113, 0.15);
+  --color-like:         #f87171;
+  --color-like-soft:    rgba(248, 113, 113, 0.12);
 
-  --shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.2);
-  --shadow-md: 0 4px 12px rgba(0, 0, 0, 0.3);
-  --shadow-lg: 0 12px 40px rgba(0, 0, 0, 0.5);
+  --shadow-color: rgba(0, 0, 0, 0.4);
 }
 
 *,
