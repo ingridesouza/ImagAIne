@@ -20,7 +20,7 @@ export const AppSidebar = ({ isOpen, isCollapsed, onClose, onToggleCollapse }: A
   return (
     <aside
       className={clsx(
-        'fixed inset-y-0 left-0 z-overlay bg-surface text-fg border-r border-border',
+        'fixed inset-y-0 left-0 z-overlay bg-sidebar backdrop-blur-xl text-fg border-r border-border',
         'transition-all duration-normal ease-out',
         'md:static md:translate-x-0 md:flex md:flex-col',
         isCollapsed ? 'w-sidebar-collapsed px-2 py-5' : 'w-sidebar px-4 py-5',

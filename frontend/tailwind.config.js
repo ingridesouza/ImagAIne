@@ -47,19 +47,22 @@ export default {
         like:       'var(--color-like)',
         'like-soft':'var(--color-like-soft)',
 
-        /* ---- Flow palette (raw indigo scale) ---- */
+        /* ---- Sidebar ---- */
+        sidebar: 'var(--color-sidebar)',
+
+        /* ---- Flow palette (Apple blue scale) ---- */
         flow: {
-          50:  '#eef2ff',
-          100: '#e0e7ff',
-          200: '#c7d2fe',
-          300: '#a5b4fc',
-          400: '#818cf8',
-          500: '#6366f1',
-          600: '#4f46e5',
-          700: '#4338ca',
-          800: '#3730a3',
-          900: '#312e81',
-          950: '#1e1b4b',
+          50:  '#eff6ff',
+          100: '#dbeafe',
+          200: '#bfdbfe',
+          300: '#93c5fd',
+          400: '#60a5fa',
+          500: '#3b82f6',
+          600: '#0071e3',
+          700: '#0077ed',
+          800: '#1e40af',
+          900: '#1e3a5f',
+          950: '#0c1e3a',
         },
       },
 
@@ -113,14 +116,14 @@ export default {
         'full': '9999px',
       },
 
-      /* ---- Shadows (elevation system) ---- */
+      /* ---- Shadows (Apple-style: soft, diffused, layered) ---- */
       boxShadow: {
-        'xs':  '0 1px 2px var(--shadow-color, rgba(0,0,0,0.05))',
-        'sm':  '0 2px 4px var(--shadow-color, rgba(0,0,0,0.06))',
-        'md':  '0 4px 12px var(--shadow-color, rgba(0,0,0,0.08))',
-        'lg':  '0 8px 24px var(--shadow-color, rgba(0,0,0,0.12))',
-        'xl':  '0 16px 48px var(--shadow-color, rgba(0,0,0,0.16))',
-        'glow':'0 0 20px var(--color-accent-soft)',
+        'xs':  '0 0.5px 1px var(--shadow-color, rgba(0,0,0,0.04))',
+        'sm':  '0 1px 3px var(--shadow-color, rgba(0,0,0,0.06)), 0 1px 2px var(--shadow-color, rgba(0,0,0,0.04))',
+        'md':  '0 4px 16px var(--shadow-color, rgba(0,0,0,0.08)), 0 1px 4px var(--shadow-color, rgba(0,0,0,0.04))',
+        'lg':  '0 12px 40px var(--shadow-color, rgba(0,0,0,0.12)), 0 4px 12px var(--shadow-color, rgba(0,0,0,0.06))',
+        'xl':  '0 24px 64px var(--shadow-color, rgba(0,0,0,0.16)), 0 8px 24px var(--shadow-color, rgba(0,0,0,0.08))',
+        'glow':'0 0 24px var(--color-accent-soft), 0 0 8px var(--color-accent-soft)',
       },
 
       /* ---- Z-Index (structured scale) ---- */

@@ -28,7 +28,7 @@ export const AppHeader = ({ onOpenSidebar, onToggleSidebarCollapse, isSidebarCol
   }, []);
 
   return (
-    <header className="sticky top-0 z-sticky border-b border-border bg-body/90 backdrop-blur-md">
+    <header className="sticky top-0 z-sticky border-b border-border bg-backdrop backdrop-blur-xl backdrop-saturate-150">
       <div className="flex items-center justify-between gap-3 px-4 py-2 md:px-6">
         {/* Left */}
         <div className="flex flex-1 items-center gap-2">

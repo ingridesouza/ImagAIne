@@ -7,16 +7,16 @@ type ButtonProps = React.ButtonHTMLAttributes<HTMLButtonElement> & {
 };
 
 const variants = {
-  primary: 'bg-accent text-fg-inv hover:bg-accent-hover shadow-xs hover:shadow-sm',
-  secondary: 'border border-border bg-surface text-fg hover:bg-inset',
+  primary: 'bg-accent text-fg-inv hover:bg-accent-hover hover:brightness-105',
+  secondary: 'bg-surface text-fg shadow-sm hover:shadow-md',
   ghost: 'text-fg-sec hover:bg-inset hover:text-fg',
   danger: 'bg-danger text-white hover:brightness-110',
 };
 
 const sizes = {
-  sm: 'h-8 px-3 text-sm gap-1.5 rounded-md',
-  md: 'h-10 px-5 text-base gap-2 rounded-lg',
-  lg: 'h-12 px-6 text-lg gap-2 rounded-xl',
+  sm: 'h-8 px-4 text-sm gap-1.5 rounded-lg',
+  md: 'h-10 px-5 text-base gap-2 rounded-xl',
+  lg: 'h-12 px-6 text-lg gap-2 rounded-2xl',
 };
 
 export const Button = forwardRef<HTMLButtonElement, ButtonProps>(

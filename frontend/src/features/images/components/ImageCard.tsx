@@ -44,7 +44,7 @@ export const ImageCard = ({
   };
 
   return (
-    <article className="group overflow-hidden rounded-xl border border-border bg-surface transition-colors duration-fast hover:border-border-strong">
+    <article className="group overflow-hidden rounded-2xl bg-surface shadow-sm transition-all duration-normal hover:shadow-lg hover:scale-[1.01]">
       <div
         className={clsx(
           'relative aspect-square overflow-hidden bg-inset',
