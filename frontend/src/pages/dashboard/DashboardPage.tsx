@@ -65,7 +65,10 @@ export const DashboardPage = () => {
             Acompanhe o status das criações e compartilhe com a comunidade.
           </p>
         </div>
-        <Link to="/generate" className="button button--primary">
+        <Link
+          to="/generate"
+          className="inline-flex items-center gap-2 rounded-lg bg-accent px-5 py-2 text-sm font-medium text-fg-inv transition-all duration-fast hover:bg-accent-hover active:scale-[0.97]"
+        >
           Nova geração
         </Link>
       </div>
