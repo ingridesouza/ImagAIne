@@ -1,11 +1,11 @@
 import { Link, useNavigate } from 'react-router-dom';
 import { useQuery } from '@tanstack/react-query';
-import { Sparkles } from 'lucide-react';
+import { Sparkles, ArrowRight, Image, Zap, Globe, Layers } from 'lucide-react';
 import { imagesApi } from '@/features/images/api';
 import { ImageGrid } from '@/features/images/components/ImageGrid';
-import { StatCard } from '@/components/ui/StatCard';
 import { DashboardSkeleton } from '@/components/ui/Skeleton';
 import { QUERY_KEYS } from '@/lib/constants';
+import { useAuthStore } from '@/features/auth/store';
 import type { ImageRecord } from '@/features/images/types';
 
 function StyleSuggestionsWidget() {
@@ -19,20 +19,18 @@ function StyleSuggestionsWidget() {
   if (isLoading || !data || data.results.length === 0) return null;
 
   return (
-    <div className="mt-6">
-      <div className="mb-3 flex items-center gap-2">
-        <Sparkles className="h-4 w-4 text-accent" />
-        <h2 className="m-0 text-lg font-medium text-fg">Sugestões para você</h2>
-      </div>
-      <div className="flex gap-2 overflow-x-auto pb-1 no-scrollbar">
+    <div className="mt-8">
+      <h2 className="mb-4 text-base font-semibold text-fg">Sugestões para você</h2>
+      <div className="flex gap-3 overflow-x-auto pb-2 no-scrollbar">
         {data.results.map((suggestion) => (
           <button
             key={suggestion.label}
             onClick={() => navigate('/generate', { state: { prompt: suggestion.example_prompt } })}
-            className="flex-shrink-0 rounded-xl border border-border bg-surface px-4 py-3 text-left transition-colors hover:border-accent hover:bg-accent-soft"
+            className="group flex-shrink-0 rounded-2xl bg-white dark:bg-white/[0.06] p-4 text-left shadow-sm transition-all duration-300 hover:shadow-lg hover:scale-[1.02] active:scale-[0.98] min-w-[200px]"
           >
+            <Sparkles className="mb-2 h-4 w-4 text-accent" />
             <span className="block text-sm font-medium text-fg">{suggestion.label}</span>
-            <span className="mt-0.5 block text-xs text-fg-muted line-clamp-1">{suggestion.example_prompt}</span>
+            <span className="mt-1 block text-xs text-fg-muted line-clamp-2">{suggestion.example_prompt}</span>
           </button>
         ))}
       </div>
@@ -40,7 +38,15 @@ function StyleSuggestionsWidget() {
   );
 }
 
+const STAT_ICONS = [
+  { icon: Image, gradient: 'from-green-400 to-emerald-600' },
+  { icon: Zap, gradient: 'from-amber-400 to-orange-600' },
+  { icon: Globe, gradient: 'from-blue-400 to-indigo-600' },
+  { icon: Layers, gradient: 'from-purple-400 to-violet-600' },
+];
+
 export const DashboardPage = () => {
+  const user = useAuthStore((state) => state.user);
   const { data: myImagesResponse, isLoading } = useQuery({
     queryKey: QUERY_KEYS.myImages(),
     queryFn: () => imagesApi.fetchMyImages(),
@@ -50,43 +56,76 @@ export const DashboardPage = () => {
   const readyCount = myImages.filter((image) => image.status === 'READY').length;
   const generatingCount = myImages.filter((image) => image.status === 'GENERATING').length;
   const publicCount = myImages.filter((image) => image.is_public).length;
-  const latest = myImages.slice(0, 3);
+  const latest = myImages.slice(0, 6);
+
+  const firstName = user?.first_name || user?.username || 'Criador';
+  const hour = new Date().getHours();
+  const greeting = hour < 12 ? 'Bom dia' : hour < 18 ? 'Boa tarde' : 'Boa noite';
 
   if (isLoading) {
     return <DashboardSkeleton />;
   }
 
+  const stats = [
+    { label: 'Prontas', value: readyCount, ...STAT_ICONS[0] },
+    { label: 'Gerando', value: generatingCount, ...STAT_ICONS[1] },
+    { label: 'Públicas', value: publicCount, ...STAT_ICONS[2] },
+    { label: 'Total', value: myImages.length, ...STAT_ICONS[3] },
+  ];
+
   return (
-    <section className="mx-auto max-w-5xl px-4 py-8 sm:px-6 md:py-10">
-      <div className="mb-6 flex flex-wrap items-center justify-between gap-4">
-        <div>
-          <h1 className="m-0 text-2xl font-semibold tracking-tight text-fg">Visão geral</h1>
-          <p className="m-0 mt-1 text-sm text-fg-muted">
-            Acompanhe o status das criações e compartilhe com a comunidade.
-          </p>
-        </div>
-        <Link
-          to="/generate"
-          className="inline-flex items-center gap-2 rounded-lg bg-accent px-5 py-2 text-sm font-medium text-fg-inv transition-all duration-fast hover:bg-accent-hover active:scale-[0.97]"
-        >
-          Nova geração
-        </Link>
+    <section className="mx-auto max-w-6xl px-4 py-8 sm:px-6 lg:px-8">
+      {/* Hero */}
+      <div className="mb-8">
+        <h1 className="text-3xl font-bold tracking-tight text-fg sm:text-4xl">
+          {greeting}, {firstName}
+        </h1>
+        <p className="mt-2 text-base text-fg-muted">
+          Continue criando. Sua imaginação é o limite.
+        </p>
       </div>
 
-      <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
-        <StatCard label="Imagens prontas" value={readyCount} helper="Disponíveis para download" />
-        <StatCard label="Em processamento" value={generatingCount} helper="Fila Celery + Hugging Face" />
-        <StatCard label="Galeria pública" value={publicCount} helper="Visíveis no feed global" />
-        <StatCard label="Total" value={myImages.length} helper="Inclui falhas e imagens privadas" />
+      {/* CTA Card — glassmorphism */}
+      <Link
+        to="/chat"
+        className="group mb-8 flex items-center justify-between rounded-3xl bg-gradient-to-r from-flow-500/10 via-flow-600/5 to-transparent p-6 transition-all duration-300 hover:from-flow-500/15 hover:shadow-lg dark:from-flow-500/[0.08]"
+      >
+        <div className="flex items-center gap-4">
+          <div className="flex size-12 items-center justify-center rounded-2xl bg-gradient-to-br from-flow-500 to-flow-700 shadow-lg shadow-flow-500/25">
+            <Sparkles className="h-6 w-6 text-white" />
+          </div>
+          <div>
+            <span className="block text-base font-semibold text-fg">Agente Criativo</span>
+            <span className="block text-sm text-fg-muted">Descreva sua ideia e eu crio para você</span>
+          </div>
+        </div>
+        <ArrowRight className="h-5 w-5 text-fg-muted transition-transform duration-300 group-hover:translate-x-1" />
+      </Link>
+
+      {/* Stats */}
+      <div className="mb-8 grid grid-cols-2 gap-4 sm:grid-cols-4">
+        {stats.map(({ label, value, icon: Icon, gradient }) => (
+          <div
+            key={label}
+            className="group rounded-2xl bg-white dark:bg-white/[0.04] p-5 shadow-sm transition-all duration-300 hover:shadow-md"
+          >
+            <div className={`mb-3 flex size-10 items-center justify-center rounded-xl bg-gradient-to-br ${gradient} shadow-sm`}>
+              <Icon className="h-5 w-5 text-white" />
+            </div>
+            <span className="block text-2xl font-bold tracking-tight text-fg">{value}</span>
+            <span className="block text-xs text-fg-muted mt-0.5">{label}</span>
+          </div>
+        ))}
       </div>
 
       <StyleSuggestionsWidget />
 
+      {/* Latest creations */}
       <div className="mt-8">
         <div className="mb-4 flex items-center justify-between">
-          <h2 className="m-0 text-lg font-medium text-fg">Últimas criações</h2>
-          <Link to="/my-images" className="text-sm text-accent hover:text-accent-hover">
-            Ver todas
+          <h2 className="text-base font-semibold text-fg">Últimas criações</h2>
+          <Link to="/my-images" className="flex items-center gap-1 text-sm font-medium text-accent transition-colors hover:text-accent-hover">
+            Ver todas <ArrowRight className="h-3.5 w-3.5" />
           </Link>
         </div>
         <ImageGrid images={latest} isLoading={isLoading} canToggleVisibility={false} />
