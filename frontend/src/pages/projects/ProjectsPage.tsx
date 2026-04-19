@@ -119,40 +119,48 @@ function ProjectCard({ project }: { project: ProjectRecord }) {
   return (
     <Link
       to={`/projects/${project.id}`}
-      className="group block overflow-hidden rounded-2xl border border-border bg-surface transition-all hover:border-accent/40 hover:shadow-md"
+      className="group block rounded-3xl bg-white dark:bg-white/[0.04] shadow-sm transition-all duration-300 hover:shadow-xl hover:scale-[1.02] active:scale-[0.98] overflow-hidden"
     >
-      <div className="relative h-32 bg-inset">
+      {/* Folder animation — images peek on hover */}
+      <div className="relative h-40 bg-gradient-to-br from-flow-50 to-flow-100 dark:from-flow-950 dark:to-flow-900/50 overflow-hidden">
         {project.cover_image_url ? (
           <img
             src={project.cover_image_url}
             alt={project.title}
-            className="h-full w-full object-cover transition-transform group-hover:scale-[1.02]"
+            className="h-full w-full object-cover transition-all duration-500 group-hover:scale-110 group-hover:brightness-110"
           />
         ) : (
           <div className="flex h-full items-center justify-center">
-            <ImageIcon className="h-10 w-10 text-fg-muted" />
+            {/* Folder icon with peek animation */}
+            <div className="relative">
+              <div className="flex size-16 items-center justify-center rounded-2xl bg-white/60 dark:bg-white/10 backdrop-blur-sm shadow-sm">
+                <ImageIcon className="h-7 w-7 text-flow-500" />
+              </div>
+              {/* Peeking thumbnails */}
+              <div className="absolute -right-3 -top-2 size-8 rounded-lg bg-flow-200 dark:bg-flow-800 shadow-sm opacity-0 transition-all duration-300 group-hover:opacity-100 group-hover:-translate-y-1 group-hover:translate-x-1 rotate-6" />
+              <div className="absolute -left-2 -bottom-2 size-7 rounded-lg bg-flow-300 dark:bg-flow-700 shadow-sm opacity-0 transition-all duration-500 group-hover:opacity-80 group-hover:translate-y-1 group-hover:-translate-x-1 -rotate-3" />
+            </div>
           </div>
         )}
-        <div className="absolute right-2 top-2">
-          {project.is_public ? (
-            <span className="inline-flex items-center gap-1 rounded-full bg-body/80 px-2 py-0.5 text-[10px] font-medium text-fg-sec backdrop-blur-sm">
-              <Globe className="h-3 w-3" /> Público
-            </span>
-          ) : (
-            <span className="inline-flex items-center gap-1 rounded-full bg-body/80 px-2 py-0.5 text-[10px] font-medium text-fg-muted backdrop-blur-sm">
-              <Lock className="h-3 w-3" /> Privado
-            </span>
-          )}
+        {/* Badge */}
+        <div className="absolute right-3 top-3">
+          <span className="inline-flex items-center gap-1 rounded-full bg-white/70 dark:bg-black/50 px-2.5 py-1 text-[10px] font-medium text-fg-sec backdrop-blur-md">
+            {project.is_public ? <><Globe className="h-3 w-3" /> Público</> : <><Lock className="h-3 w-3" /> Privado</>}
+          </span>
+        </div>
+        {/* Image count pill */}
+        <div className="absolute left-3 bottom-3">
+          <span className="inline-flex items-center gap-1.5 rounded-full bg-black/40 px-2.5 py-1 text-[11px] font-medium text-white backdrop-blur-md">
+            <ImageIcon className="h-3 w-3" />
+            {project.image_count}
+          </span>
         </div>
       </div>
-      <div className="p-4">
-        <h3 className="text-sm font-semibold text-fg group-hover:text-accent">{project.title}</h3>
+      <div className="p-5">
+        <h3 className="text-sm font-semibold text-fg group-hover:text-accent transition-colors">{project.title}</h3>
         {project.description && (
-          <p className="mt-1 text-xs text-fg-muted line-clamp-2">{project.description}</p>
+          <p className="mt-1.5 text-xs text-fg-muted line-clamp-2 leading-relaxed">{project.description}</p>
         )}
-        <div className="mt-3 flex items-center gap-3 text-xs text-fg-muted">
-          <span>{project.image_count} {project.image_count === 1 ? 'imagem' : 'imagens'}</span>
-        </div>
       </div>
     </Link>
   );

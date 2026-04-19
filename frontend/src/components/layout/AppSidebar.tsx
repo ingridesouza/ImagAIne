@@ -1,6 +1,7 @@
 import clsx from 'clsx';
 import { SidebarNav } from '@/components/layout/SidebarNav';
 import { useAuthStore } from '@/features/auth/store';
+import { Sparkles } from 'lucide-react';
 
 type AppSidebarProps = {
   isOpen: boolean;
@@ -16,76 +17,98 @@ export const AppSidebar = ({ isOpen, isCollapsed, onClose, onToggleCollapse }: A
   const plan = user?.plan ?? 'free';
   const quota = plan === 'pro' ? 50 : 20;
   const percent = Math.min(100, (generationCount / quota) * 100);
+  const circumference = 2 * Math.PI * 18;
+  const strokeDashoffset = circumference - (percent / 100) * circumference;
 
   return (
     <aside
       className={clsx(
-        'fixed inset-y-0 left-0 z-overlay bg-sidebar backdrop-blur-xl text-fg border-r border-border',
-        'transition-all duration-normal ease-out',
-        'md:static md:translate-x-0 md:flex md:flex-col',
-        isCollapsed ? 'w-sidebar-collapsed px-2 py-5' : 'w-sidebar px-4 py-5',
-        isOpen ? 'translate-x-0 flex' : '-translate-x-full',
+        'fixed inset-y-0 left-0 z-overlay flex flex-col',
+        'bg-white/60 dark:bg-black/40 backdrop-blur-2xl backdrop-saturate-150',
+        'border-r border-white/20 dark:border-white/[0.06]',
+        'transition-all duration-300 ease-[cubic-bezier(0.4,0,0.2,1)]',
+        'md:static md:translate-x-0',
+        isCollapsed ? 'w-[72px]' : 'w-[260px]',
+        isOpen ? 'translate-x-0' : '-translate-x-full md:translate-x-0',
       )}
       aria-label="Navegação principal"
     >
-      {/* Close (mobile) */}
+      {/* Close mobile */}
       <button
         type="button"
-        className="absolute right-3 top-4 flex size-8 items-center justify-center rounded-md text-fg-muted transition-colors duration-fast hover:bg-inset hover:text-fg md:hidden"
+        className="absolute right-3 top-4 flex size-8 items-center justify-center rounded-full text-fg-muted/60 transition-all hover:bg-black/5 dark:hover:bg-white/10 hover:text-fg md:hidden"
         onClick={onClose}
-        aria-label="Fechar menu"
+        aria-label="Fechar"
       >
-        <span className="material-symbols-outlined text-xl">close</span>
+        <span className="material-symbols-outlined text-lg">close</span>
       </button>
 
-      <div className="flex h-full flex-col justify-between gap-4">
-        {/* Logo + Nav */}
-        <div className="flex flex-col gap-6">
-          <div className={clsx('flex items-center', isCollapsed ? 'justify-center' : 'gap-3 px-2')}>
-            <button
-              type="button"
-              onClick={onToggleCollapse}
-              className="hidden size-9 items-center justify-center rounded-lg bg-accent transition-all duration-fast hover:bg-accent-hover active:scale-95 md:flex"
-              aria-label={isCollapsed ? 'Expandir menu' : 'Recolher menu'}
-            >
-              <span className="material-symbols-outlined text-xl text-fg-inv">auto_awesome</span>
-            </button>
-            <div className="flex size-9 items-center justify-center rounded-lg bg-accent md:hidden">
-              <span className="material-symbols-outlined text-xl text-fg-inv">auto_awesome</span>
-            </div>
-            {!isCollapsed && (
-              <span className="text-lg font-semibold tracking-tight text-fg">ImagAIne</span>
-            )}
-          </div>
-
-          <SidebarNav onNavigate={onClose} collapsed={isCollapsed} />
+      {/* Logo */}
+      <div className={clsx(
+        'flex items-center shrink-0',
+        isCollapsed ? 'justify-center px-0 pt-6 pb-4' : 'gap-3 px-5 pt-6 pb-4',
+      )}>
+        <button
+          type="button"
+          onClick={onToggleCollapse}
+          className={clsx(
+            'relative flex size-10 items-center justify-center rounded-2xl',
+            'bg-gradient-to-br from-flow-500 to-flow-700',
+            'shadow-md shadow-flow-500/25',
+            'transition-all duration-200 hover:shadow-lg hover:shadow-flow-500/30 hover:scale-105 active:scale-95',
+            'hidden md:flex',
+          )}
+          aria-label={isCollapsed ? 'Expandir' : 'Recolher'}
+        >
+          <Sparkles className="h-5 w-5 text-white" />
+        </button>
+        <div className="flex size-10 items-center justify-center rounded-2xl bg-gradient-to-br from-flow-500 to-flow-700 shadow-md shadow-flow-500/25 md:hidden">
+          <Sparkles className="h-5 w-5 text-white" />
         </div>
+        {!isCollapsed && (
+          <div className="flex flex-col">
+            <span className="text-base font-bold tracking-tight text-fg">ImagAIne</span>
+            <span className="text-[10px] font-medium tracking-widest text-fg-muted uppercase">Studio</span>
+          </div>
+        )}
+      </div>
 
-        {/* Credits */}
-        {!isCollapsed ? (
-          <div className="space-y-2 px-2">
-            <div className="flex items-center justify-between text-xs">
-              <span className="text-fg-muted">Créditos</span>
-              <span className="font-medium text-fg-sec">
-                {generationCount}<span className="text-fg-muted">/{quota}</span>
-              </span>
-            </div>
-            <div className="h-1 w-full overflow-hidden rounded-full bg-inset">
-              <div className="h-full rounded-full bg-accent transition-all duration-slow" style={{ width: `${percent}%` }} />
-            </div>
-            <span className="flex w-full items-center justify-center gap-1.5 py-1 text-xs font-medium text-fg-muted">
-              Plano {plan === 'pro' ? 'Pro' : 'Free'}
-            </span>
+      {/* Nav */}
+      <div className="flex-1 overflow-y-auto overflow-x-hidden px-2 py-2">
+        <SidebarNav onNavigate={onClose} collapsed={isCollapsed} />
+      </div>
+
+      {/* Credits — circular progress */}
+      <div className={clsx(
+        'shrink-0 border-t border-border px-3 py-4',
+        isCollapsed ? 'flex justify-center' : '',
+      )}>
+        {isCollapsed ? (
+          <div className="relative flex size-10 items-center justify-center">
+            <svg className="size-10 -rotate-90" viewBox="0 0 40 40">
+              <circle cx="20" cy="20" r="18" fill="none" stroke="currentColor" strokeWidth="2" className="text-inset" />
+              <circle cx="20" cy="20" r="18" fill="none" stroke="currentColor" strokeWidth="2.5"
+                className="text-accent transition-all duration-500"
+                strokeDasharray={circumference} strokeDashoffset={strokeDashoffset} strokeLinecap="round" />
+            </svg>
+            <span className="absolute text-[9px] font-bold text-fg-sec">{generationCount}</span>
           </div>
         ) : (
-          <button
-            type="button"
-            onClick={onToggleCollapse}
-            className="hidden items-center justify-center text-fg-muted transition-colors duration-fast hover:text-fg md:flex"
-            aria-label="Expandir"
-          >
-            <span className="material-symbols-outlined text-xl">chevron_right</span>
-          </button>
+          <div className="flex items-center gap-3">
+            <div className="relative flex size-10 shrink-0 items-center justify-center">
+              <svg className="size-10 -rotate-90" viewBox="0 0 40 40">
+                <circle cx="20" cy="20" r="18" fill="none" stroke="currentColor" strokeWidth="2" className="text-inset" />
+                <circle cx="20" cy="20" r="18" fill="none" stroke="currentColor" strokeWidth="2.5"
+                  className="text-accent transition-all duration-500"
+                  strokeDasharray={circumference} strokeDashoffset={strokeDashoffset} strokeLinecap="round" />
+              </svg>
+              <span className="absolute text-[9px] font-bold text-fg-sec">{generationCount}</span>
+            </div>
+            <div className="flex flex-col">
+              <span className="text-xs font-medium text-fg">{generationCount}/{quota} créditos</span>
+              <span className="text-[10px] text-fg-muted">Plano {plan === 'pro' ? 'Pro' : 'Free'}</span>
+            </div>
+          </div>
         )}
       </div>
     </aside>
