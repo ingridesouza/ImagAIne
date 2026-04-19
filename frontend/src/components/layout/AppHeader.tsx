@@ -9,7 +9,7 @@ type AppHeaderProps = {
   isSidebarCollapsed?: boolean;
 };
 
-export const AppHeader = ({ onOpenSidebar, onToggleSidebarCollapse, isSidebarCollapsed }: AppHeaderProps) => {
+export const AppHeader = ({ onOpenSidebar }: AppHeaderProps) => {
   const user = useAuthStore((state) => state.user);
   const searchInputRef = useRef<HTMLInputElement>(null);
   const { theme, toggle: toggleTheme } = useThemeStore();
@@ -40,16 +40,6 @@ export const AppHeader = ({ onOpenSidebar, onToggleSidebarCollapse, isSidebarCol
             aria-label="Menu"
           >
             <span className="material-symbols-outlined text-[20px]">menu</span>
-          </button>
-          <button
-            type="button"
-            className="hidden size-9 items-center justify-center rounded-xl text-fg-muted transition-all duration-200 hover:bg-black/5 dark:hover:bg-white/10 hover:text-fg md:flex"
-            onClick={() => onToggleSidebarCollapse?.()}
-            aria-label={isSidebarCollapsed ? 'Expandir' : 'Recolher'}
-          >
-            <span className="material-symbols-outlined text-[20px]">
-              {isSidebarCollapsed ? 'chevron_right' : 'chevron_left'}
-            </span>
           </button>
         </div>
 

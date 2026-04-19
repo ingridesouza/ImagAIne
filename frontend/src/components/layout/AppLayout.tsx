@@ -6,69 +6,39 @@ import { useThemeStore } from '@/hooks/useTheme';
 
 export const AppLayout = () => {
   const [isSidebarOpen, setSidebarOpen] = useState(false);
-  const [isSidebarCollapsed, setSidebarCollapsed] = useState(false);
-  // Subscribe so the store initializes and applies the class
   useThemeStore((s) => s.theme);
 
   useEffect(() => {
-    document.documentElement.style.setProperty('--sidebar-width', isSidebarCollapsed ? '4.5rem' : '15rem');
-    return () => {
-      document.documentElement.style.removeProperty('--sidebar-width');
-    };
-  }, [isSidebarCollapsed]);
-
-  useEffect(() => {
-    const handleResize = () => {
-      if (window.innerWidth >= 1024) {
-        setSidebarOpen(false);
-      }
-    };
-
-    window.addEventListener('resize', handleResize);
-    return () => window.removeEventListener('resize', handleResize);
-  }, []);
-
-  useEffect(() => {
     const handleEsc = (event: KeyboardEvent) => {
-      if (event.key === 'Escape') {
-        setSidebarOpen(false);
-      }
+      if (event.key === 'Escape') setSidebarOpen(false);
     };
-
     window.addEventListener('keydown', handleEsc);
     return () => window.removeEventListener('keydown', handleEsc);
   }, []);
 
   useEffect(() => {
     document.body.style.overflow = isSidebarOpen ? 'hidden' : '';
-    return () => {
-      document.body.style.overflow = '';
-    };
+    return () => { document.body.style.overflow = ''; };
   }, [isSidebarOpen]);
 
   return (
     <div id="app-layout" className="flex h-screen w-full overflow-hidden bg-body text-fg font-sans">
+      {/* Dock sidebar — fixed, floats over content */}
       <AppSidebar
         isOpen={isSidebarOpen}
-        isCollapsed={isSidebarCollapsed}
+        isCollapsed={false}
         onClose={() => setSidebarOpen(false)}
-        onToggleCollapse={() => setSidebarCollapsed((prev) => !prev)}
+        onToggleCollapse={() => {}}
       />
-      {isSidebarOpen ? (
-        <div
-          className="fixed inset-0 z-30 bg-overlay md:hidden"
-          onClick={() => setSidebarOpen(false)}
-          role="presentation"
-          aria-hidden={!isSidebarOpen}
-        />
-      ) : null}
-      <div className="flex min-h-0 flex-1 flex-col overflow-hidden">
+
+      {/* Main content — offset for dock */}
+      <div className="flex min-h-0 flex-1 flex-col overflow-hidden md:ml-[80px]">
         <AppHeader
           onOpenSidebar={() => setSidebarOpen(true)}
-          onToggleSidebarCollapse={() => setSidebarCollapsed((prev) => !prev)}
-          isSidebarCollapsed={isSidebarCollapsed}
+          onToggleSidebarCollapse={() => {}}
+          isSidebarCollapsed={false}
         />
-        <main className="relative z-0 flex-1 min-h-0 overflow-y-auto bg-body">
+        <main className="relative z-0 flex-1 min-h-0 overflow-y-auto">
           <Outlet />
         </main>
       </div>
