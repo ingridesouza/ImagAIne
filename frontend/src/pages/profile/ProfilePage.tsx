@@ -439,66 +439,34 @@ export const ProfilePage = () => {
       ) : null}
 
       <div className="mx-auto w-full max-w-6xl flex-1 px-4 py-5 sm:px-6 md:px-8 lg:px-16 xl:px-20">
-        <div className="no-scrollbar flex gap-1 overflow-x-auto border-b border-border pb-0">
+        {/* Tabs — prominent, centered */}
+        <div className="flex justify-center gap-1 rounded-2xl bg-black/[0.03] dark:bg-white/[0.04] p-1 mb-6">
           <button
             type="button"
             className={clsx(
-              'relative flex-shrink-0 px-4 py-3 text-[13px] font-medium transition-colors',
-              activeTab === 'creations' ? 'text-fg' : 'text-fg-muted hover:text-fg-sec',
+              'flex items-center gap-2 rounded-xl px-6 py-2.5 text-sm font-medium transition-all duration-200',
+              activeTab === 'creations'
+                ? 'bg-white dark:bg-white/[0.1] text-fg shadow-sm'
+                : 'text-fg-muted hover:text-fg',
             )}
             onClick={() => setActiveTab('creations')}
           >
-            <div className="flex items-center gap-1.5">
-              <span className="material-symbols-outlined text-[18px]">grid_view</span>
-              <span>Criações</span>
-            </div>
-            {activeTab === 'creations' && (
-              <div className="absolute bottom-0 left-2 right-2 h-[2px] rounded-full bg-accent" />
-            )}
+            <span className="material-symbols-outlined text-lg" style={{ fontVariationSettings: `'FILL' ${activeTab === 'creations' ? 1 : 0}` }}>grid_view</span>
+            Criações
           </button>
           <button
             type="button"
             className={clsx(
-              'relative flex-shrink-0 px-4 py-3 text-[13px] font-medium transition-colors',
-              activeTab === 'liked' ? 'text-fg' : 'text-fg-muted hover:text-fg-sec',
+              'flex items-center gap-2 rounded-xl px-6 py-2.5 text-sm font-medium transition-all duration-200',
+              activeTab === 'liked'
+                ? 'bg-white dark:bg-white/[0.1] text-fg shadow-sm'
+                : 'text-fg-muted hover:text-fg',
             )}
             onClick={() => setActiveTab('liked')}
           >
-            <div className="flex items-center gap-1.5">
-              <span className="material-symbols-outlined text-[18px]">favorite</span>
-              <span>Curtidas</span>
-            </div>
-            {activeTab === 'liked' && (
-              <div className="absolute bottom-0 left-2 right-2 h-[2px] rounded-full bg-accent" />
-            )}
+            <span className="material-symbols-outlined text-lg" style={{ fontVariationSettings: `'FILL' ${activeTab === 'liked' ? 1 : 0}` }}>favorite</span>
+            Curtidas
           </button>
-        </div>
-
-        <div className="mt-4 flex flex-wrap items-center justify-between gap-3">
-          <div className="no-scrollbar flex gap-1.5 overflow-x-auto">
-            {['Tudo', 'Retratos', 'Paisagens', 'Cyberpunk', '3D'].map((chip) => (
-              <button
-                key={chip}
-                type="button"
-                className={clsx(
-                  'whitespace-nowrap rounded-lg px-3 py-1.5 text-[11px] font-medium transition-all',
-                  chip === 'Tudo'
-                    ? 'bg-accent-soft text-accent'
-                    : 'text-fg-muted hover:bg-surface hover:text-fg-sec',
-                )}
-              >
-                {chip}
-              </button>
-            ))}
-          </div>
-          <div className="flex items-center gap-1.5 text-[11px] text-fg-muted">
-            <span>Ordenar:</span>
-            <select className="rounded-md border border-border bg-surface px-2 py-1 text-[11px] text-fg-sec outline-none focus:ring-0">
-              <option>Mais recentes</option>
-              <option>Mais baixadas</option>
-              <option>Mais curtidas</option>
-            </select>
-          </div>
         </div>
 
         {activeTab === 'creations' && (

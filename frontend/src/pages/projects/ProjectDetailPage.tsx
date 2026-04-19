@@ -102,15 +102,15 @@ export const ProjectDetailPage = () => {
   ) ?? [];
 
   return (
-    <section className="mx-auto max-w-5xl px-4 py-8 sm:px-6 md:py-10">
+    <section className="mx-auto max-w-6xl px-5 py-8 sm:px-8 lg:px-10">
       {/* Header */}
       <div className="mb-6">
-        <Link to="/projects" className="mb-4 inline-flex items-center gap-1 text-sm text-fg-muted hover:text-fg">
-          <ArrowLeft className="h-4 w-4" /> Projetos
+        <Link to="/projects" className="mb-4 inline-flex items-center gap-1 text-xs font-medium text-fg-muted hover:text-fg transition-colors">
+          <ArrowLeft className="h-3.5 w-3.5" /> Projetos
         </Link>
 
         {/* Cover */}
-        <div className="relative mb-4 h-40 overflow-hidden rounded-2xl bg-inset sm:h-52">
+        <div className="relative mb-4 h-32 overflow-hidden rounded-2xl bg-inset sm:h-40">
           {project.cover_image_url ? (
             <img src={project.cover_image_url} alt="" className="h-full w-full object-cover" />
           ) : (

@@ -125,17 +125,14 @@ export const SettingsPage = () => {
     <div className="flex min-h-full flex-col bg-body text-fg">
       <div className="flex-1 overflow-y-auto px-4 py-6 md:px-8 lg:px-12 xl:px-20">
         <div className="mx-auto max-w-5xl space-y-8 pb-16">
-          <header className="flex flex-col gap-2 border-b border-border pb-6 pt-2">
-            <h1 className="text-3xl font-black tracking-tight md:text-4xl">Configurações</h1>
-            <p className="text-base text-fg-sec">Gerencie sua conta, preferências de IA e notificações.</p>
+          <header className="pb-6 pt-2">
+            <h1 className="text-3xl font-bold tracking-tight">Configurações</h1>
+            <p className="mt-1 text-base text-fg-muted">Gerencie sua conta e preferências.</p>
           </header>
 
           <section className="space-y-4">
-            <h2 className="flex items-center gap-2 text-xl font-bold">
-              <span className="material-symbols-outlined text-accent">manage_accounts</span>
-              Conta
-            </h2>
-            <div className="rounded-2xl border border-border bg-surface p-6 shadow-sm">
+            <h2 className="text-sm font-semibold uppercase tracking-wider text-fg-muted">Conta</h2>
+            <div className="rounded-2xl bg-white dark:bg-white/[0.04] p-6 shadow-sm">
               <div className="mb-8 flex flex-col items-center justify-between gap-6 md:flex-row md:items-start">
                 <div className="flex items-center gap-5">
                   <div className="group relative cursor-pointer">
@@ -240,11 +237,11 @@ export const SettingsPage = () => {
           </section>
 
           <section className="space-y-4">
-            <h2 className="flex items-center gap-2 text-xl font-bold">
+            <h2 className="text-sm font-semibold uppercase tracking-wider text-fg-muted flex items-center gap-2">
               <span className="material-symbols-outlined text-accent">tune</span>
               Preferências de geração
             </h2>
-            <div className="space-y-8 rounded-2xl border border-border bg-surface p-6 shadow-sm">
+            <div className="space-y-8 rounded-2xl bg-white dark:bg-white/[0.04] p-6 shadow-sm">
               <div className="space-y-4">
                 <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
                   <div>
@@ -327,11 +324,11 @@ export const SettingsPage = () => {
           </section>
 
           <section className="space-y-4">
-            <h2 className="flex items-center gap-2 text-xl font-bold">
+            <h2 className="text-sm font-semibold uppercase tracking-wider text-fg-muted flex items-center gap-2">
               <span className="material-symbols-outlined text-accent">notifications</span>
               Notificações
             </h2>
-            <div className="divide-y divide-border overflow-hidden rounded-2xl border border-border bg-surface shadow-sm">
+            <div className="divide-y divide-border overflow-hidden rounded-2xl bg-white dark:bg-white/[0.04] shadow-sm">
               <div className="flex items-center justify-between gap-4 p-4 sm:p-6">
                 <div>
                   <h3 className="font-semibold">Email de geração concluída</h3>
@@ -370,11 +367,11 @@ export const SettingsPage = () => {
           </section>
 
           <section className="space-y-4">
-            <h2 className="flex items-center gap-2 text-xl font-bold">
+            <h2 className="text-sm font-semibold uppercase tracking-wider text-fg-muted flex items-center gap-2">
               <span className="material-symbols-outlined text-accent">security</span>
               Privacidade
             </h2>
-            <div className="space-y-6 rounded-2xl border border-border bg-surface p-6 shadow-sm">
+            <div className="space-y-6 rounded-2xl bg-white dark:bg-white/[0.04] p-6 shadow-sm">
               <div className="flex items-center justify-between gap-4">
                 <div>
                   <h3 className="font-semibold">Modo público</h3>
