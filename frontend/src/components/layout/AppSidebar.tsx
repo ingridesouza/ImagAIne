@@ -73,7 +73,7 @@ export const AppSidebar = ({ isOpen, isCollapsed, onClose, onToggleCollapse }: A
             <div className="h-1 w-full overflow-hidden rounded-full bg-inset">
               <div className="h-full rounded-full bg-accent transition-all duration-slow" style={{ width: `${percent}%` }} />
             </div>
-            <span className="flex w-full items-center justify-center py-1 text-xs text-fg-muted">
+            <span className="flex w-full items-center justify-center gap-1.5 py-1 text-xs font-medium text-fg-muted">
               Plano {plan === 'pro' ? 'Pro' : 'Free'}
             </span>
           </div>

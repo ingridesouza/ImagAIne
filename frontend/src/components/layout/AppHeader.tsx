@@ -101,7 +101,6 @@ export const AppHeader = ({ onOpenSidebar, onToggleSidebarCollapse, isSidebarCol
           >
             <span className="material-symbols-outlined text-xl">chat</span>
           </Link>
-
           <Link
             to="/generate"
             className="flex size-9 items-center justify-center rounded-lg bg-accent text-fg-inv transition-all duration-fast hover:bg-accent-hover active:scale-95"

@@ -1,5 +1,7 @@
 import { useInfiniteQuery, useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { useMemo, useRef, useState } from 'react';
+import { useNavigate } from 'react-router-dom';
+import { toast } from 'sonner';
 import clsx from 'clsx';
 import { GalleryCard } from '@/features/images/components/GalleryCard';
 import { ImageDetailsDialog, type ImageComment } from '@/features/images/components/ImageDetailsDialog';
@@ -37,6 +39,7 @@ const getInitials = (name?: string, username?: string) => {
 
 export const ProfilePage = () => {
   const queryClient = useQueryClient();
+  const navigate = useNavigate();
   const cachedProfile = queryClient.getQueryData<UserProfile>(QUERY_KEYS.profile);
   const storeUser = useAuthStore((state) => state.user);
   const [selectedImage, setSelectedImage] = useState<ImageRecord | null>(null);
@@ -404,6 +407,7 @@ export const ProfilePage = () => {
             <div className="flex w-full items-center gap-2 pb-1 md:w-auto">
               <button
                 type="button"
+                onClick={() => navigate('/settings')}
                 className="flex h-9 flex-1 items-center justify-center gap-1.5 rounded-lg border border-border bg-surface px-4 text-[13px] font-medium text-fg-sec transition-all hover:bg-inset hover:text-fg md:flex-initial"
               >
                 <span className="material-symbols-outlined text-[16px]">edit</span>
@@ -411,17 +415,15 @@ export const ProfilePage = () => {
               </button>
               <button
                 type="button"
+                onClick={() => {
+                  const url = window.location.href;
+                  navigator.clipboard.writeText(url);
+                  toast.success('Link do perfil copiado!');
+                }}
                 className="flex size-9 items-center justify-center rounded-lg border border-border bg-surface text-fg-muted transition-all hover:bg-inset hover:text-fg"
                 aria-label="Compartilhar perfil"
               >
                 <span className="material-symbols-outlined text-[18px]">share</span>
-              </button>
-              <button
-                type="button"
-                className="flex size-9 items-center justify-center rounded-lg border border-border bg-surface text-fg-muted transition-all hover:bg-inset hover:text-fg"
-                aria-label="Mais ações"
-              >
-                <span className="material-symbols-outlined text-[18px]">more_horiz</span>
               </button>
             </div>
           </div>

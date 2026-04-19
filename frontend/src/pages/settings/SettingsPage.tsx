@@ -11,10 +11,7 @@ import { Eye, EyeOff } from 'lucide-react';
 type AspectOption = '1:1' | '16:9' | '9:16' | '21:9';
 
 const MODEL_OPTIONS = [
-  'AI Vision v2.1 (Turbo)',
-  'AI Vision v2.0 (Stable)',
-  'Realistic Photo v4',
-  'Anime Diffusion XL',
+  'FLUX.1-dev (Padrão)',
 ];
 
 const ASPECT_OPTIONS: { value: AspectOption; label: string; shape: 'square' | 'landscape' | 'portrait' }[] = [
@@ -450,6 +447,7 @@ export const SettingsPage = () => {
             <div className="flex gap-2">
               <button
                 type="button"
+                onClick={() => navigate('/profile')}
                 className="rounded-full border border-border bg-surface px-6 py-3 text-sm font-bold text-fg transition-colors hover:bg-inset"
               >
                 Cancelar
