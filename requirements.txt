@@ -4,13 +4,8 @@ djangorestframework
 djangorestframework-simplejwt
 psycopg[binary]
 celery[redis]
-diffusers
-torch
 Pillow
 python-decouple
-transformers
-accelerate
-huggingface-hub>=0.16.0
 python-dotenv
 redis
 drf-spectacular>=0.27.0

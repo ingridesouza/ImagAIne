@@ -1,0 +1,7 @@
+-r requirements.txt
+--extra-index-url https://download.pytorch.org/whl/cpu
+torch
+diffusers
+transformers
+accelerate
+huggingface-hub>=0.16.0
